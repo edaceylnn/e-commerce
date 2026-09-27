@@ -1,0 +1,554 @@
+// Owned data model for the store: product catalog, users/roles, orders,
+// reviews, wishlist, coupons and push subscriptions. Replaces the
+// DummyJSON-only catalog and the in-memory review/push stores that this
+// project started with (see README "Üretim seviyesine taşıma" notes).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  HAZIRLANIYOR
+  KARGOLANDI
+  TESLIM_EDILDI
+  IPTAL
+  // Reachable only through the refund action (see src/lib/orders.ts
+  // refundOrder) — a paid order returned after it shipped, money actually
+  // sent back via iyzico. Distinct from IPTAL, which means "cancelled
+  // before it ever shipped" and carries no such guarantee.
+  IADE
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED
+}
+
+enum AddressType {
+  SHIPPING
+  BILLING
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model User {
+  id                String             @id @default(cuid())
+  email             String             @unique
+  name              String
+  passwordHash      String
+  phone             String?
+  birthDate         DateTime?
+  role              Role               @default(CUSTOMER)
+  notifyMarketing   Boolean            @default(false)
+  notifyOrderStatus Boolean            @default(true)
+  notifyNewProducts Boolean            @default(false)
+  notifySms         Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  addresses         Address[]
+  orders            Order[]
+  wishlist          WishlistItem[]
+  reviews           Review[]
+  pushSubs          PushSubscription[]
+  stockMovements    StockMovement[]
+  orderEvents       OrderEvent[]
+}
+
+model Category {
+  id              String     @id @default(cuid())
+  slug            String     @unique
+  label           String
+  description     String?
+  imageUrl        String?
+  metaTitle       String?
+  metaDescription String?
+  position        Int        @default(0)
+  parentId        String?
+  parent          Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children        Category[] @relation("CategoryHierarchy")
+  products        Product[]
+  campaigns       Campaign[]
+
+  @@index([parentId])
+}
+
+model Brand {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  slug      String     @unique
+  createdAt DateTime   @default(now())
+  products  Product[]
+  campaigns Campaign[]
+}
+
+model Ingredient {
+  id          String              @id @default(cuid())
+  name        String              @unique
+  slug        String              @unique
+  description String?
+  products    ProductIngredient[]
+  createdAt   DateTime            @default(now())
+}
+
+// Join table for the Product <-> Ingredient many-to-many — deliberately only
+// for the small set of *named/active* ingredients worth cross-referencing
+// ("which products contain Niacinamide"), kept separate from the raw INCI
+// text blob (Product.fullIngredients) which is descriptive, not queryable.
+model ProductIngredient {
+  productId    Int
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@id([productId, ingredientId])
+  @@index([ingredientId])
+}
+
+// A reusable color swatch — named once, referenced by every variant that
+// uses it, instead of each variant carrying its own free-text name/hex.
+model Color {
+  id        String           @id @default(cuid())
+  name      String           @unique
+  hex       String
+  active    Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  variants  ProductVariant[]
+  images    ProductImage[]
+}
+
+// A named run of sizes (e.g. "Kadın Üst Giyim" = XS..XL, "Kadın Alt Giyim" =
+// 34..42) — different product types use different groups, but sizes within
+// a group share a position/order.
+model SizeGroup {
+  id         String      @id @default(cuid())
+  name       String      @unique
+  sizes      Size[]
+  sizeCharts SizeChart[]
+}
+
+model Size {
+  id            String           @id @default(cuid())
+  sizeGroupId   String
+  sizeGroup     SizeGroup        @relation(fields: [sizeGroupId], references: [id], onDelete: Cascade)
+  label         String
+  position      Int              @default(0)
+  variants      ProductVariant[]
+  sizeChartRows SizeChartRow[]
+
+  @@unique([sizeGroupId, label])
+  @@index([sizeGroupId])
+}
+
+// A measurement grid (rows = sizes, columns = body measurements in cm/inch)
+// tied to one SizeGroup; a product opts in via Product.sizeChartId and one
+// chart can be reused across many products of the same size group.
+model SizeChart {
+  id          String         @id @default(cuid())
+  name        String
+  sizeGroupId String
+  sizeGroup   SizeGroup      @relation(fields: [sizeGroupId], references: [id])
+  unit        String         @default("cm")
+  columns     String[]
+  rows        SizeChartRow[]
+  products    Product[]
+  createdAt   DateTime       @default(now())
+
+  @@index([sizeGroupId])
+}
+
+model SizeChartRow {
+  id           String    @id @default(cuid())
+  sizeChartId  String
+  sizeChart    SizeChart @relation(fields: [sizeChartId], references: [id], onDelete: Cascade)
+  sizeId       String
+  size         Size      @relation(fields: [sizeId], references: [id])
+  measurements Json
+
+  @@unique([sizeChartId, sizeId])
+  @@index([sizeChartId])
+}
+
+// One row per fully-specified combination (color + size) — not a multi-axis
+// matrix computed on the fly. Opt-in per product; a product with zero
+// variants behaves exactly as before this model existed.
+model ProductVariant {
+  id                String   @id @default(cuid())
+  productId         Int
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  colorId           String
+  color             Color    @relation(fields: [colorId], references: [id])
+  sizeId            String
+  size              Size     @relation(fields: [sizeId], references: [id])
+  sku               String   @unique
+  stock             Int      @default(0)
+  priceOverride     Decimal? @db.Decimal(10, 2)
+  // Overrides Product.lowStockThreshold for this variant when set; null
+  // means "inherit the product's threshold" (see Bölüm 11 of the PRD).
+  lowStockThreshold Int?
+  position          Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  orderItems     OrderItem[]
+  wishlistedBy   WishlistItem[]
+  stockMovements StockMovement[]
+
+  @@index([productId])
+  @@index([colorId])
+  @@index([sizeId])
+}
+
+enum StockMovementType {
+  RECEIVING
+  SALE
+  CANCELLATION
+  RETURN
+  DAMAGE
+  MANUAL_ADJUSTMENT
+}
+
+// Append-only ledger — every change to Product.stock / ProductVariant.stock
+// is expected to write one of these alongside the update, in the same
+// transaction. Never edited or deleted after creation.
+model StockMovement {
+  id            String            @id @default(cuid())
+  productId     Int
+  product       Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId     String?
+  variant       ProductVariant?   @relation(fields: [variantId], references: [id])
+  type          StockMovementType
+  quantity      Int
+  previousStock Int
+  newStock      Int
+  userId        String?
+  user          User?             @relation(fields: [userId], references: [id])
+  note          String?
+  createdAt     DateTime          @default(now())
+
+  @@index([productId])
+  @@index([variantId])
+  @@index([createdAt])
+}
+
+// Automatic (no-code) percentage-off promotion, scoped by exactly one of
+// category / brand / minimum-spend (enforced at the API layer, not the DB —
+// same app-level-not-DB-level pattern already used for Address.type).
+model Campaign {
+  id                 String    @id @default(cuid())
+  name               String
+  description        String?
+  discountPercentage Decimal   @db.Decimal(5, 2)
+  categoryId         String?
+  category           Category? @relation(fields: [categoryId], references: [id])
+  brandId            String?
+  brand              Brand?    @relation(fields: [brandId], references: [id])
+  minSpend           Decimal?  @db.Decimal(10, 2)
+  startAt            DateTime
+  endAt              DateTime
+  active             Boolean   @default(true)
+  orders             Order[]
+  createdAt          DateTime  @default(now())
+}
+
+model Collection {
+  id          String              @id @default(cuid())
+  slug        String              @unique
+  label       String
+  description String?
+  active      Boolean             @default(true)
+  // Optional window for seasonal collections — outside it the collection is
+  // just marked expired in the admin, never auto-deleted (see Bölüm 14).
+  startAt     DateTime?
+  endAt       DateTime?
+  products    ProductCollection[]
+  createdAt   DateTime            @default(now())
+}
+
+// Join table for the Product <-> Collection many-to-many (a product can be
+// featured in several curated collections, e.g. "Altın Işıltısı Serisi").
+model ProductCollection {
+  productId    Int
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@id([productId, collectionId])
+  @@index([collectionId])
+}
+
+model Product {
+  id                 Int                 @id
+  title              String
+  description        String
+  categoryId         String
+  category           Category            @relation(fields: [categoryId], references: [id])
+  price              Decimal             @db.Decimal(10, 2)
+  discountPercentage Decimal             @default(0) @db.Decimal(5, 2)
+  // Cost and tax feed the profit-margin figures shown in the admin — always
+  // computed live from these, never stored (see Bölüm 9 of the PRD).
+  cost               Decimal?            @db.Decimal(10, 2)
+  taxRate            Decimal             @default(20) @db.Decimal(5, 2)
+  stock              Int                 @default(0)
+  lowStockThreshold  Int                 @default(10)
+  brandId            String?
+  brand              Brand?              @relation(fields: [brandId], references: [id])
+  sizeChartId        String?
+  sizeChart          SizeChart?          @relation(fields: [sizeChartId], references: [id])
+  tags               String[]
+  ratingAvg          Decimal             @default(0) @db.Decimal(3, 2)
+  ratingCount        Int                 @default(0)
+  isNew              Boolean             @default(false)
+  thumbnail          String
+  images             ProductImage[]
+  reviews            Review[]
+  wishlistedBy       WishlistItem[]
+  orderItems         OrderItem[]
+  collections        ProductCollection[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  // Cosmetic-specific attributes
+  status            ProductStatus       @default(ACTIVE)
+  skinTypes         String[]            @default([])
+  skinConcerns      String[]            @default([])
+  finish            String?
+  coverage          String?
+  texture           String?
+  usagePurpose      String?
+  fullIngredients   String?
+  usageInstructions String?
+  warnings          String?
+  isVegan           Boolean             @default(false)
+  isCrueltyFree     Boolean             @default(false)
+  isParabenFree     Boolean             @default(false)
+  spf               Int?
+  volumeLabel       String?
+  origin            String?
+  expiryInfo        String?
+  metaTitle         String?
+  metaDescription   String?
+  variants          ProductVariant[]
+  ingredients       ProductIngredient[]
+  stockMovements    StockMovement[]
+
+  @@index([categoryId])
+  @@index([title])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  altText   String?
+  position  Int     @default(0)
+  // Ties this photo to one color's variant gallery (e.g. the black product
+  // shots) — null means it's a general/shared photo shown regardless of
+  // which color the customer has selected.
+  colorId   String?
+  color     Color?  @relation(fields: [colorId], references: [id])
+
+  @@index([productId])
+  @@index([colorId])
+}
+
+model Review {
+  id        String       @id @default(cuid())
+  productId Int
+  product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?        @relation(fields: [userId], references: [id])
+  author    String
+  rating    Int
+  comment   String
+  verified  Boolean      @default(false)
+  status    ReviewStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+
+  @@index([productId, status])
+}
+
+model Address {
+  id                String      @id @default(cuid())
+  userId            String
+  user              User        @relation(fields: [userId], references: [id])
+  // Default/label for the account address book — not a hard restriction on
+  // which slot an address can fill at checkout (a shipping-labeled address
+  // can still be reused as an order's billing address, and vice versa).
+  type              AddressType @default(SHIPPING)
+  label             String?
+  fullName          String
+  phone             String
+  line1             String
+  line2             String?
+  city              String
+  district          String
+  postalCode        String
+  // Independent of `type` on purpose (see note above) — an address can be
+  // the default for shipping, billing, both, or neither.
+  isDefaultShipping Boolean     @default(false)
+  isDefaultBilling  Boolean     @default(false)
+  shippingOrders    Order[]     @relation("ShippingAddress")
+  billingOrders     Order[]     @relation("BillingAddress")
+
+  @@index([userId])
+}
+
+model Order {
+  id                     String       @id @default(cuid())
+  orderNumber            String       @unique
+  userId                 String
+  user                   User         @relation(fields: [userId], references: [id])
+  shippingAddressId      String
+  shippingAddress        Address      @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  billingAddressId       String
+  billingAddress         Address      @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  status                 OrderStatus  @default(PENDING_PAYMENT)
+  subtotal               Decimal      @db.Decimal(10, 2)
+  discountTotal          Decimal      @default(0) @db.Decimal(10, 2)
+  shippingCost           Decimal      @default(0) @db.Decimal(10, 2)
+  total                  Decimal      @db.Decimal(10, 2)
+  couponId               String?
+  coupon                 Coupon?      @relation(fields: [couponId], references: [id])
+  iyzicoPaymentId        String?
+  iyzicoConversationId   String?      @unique
+  iyzicoToken            String?      @unique
+  // Captured at payment confirmation from CF-Retrieve's itemTransactions —
+  // a refund is issued per transaction, not against the top-level payment,
+  // so this is what refundOrder() actually has to work with later.
+  iyzicoItemTransactions Json?
+  paidAt                 DateTime?
+  refundedAt             DateTime?
+  items                  OrderItem[]
+  trackingNumber         String?
+  internalNote           String?
+  campaignId             String?
+  campaign               Campaign?    @relation(fields: [campaignId], references: [id])
+  events                 OrderEvent[]
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// Append-only history of what happened to an order and when — backs the
+// Sipariş Timeline (Bölüm 19). Distinct from a full system Audit Log
+// (Bölüm 34): this is only the story of one order, shown to admins and
+// (in simplified form) to the customer. actorUserId is null for
+// system-triggered events (payment webhook, automated flows).
+model OrderEvent {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type        String
+  message     String
+  actorUserId String?
+  actor       User?    @relation(fields: [actorUserId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id         String          @id @default(cuid())
+  orderId    String
+  order      Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  Int
+  product    Product         @relation(fields: [productId], references: [id])
+  variantId  String?
+  variant    ProductVariant? @relation(fields: [variantId], references: [id])
+  sku        String?
+  title      String
+  thumbnail  String
+  unitPrice  Decimal         @db.Decimal(10, 2)
+  quantity   Int
+  // Set once this line's share of the order has been refunded (Bölüm 28 —
+  // Kısmi İade). iyzico's refund granularity is per basket item, and
+  // checkout/create keys basket items by productId — so lines sharing a
+  // productId (e.g. two variants of the same product) share one iyzico
+  // transaction and are always refunded together as a group.
+  refundedAt DateTime?
+  // Optional free-form reason captured from the admin at refund time (Bölüm
+  // 28 follow-up — İadeler reporting page). Nullable since it's opt-in and
+  // refunds made before this field existed have none.
+  refundReason String?
+
+  @@index([orderId])
+}
+
+model WishlistItem {
+  id         String          @id @default(cuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id])
+  productId  Int
+  product    Product         @relation(fields: [productId], references: [id])
+  variantId  String?
+  variant    ProductVariant? @relation(fields: [variantId], references: [id])
+  createdAt  DateTime        @default(now())
+  // Effective (discounted) unit price at the moment this was wishlisted —
+  // captured once, never recomputed — so the account favorites page can
+  // honestly show a "Fiyat Düştü" badge instead of guessing at a comparison.
+  priceAtAdd Decimal?        @db.Decimal(10, 2)
+
+  @@unique([userId, productId, variantId])
+}
+
+model Coupon {
+  id         String     @id @default(cuid())
+  code       String     @unique
+  type       CouponType
+  value      Decimal    @db.Decimal(10, 2)
+  expiresAt  DateTime?
+  usageLimit Int?
+  usedCount  Int        @default(0)
+  active     Boolean    @default(true)
+  orders     Order[]
+  createdAt  DateTime   @default(now())
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Single global config row, always read/written at the fixed id "global" —
+// never a per-tenant table (Bölüm 40). Only covers values whose every
+// consumer is a server component today (VIP tier math, the new-product
+// form's prefilled threshold); shipping-cost constants stay in
+// src/lib/shipping.ts since client components read those directly and
+// making them dynamic would need prop-threading beyond this slice's scope.
+model Settings {
+  id                       String   @id @default("global")
+  vipSpendThreshold        Decimal  @default(5000) @db.Decimal(10, 2)
+  defaultLowStockThreshold Int      @default(10)
+  updatedAt                DateTime @updatedAt
+}

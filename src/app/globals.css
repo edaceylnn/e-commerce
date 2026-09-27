@@ -1,26 +1,277 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* EDACEY brand palette — cream/ink/sage. --primary and --primary-dark are
+     deliberately *aliases* of --ink/--accent rather than independent
+     colors, so every bg-primary/hover:bg-primary-dark call site (buttons
+     across the storefront) stays in sync with the brand colors below with
+     no per-component changes needed. */
+  --background: #f2efe8;
+  --foreground: #16150f;
+  --ink: #16150f;
+  /* The only muted text color (5.4:1 on --background, WCAG AA). The design
+     system deliberately has no lighter text tint: de-emphasis comes from
+     size and weight, never from dropping below AA contrast. */
+  --ink-soft: rgba(22, 21, 15, 0.65);
+  --primary: var(--ink);
+  --primary-dark: var(--accent);
+  --primary-soft: #e7e9de;
+  --cream: #ede9e0;
+  --cream-deep: #e4e0d5;
+  --ivory: #ffffff;
+  /* Input fill for forms sitting directly on the cream page (no white card):
+     a hair lighter than --background so the field reads as a field. */
+  --field: #f8f6f2;
+  --rose: #4e5b3a;
+  --rose-soft: #e3e7da;
+  --line: rgba(22, 21, 15, 0.14);
+  /* Boundary of interactive controls (inputs). --line is decorative only;
+     WCAG 1.4.11 asks 3:1 for a control's edge, which this meets (3.4:1). */
+  --line-strong: rgba(22, 21, 15, 0.5);
+
+  /* Sage green — the one accent color, used sparingly for hover states,
+     price emphasis and sale tags (never large tinted areas). --accent-ink
+     is the text color to put ON a solid --accent fill. */
+  --accent: #4e5b3a;
+  --accent-dark: #3c4730;
+  --accent-soft: #e3e7da;
+  --accent-ink: #ffffff;
+  --shadow-soft: 0 1px 0 rgba(22, 21, 15, 0.06);
+  --shadow-lift: 0 14px 34px -18px rgba(22, 21, 15, 0.28);
+
+  /* Semantic status colors — admin back-office only. Clear and legible
+     (a modern SaaS dashboard needs status pills to read at a glance),
+     not neon, and not fighting the warm brand palette. */
+  --success: #16794a;
+  --success-soft: #dcf5e7;
+  --warning: #b06b12;
+  --warning-soft: #fbe8cf;
+  --danger: #c23b52;
+  --danger-soft: #fbe1e6;
+  --info: #2f6690;
+  --info-soft: #dfedf6;
+
+  /* Admin design tokens — "EDACEY Admin Paneli" Eylül 2026 redesign (see the
+     design deck this was built from). Cool neutral gray canvas, near-black
+     ink, flat white cards with a hairline ~7%-black border (never a
+     shadow), one saturated color per semantic state. Deliberately a
+     different palette from the storefront's warm cream/sage — the admin
+     tokens are fully decoupled (adm- prefix) so this never touches the
+     customer-facing site. */
+  --adm-bg: #f7f7f5;
+  --adm-surface: #f7f7f5;
+  --adm-surface-card: #ffffff;
+  --adm-surface-secondary: #efefea;
+  --adm-surface-tertiary: #e9e9e4;
+  --adm-border: rgba(14, 15, 17, 0.08);
+  --adm-text: #17171a;
+  --adm-text-secondary: #6b6b64;
+  --adm-text-tertiary: #8a8a82;
+  --adm-text-quaternary: #a1a1a0;
+  --adm-primary: #17171a;
+  --adm-primary-deep: #000000;
+  --adm-primary-soft: #e9e9e4;
+  --adm-on-primary: #ffffff;
+  --adm-success: #15803d;
+  --adm-success-soft: #e7f6ec;
+  --adm-warning: #b45309;
+  --adm-warning-soft: #fff3e0;
+  --adm-danger: #b91c1c;
+  --adm-danger-soft: #fdecec;
+  --adm-info: #1d4ed8;
+  --adm-info-soft: #e8efff;
+  --adm-purple: #7c3aed;
+  --adm-purple-soft: #f1eafe;
+
+  /* Chart/data-viz series — revenue bars (this period vs. previous) and the
+     channel/category breakdown bars on the dashboard. */
+  --adm-chart-ink: #0e0f11;
+  --adm-chart-muted: #d8d8d2;
+  --adm-chart-track: #efefec;
+  --adm-chart-blue: #2f6bff;
+  --adm-chart-orange: #ea580c;
+  --adm-chart-pink: #db2777;
+
+  /* Sidebar — near-black, white active pill, white text throughout
+     (hierarchy comes from weight/size/opacity, not a separate muted color). */
+  --adm-sidebar-bg: #0e0f11;
+  --adm-sidebar-text: #ffffff;
+  --adm-sidebar-text-muted: rgba(255, 255, 255, 0.65);
+  --adm-sidebar-section-label: rgba(255, 255, 255, 0.5);
+  --adm-sidebar-active-bg: #ffffff;
+  --adm-sidebar-active-text: #17171a;
+  --adm-sidebar-border: rgba(255, 255, 255, 0.08);
+
+  /* Legacy "Luxe Cosmetics Dashboard" token names, remapped to the palette
+     above — every admin screen written against these names (products,
+     brands, categories, stock, users, analytics, ...) picks up the new
+     palette automatically, with no per-file changes needed. */
+  --adm-surface-container-lowest: #ffffff;
+  --adm-surface-container-low: #efefea;
+  --adm-surface-container: #e9e9e4;
+  --adm-surface-container-high: #e0e0da;
+  --adm-surface-container-highest: #d8d8d2;
+  --adm-on-surface: #17171a;
+  --adm-on-surface-variant: #6b6b64;
+  --adm-outline: #8a8a82;
+  --adm-outline-variant: #e9e9e4;
+  --adm-primary-container: #e9e9e4;
+  --adm-on-primary-container: #17171a;
+  --adm-secondary: #6b6b64;
+  --adm-secondary-container: #e9e9e4;
+  --adm-on-secondary-container: #6b6b64;
+  --adm-tertiary-fixed: #e9e9e4;
+  --adm-on-tertiary-fixed: #6b6b64;
+  --adm-error: #b91c1c;
+  --adm-error-container: #fdecec;
+  --adm-on-error-container: #8a1515;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-soft: var(--primary-soft);
+  --color-cream: var(--cream);
+  --color-cream-deep: var(--cream-deep);
+  --color-ivory: var(--ivory);
+  --color-field: var(--field);
+  --color-rose: var(--rose);
+  --color-rose-soft: var(--rose-soft);
+  --color-accent: var(--accent);
+  --color-accent-dark: var(--accent-dark);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  /* EDACEY typography: Archivo for body/UI text, an italic Instrument Serif
+     for editorial headings (font-display — the dozens of existing call
+     sites for section titles/h1s pick this up with no per-file changes),
+     and DM Mono for the small-caps eyebrow labels, prices and pills. */
+  --font-sans: var(--font-archivo);
+  --font-display: var(--font-instrument-serif);
+  --font-mono: var(--font-dm-mono);
+
+  --color-adm-bg: var(--adm-bg);
+  --color-adm-surface-card: var(--adm-surface-card);
+  --color-adm-surface-secondary: var(--adm-surface-secondary);
+  --color-adm-surface-tertiary: var(--adm-surface-tertiary);
+  --color-adm-border: var(--adm-border);
+  --color-adm-text: var(--adm-text);
+  --color-adm-text-secondary: var(--adm-text-secondary);
+  --color-adm-text-tertiary: var(--adm-text-tertiary);
+  --color-adm-text-quaternary: var(--adm-text-quaternary);
+  --color-adm-primary-deep: var(--adm-primary-deep);
+  --color-adm-primary-soft: var(--adm-primary-soft);
+  --color-adm-success: var(--adm-success);
+  --color-adm-success-soft: var(--adm-success-soft);
+  --color-adm-warning: var(--adm-warning);
+  --color-adm-warning-soft: var(--adm-warning-soft);
+  --color-adm-danger: var(--adm-danger);
+  --color-adm-danger-soft: var(--adm-danger-soft);
+  --color-adm-info: var(--adm-info);
+  --color-adm-info-soft: var(--adm-info-soft);
+  --color-adm-purple: var(--adm-purple);
+  --color-adm-purple-soft: var(--adm-purple-soft);
+
+  --color-adm-chart-ink: var(--adm-chart-ink);
+  --color-adm-chart-muted: var(--adm-chart-muted);
+  --color-adm-chart-track: var(--adm-chart-track);
+  --color-adm-chart-blue: var(--adm-chart-blue);
+  --color-adm-chart-orange: var(--adm-chart-orange);
+  --color-adm-chart-pink: var(--adm-chart-pink);
+
+  --color-adm-sidebar-bg: var(--adm-sidebar-bg);
+  --color-adm-sidebar-text: var(--adm-sidebar-text);
+  --color-adm-sidebar-text-muted: var(--adm-sidebar-text-muted);
+  --color-adm-sidebar-section-label: var(--adm-sidebar-section-label);
+  --color-adm-sidebar-active-bg: var(--adm-sidebar-active-bg);
+  --color-adm-sidebar-active-text: var(--adm-sidebar-active-text);
+  --color-adm-sidebar-border: var(--adm-sidebar-border);
+
+  --color-adm-surface: var(--adm-surface);
+  --color-adm-surface-container-lowest: var(--adm-surface-container-lowest);
+  --color-adm-surface-container-low: var(--adm-surface-container-low);
+  --color-adm-surface-container: var(--adm-surface-container);
+  --color-adm-surface-container-high: var(--adm-surface-container-high);
+  --color-adm-surface-container-highest: var(--adm-surface-container-highest);
+  --color-adm-on-surface: var(--adm-on-surface);
+  --color-adm-on-surface-variant: var(--adm-on-surface-variant);
+  --color-adm-outline: var(--adm-outline);
+  --color-adm-outline-variant: var(--adm-outline-variant);
+  --color-adm-primary: var(--adm-primary);
+  --color-adm-on-primary: var(--adm-on-primary);
+  --color-adm-primary-container: var(--adm-primary-container);
+  --color-adm-on-primary-container: var(--adm-on-primary-container);
+  --color-adm-secondary: var(--adm-secondary);
+  --color-adm-secondary-container: var(--adm-secondary-container);
+  --color-adm-on-secondary-container: var(--adm-on-secondary-container);
+  --color-adm-tertiary-fixed: var(--adm-tertiary-fixed);
+  --color-adm-on-tertiary-fixed: var(--adm-on-tertiary-fixed);
+  --color-adm-error: var(--adm-error);
+  --color-adm-error-container: var(--adm-error-container);
+  --color-adm-on-error-container: var(--adm-on-error-container);
+  /* Admin uses one sans-serif everywhere (headline and body alike) instead
+     of the storefront's serif/sans pairing — see src/lib/admin-fonts.ts for
+     the font loader. */
+  --font-adm-headline: var(--font-plus-jakarta-sans);
+  --font-adm-body: var(--font-plus-jakarta-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Storefront type scale and letter-spacing — derived from what the pages
+   already used, not invented. Display sizes are fluid (clamp) for the serif
+   headlines; UI text adds body-sm (13px) and caption (11px) between
+   Tailwind's text-xs/sm steps. Letter-spacing has four steps plus Tailwind's
+   tracking-wide for small uppercase UI labels. See /design-system. */
+@theme {
+  --text-display-2xl: clamp(3rem, 5vw, 7.5rem);
+  --text-display-2xl--line-height: 0.88;
+  --text-display-xl: clamp(2.25rem, 3.2vw, 4.25rem);
+  --text-display-xl--line-height: 0.88;
+  --text-display-lg: clamp(1.9rem, 4.6vw, 3.4rem);
+  --text-display-lg--line-height: 1.05;
+  --text-display-md: clamp(1.75rem, 4vw, 2.75rem);
+  --text-display-md--line-height: 1.1;
+  --text-body-lg: 0.9375rem;
+  --text-body-lg--line-height: 1.625;
+  --text-body-sm: 0.8125rem;
+  --text-body-sm--line-height: 1.5;
+  --text-caption: 0.6875rem;
+  --text-caption--line-height: 1.5;
+
+  --tracking-display: -0.02em;
+  --tracking-eyebrow: 0.2em;
+  --tracking-label: 0.12em;
+  --tracking-logo: 0.34em;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee-scroll 28s linear infinite;
 }

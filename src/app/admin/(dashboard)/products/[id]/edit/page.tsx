@@ -1,0 +1,101 @@
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/db";
+import { AdminProductForm } from "@/components/AdminProductForm";
+import { PageHeader } from "@/components/admin/PageHeader";
+
+export default async function AdminEditProductPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const productId = Number(id);
+  if (!Number.isInteger(productId)) {
+    notFound();
+  }
+
+  const [product, brands, ingredients, colors, sizes, sizeCharts] = await Promise.all([
+    prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        images: { orderBy: { position: "asc" } },
+        category: true,
+        brand: true,
+        variants: { orderBy: { position: "asc" } },
+        ingredients: true,
+      },
+    }),
+    prisma.brand.findMany({ orderBy: { name: "asc" } }),
+    prisma.ingredient.findMany({ orderBy: { name: "asc" } }),
+    prisma.color.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+    prisma.size.findMany({ orderBy: { position: "asc" } }),
+    prisma.sizeChart.findMany({ orderBy: { name: "asc" } }),
+  ]);
+  if (!product) {
+    notFound();
+  }
+
+  return (
+    <div>
+      <PageHeader title="Ürünü Düzenle" />
+      <AdminProductForm
+        productId={product.id}
+        brands={brands.map((b) => ({ id: b.id, name: b.name }))}
+        ingredients={ingredients.map((i) => ({ id: i.id, name: i.name }))}
+        colors={colors.map((c) => ({ id: c.id, name: c.name, hex: c.hex }))}
+        sizes={sizes.map((s) => ({ id: s.id, label: s.label }))}
+        sizeCharts={sizeCharts.map((c) => ({ id: c.id, name: c.name }))}
+        initial={{
+          title: product.title,
+          description: product.description,
+          categorySlug: product.category.slug,
+          price: Number(product.price),
+          discountPercentage: Number(product.discountPercentage),
+          cost: product.cost ? Number(product.cost) : undefined,
+          taxRate: Number(product.taxRate),
+          stock: product.stock,
+          lowStockThreshold: product.lowStockThreshold,
+          brandId: product.brandId ?? undefined,
+          sizeChartId: product.sizeChartId ?? undefined,
+          tags: product.tags,
+          isNew: product.isNew,
+          thumbnail: product.thumbnail,
+          images: product.images.map((image) => ({
+            url: image.url,
+            altText: image.altText ?? undefined,
+            colorId: image.colorId ?? undefined,
+          })),
+          variants: product.variants.map((v) => ({
+            id: v.id,
+            colorId: v.colorId,
+            sizeId: v.sizeId,
+            sku: v.sku,
+            stock: v.stock,
+            priceOverride: v.priceOverride ? Number(v.priceOverride) : undefined,
+            lowStockThreshold: v.lowStockThreshold ?? undefined,
+          })),
+          skinTypes: product.skinTypes,
+          skinConcerns: product.skinConcerns,
+          finish: product.finish ?? undefined,
+          coverage: product.coverage ?? undefined,
+          texture: product.texture ?? undefined,
+          usagePurpose: product.usagePurpose ?? undefined,
+          fullIngredients: product.fullIngredients ?? undefined,
+          usageInstructions: product.usageInstructions ?? undefined,
+          warnings: product.warnings ?? undefined,
+          isVegan: product.isVegan,
+          isCrueltyFree: product.isCrueltyFree,
+          isParabenFree: product.isParabenFree,
+          spf: product.spf ?? undefined,
+          volumeLabel: product.volumeLabel ?? undefined,
+          origin: product.origin ?? undefined,
+          expiryInfo: product.expiryInfo ?? undefined,
+          metaTitle: product.metaTitle ?? undefined,
+          metaDescription: product.metaDescription ?? undefined,
+          status: product.status,
+          ingredientIds: product.ingredients.map((pi) => pi.ingredientId),
+        }}
+      />
+    </div>
+  );
+}

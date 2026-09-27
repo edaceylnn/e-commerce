@@ -1,0 +1,192 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/db";
+import { formatPrice } from "@/lib/format";
+import { OrderStatusBadge } from "@/components/OrderStatusBadge";
+import { AdminOrderStatusForm } from "@/components/AdminOrderStatusForm";
+import { AdminOrderHeaderActions } from "@/components/AdminOrderHeaderActions";
+import { AdminOrderEventTimeline } from "@/components/AdminOrderEventTimeline";
+import { AdminOrderItemsPanel } from "@/components/AdminOrderItemsPanel";
+import { isOrderRefundable } from "@/lib/order-status";
+import { getInitials } from "@/lib/format";
+import { Card } from "@/components/admin/Card";
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between text-sm">
+      <span className="text-adm-text-secondary">{label}</span>
+      <span className="text-adm-text">{value}</span>
+    </div>
+  );
+}
+
+function AddressBlock({
+  address,
+}: {
+  address: { fullName: string; line1: string; line2: string | null; city: string; district: string; phone: string };
+}) {
+  return (
+    <div className="text-sm">
+      <p className="font-medium text-adm-text">{address.fullName}</p>
+      <p className="mt-0.5 text-adm-text-secondary">
+        {address.line1}
+        {address.line2 ? `, ${address.line2}` : ""}
+      </p>
+      <p className="text-adm-text-secondary">
+        {address.district}/{address.city}
+      </p>
+      <p className="mt-1 text-adm-text-tertiary">{address.phone}</p>
+    </div>
+  );
+}
+
+export default async function AdminOrderDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: {
+      user: true,
+      items: true,
+      shippingAddress: true,
+      billingAddress: true,
+      coupon: true,
+      campaign: true,
+      events: { include: { actor: true }, orderBy: { createdAt: "asc" } },
+    },
+  });
+  if (!order) {
+    notFound();
+  }
+
+  const customerStats = await prisma.order.aggregate({
+    where: { userId: order.userId, paidAt: { not: null } },
+    _sum: { total: true },
+    _count: true,
+  });
+
+  const sameAddress = order.shippingAddressId === order.billingAddressId;
+  const discountLabel = order.coupon
+    ? `İndirim (${order.coupon.code})`
+    : order.campaign
+      ? `İndirim (${order.campaign.name})`
+      : "İndirim";
+
+  return (
+    <div>
+      <nav className="mb-1.5 flex items-center gap-1.5 text-sm text-adm-text-secondary">
+        <Link href="/admin/orders" className="transition hover:text-adm-text">
+          Siparişler
+        </Link>
+        <span className="text-adm-text-tertiary">/</span>
+        <span>#{order.orderNumber}</span>
+      </nav>
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4 border-b border-adm-border pb-6">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-adm-headline text-[32px] font-bold tracking-tight text-adm-text">
+              #{order.orderNumber}
+            </h1>
+            <OrderStatusBadge status={order.status} />
+          </div>
+          <p className="mt-1.5 text-sm text-adm-text-secondary">
+            {order.createdAt.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} ·{" "}
+            {order.user.name}
+          </p>
+        </div>
+        <AdminOrderHeaderActions
+          orderId={order.id}
+          status={order.status}
+          paidAt={order.paidAt}
+          refundedAt={order.refundedAt}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr]">
+        <div className="space-y-6">
+          <Card title="Ürünler">
+            <AdminOrderItemsPanel
+              orderId={order.id}
+              items={order.items.map((item) => ({
+                id: item.id,
+                productId: item.productId,
+                title: item.title,
+                thumbnail: item.thumbnail,
+                sku: item.sku,
+                quantity: item.quantity,
+                unitPrice: Number(item.unitPrice),
+                refundedAt: item.refundedAt,
+              }))}
+              refundable={isOrderRefundable(order.status, order.paidAt, order.refundedAt)}
+            />
+            <div className="mt-4 space-y-2 border-t border-adm-border pt-4">
+              <SummaryRow label="Ara toplam" value={formatPrice(Number(order.subtotal))} />
+              {Number(order.discountTotal) > 0 && (
+                <SummaryRow label={discountLabel} value={`-${formatPrice(Number(order.discountTotal))}`} />
+              )}
+              <SummaryRow
+                label="Kargo"
+                value={Number(order.shippingCost) === 0 ? "Ücretsiz" : formatPrice(Number(order.shippingCost))}
+              />
+              <div className="flex justify-between border-t border-adm-border pt-3 text-base font-semibold text-adm-text">
+                <span>Toplam</span>
+                <span>{formatPrice(Number(order.total))}</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card title="Zaman Çizelgesi">
+            <AdminOrderEventTimeline
+              events={order.events.map((e) => ({
+                id: e.id,
+                message: e.message,
+                createdAt: e.createdAt,
+                actorName: e.actor?.name ?? null,
+              }))}
+            />
+          </Card>
+
+          <Card title="Kargo & İç Not">
+            <AdminOrderStatusForm
+              orderId={order.id}
+              currentStatus={order.status}
+              currentTrackingNumber={order.trackingNumber}
+              currentInternalNote={order.internalNote}
+              currentUpdatedAt={order.updatedAt.toISOString()}
+            />
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card title="Müşteri">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-adm-primary text-sm font-bold text-adm-on-primary">
+                {getInitials(order.user.name, order.user.email)}
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-adm-text">{order.user.name}</p>
+                <p className="text-xs text-adm-text-tertiary">
+                  {customerStats._count} sipariş · {formatPrice(Number(customerStats._sum.total ?? 0))} harcama
+                </p>
+              </div>
+            </div>
+            <p className="mt-3 text-sm text-adm-text-secondary">{order.user.email}</p>
+          </Card>
+
+          <Card title={sameAddress ? "Teslimat & Fatura Adresi" : "Teslimat Adresi"}>
+            <AddressBlock address={order.shippingAddress} />
+          </Card>
+
+          {!sameAddress && (
+            <Card title="Fatura Adresi">
+              <AddressBlock address={order.billingAddress} />
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

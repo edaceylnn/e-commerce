@@ -32,6 +32,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# test artifacts
+/playwright-report
+/test-results
 
 # vercel
 .vercel
@@ -39,3 +44,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# local archives and AI-tool config (not part of the app)
+/public.zip
+/src.zip
+/.claude/
+/.agents/
+/.windsurf/
+/skills-lock.json
+/docs/
