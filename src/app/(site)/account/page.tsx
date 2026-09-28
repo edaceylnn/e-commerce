@@ -9,12 +9,11 @@ export default async function AccountPage() {
 
   if (!session) {
     return (
-      <div className="mx-auto max-w-md px-4 py-16">
-        <h1 className="font-display text-4xl">
-          Hesabım
-        </h1>
-        <p className="mt-2 text-sm text-ink-soft">
-          Hesabınıza giriş yapın veya yeni bir hesap oluşturun.
+      <div className="page-x pt-20 tab:pt-28 [&>*]:mx-auto [&>*]:max-w-[440px]">
+        <span className="text-caption uppercase tracking-eyebrow text-text-3">Hesabım</span>
+        <h1 className="headline mt-3 text-[clamp(28px,2.6vw,38px)] leading-[1.1]">Hoş geldin</h1>
+        <p className="mt-3 text-body font-light text-ink-soft">
+          Siparişlerini, adreslerini ve favorilerini görmek için giriş yap ya da hesap oluştur.
         </p>
         <AccountClient />
       </div>

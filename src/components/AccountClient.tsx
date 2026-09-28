@@ -49,10 +49,10 @@ export function AccountClient() {
   }
 
   return (
-    <div className="mt-8 border border-line bg-background px-6 pb-7 pt-5 sm:px-8 sm:pb-8">
+    <div className="mt-10">
       {/* The active mode is marked by a hairline underline sitting on the
           row's bottom border (-mb-px), not by color alone. */}
-      <div className="flex gap-7 border-b border-line">
+      <div className="flex gap-6">
         {TABS.map((tab) => {
           const active = mode === tab.mode;
           return (
@@ -64,8 +64,8 @@ export function AccountClient() {
                 setMode(tab.mode);
                 setError(null);
               }}
-              className={`-mb-px border-b pb-3 text-xs font-semibold uppercase tracking-label transition ${
-                active ? "border-ink text-ink" : "border-transparent text-ink-soft hover:text-ink"
+              className={`border-b pb-1 text-nav uppercase tracking-label transition-colors ${
+                active ? "border-ink text-ink" : "border-transparent text-text-4 hover:text-ink"
               }`}
             >
               {tab.label}
@@ -74,7 +74,7 @@ export function AccountClient() {
         })}
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
         {mode === "register" && (
           <FormField label="İsim" htmlFor={nameId} required>
             <input
@@ -115,7 +115,7 @@ export function AccountClient() {
 
         {error && <Alert variant="error">{error}</Alert>}
 
-        <PillButton type="submit" disabled={submitting} className="mt-2 w-full">
+        <PillButton type="submit" disabled={submitting} className="!mt-8 w-full">
           {submitting ? "Gönderiliyor…" : mode === "login" ? "Giriş Yap" : "Kayıt Ol"}
         </PillButton>
       </form>
@@ -124,7 +124,7 @@ export function AccountClient() {
         <p className="mt-5 text-center">
           <Link
             href="/account/sifremi-unuttum"
-            className="text-xs text-ink-soft underline underline-offset-4 transition hover:text-ink"
+            className="text-[12px] text-ink-soft underline decoration-disabled underline-offset-4 transition-colors hover:text-ink"
           >
             Şifremi unuttum
           </Link>

@@ -28,8 +28,8 @@ export default async function CheckoutAddressPage() {
   }));
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="font-display text-4xl sm:text-5xl">
+    <div className="page-x py-12 [&>*]:max-w-2xl">
+      <h1 className="font-light tracking-title text-4xl sm:text-5xl">
         Teslimat &amp; Fatura Adresi
       </h1>
       <div className="mt-8">

@@ -16,7 +16,7 @@ import { CancelOrderButton } from "@/components/CancelOrderButton";
 function Section({ title, id, children }: { title: string; id?: string; children: ReactNode }) {
   return (
     <section id={id} className="scroll-mt-24 border-t border-line pt-6">
-      <h2 className="mb-4 font-mono text-caption uppercase tracking-eyebrow text-ink-soft">{title}</h2>
+      <h2 className="mb-4 text-caption uppercase tracking-eyebrow text-ink-soft">{title}</h2>
       {children}
     </section>
   );
@@ -26,7 +26,7 @@ function Line({ label, value, strong = false }: { label: string; value: ReactNod
   return (
     <div className="flex justify-between gap-4">
       <dt className="text-ink-soft">{label}</dt>
-      <dd className={strong ? "font-medium" : "font-mono"}>{value}</dd>
+      <dd className={strong ? "font-medium" : ""}>{value}</dd>
     </div>
   );
 }
@@ -49,7 +49,7 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
         </Link>
         <div className="mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <div>
-            <h2 className="font-display text-3xl">{order.orderNumber}</h2>
+            <h2 className="font-light tracking-title text-3xl">{order.orderNumber}</h2>
             <p className="mt-1 text-sm text-ink-soft">{date}</p>
           </div>
           <OrderStatusText status={order.status} className="text-base" />
@@ -81,11 +81,11 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
                       {item.sku}
                     </p>
                   )}
-                  <p className="mt-0.5 font-mono text-xs text-ink-soft">
+                  <p className="mt-0.5 text-xs text-ink-soft">
                     {item.quantity} × {formatPrice(item.unitPrice)}
                   </p>
                 </div>
-                <p className="font-mono text-sm">{formatPrice(item.unitPrice * item.quantity)}</p>
+                <p className="text-sm">{formatPrice(item.unitPrice * item.quantity)}</p>
               </div>
             </li>
           ))}
@@ -99,7 +99,7 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
           <Line label="Kargo" value={order.shippingCost === 0 ? "Ücretsiz" : formatPrice(order.shippingCost)} />
           <div className="flex items-baseline justify-between border-t border-ink pt-3">
             <dt className="font-medium">Genel toplam</dt>
-            <dd className="font-display text-3xl leading-none">{formatPrice(order.total)}</dd>
+            <dd className="font-light tracking-title text-3xl leading-none">{formatPrice(order.total)}</dd>
           </div>
         </dl>
       </Section>
@@ -163,7 +163,7 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
 
       {isOrderCancelable(order.status) && (
         <section className="border-t border-line pt-6">
-          <h2 className="font-mono text-caption uppercase tracking-eyebrow text-ink-soft">Siparişi iptal et</h2>
+          <h2 className="text-caption uppercase tracking-eyebrow text-ink-soft">Siparişi iptal et</h2>
           <p className="mt-2 max-w-md text-sm text-ink-soft">
             Siparişiniz kargoya verilmeden önce iptal edebilirsiniz. Bu işlem geri alınamaz.
           </p>

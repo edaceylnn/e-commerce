@@ -44,25 +44,28 @@ export function CartCrossSell({ cartProductIds }: { cartProductIds: number[] }) 
   if (!idsKey || products.length === 0) return null;
 
   return (
-    <section className="mt-12 border-t border-line pt-10">
-      <h2 className="font-display text-2xl">Bunları da beğenebilirsin</h2>
-      <div className="mt-6 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
+    <section className="pt-28">
+      <h2 className="mb-7 text-body-sm uppercase tracking-eyebrow">Bunları da beğenebilirsin</h2>
+      <div className="grid grid-cols-2 gap-x-1.5 gap-y-9 tab:grid-cols-4 tab:gap-x-2">
         {products.map((product) => {
-          const discounted =
-            product.price * (1 - product.discountPercentage / 100);
+          const onSale = product.discountPercentage > 0;
+          const discounted = product.price * (1 - product.discountPercentage / 100);
           return (
-            <Link key={product.id} href={`/products/${product.id}`} className="group">
-              <div className="relative aspect-[3/4] overflow-hidden bg-cream-deep">
+            <Link key={product.id} href={`/products/${product.id}`} className="flex flex-col gap-1.5">
+              <div className="relative mb-2.5 aspect-[2/3] bg-cream-deep">
                 <Image
                   src={product.thumbnail}
                   alt={product.title}
                   fill
-                  sizes="(max-width: 640px) 50vw, 25vw"
-                  className="object-cover transition duration-500 group-hover:scale-[1.04]"
+                  sizes="(max-width: 759px) 50vw, 25vw"
+                  className="object-cover"
                 />
               </div>
-              <p className="mt-2 truncate text-body-sm font-medium">{product.title}</p>
-              <p className="font-mono text-body-sm font-medium">{formatPrice(discounted)}</p>
+              <span className="text-card">{product.title}</span>
+              <span className="flex gap-2 text-card">
+                <span className={onSale ? "text-sale" : "text-ink-soft"}>{formatPrice(discounted)}</span>
+                {onSale && <span className="text-text-4 line-through">{formatPrice(product.price)}</span>}
+              </span>
             </Link>
           );
         })}

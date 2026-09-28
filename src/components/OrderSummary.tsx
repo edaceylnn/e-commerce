@@ -40,13 +40,13 @@ export function OrderSummary({ order }: { order: OrderSummaryData }) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">
             Sipariş No
           </p>
-          <p className="font-display text-xl">{order.orderNumber}</p>
+          <p className="font-light tracking-title text-xl">{order.orderNumber}</p>
           {order.trackingNumber && (
             <p className="mt-1 text-xs text-ink-soft">
-              Kargo Takip No: <span className="font-semibold">{order.trackingNumber}</span>
+              Kargo Takip No: <span className="font-medium">{order.trackingNumber}</span>
             </p>
           )}
         </div>
@@ -66,12 +66,12 @@ export function OrderSummary({ order }: { order: OrderSummaryData }) {
               />
             </div>
             <div className="flex-1 text-sm">
-              <p className="font-semibold">{item.title}</p>
+              <p className="font-medium">{item.title}</p>
               <p className="text-ink-soft">
                 {item.quantity} × {formatPrice(item.unitPrice)}
               </p>
             </div>
-            <p className="text-sm font-semibold">
+            <p className="text-sm font-medium">
               {formatPrice(item.unitPrice * item.quantity)}
             </p>
           </li>
@@ -95,7 +95,7 @@ export function OrderSummary({ order }: { order: OrderSummaryData }) {
             {order.shippingCost === 0 ? "Ücretsiz" : formatPrice(order.shippingCost)}
           </span>
         </div>
-        <div className="flex justify-between text-base font-bold">
+        <div className="flex justify-between text-base font-medium">
           <span>Toplam</span>
           <span>{formatPrice(order.total)}</span>
         </div>
@@ -103,10 +103,10 @@ export function OrderSummary({ order }: { order: OrderSummaryData }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="border border-line p-4 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">
             {order.sameAddress ? "Teslimat & Fatura Adresi" : "Teslimat Adresi"}
           </p>
-          <p className="mt-1 font-semibold">{order.shippingAddress.fullName}</p>
+          <p className="mt-1 font-medium">{order.shippingAddress.fullName}</p>
           <p className="text-ink-soft">
             {order.shippingAddress.line1}
             {order.shippingAddress.line2 ? `, ${order.shippingAddress.line2}` : ""} —{" "}
@@ -116,10 +116,10 @@ export function OrderSummary({ order }: { order: OrderSummaryData }) {
 
         {!order.sameAddress && (
           <div className="border border-line p-4 text-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">
               Fatura Adresi
             </p>
-            <p className="mt-1 font-semibold">{order.billingAddress.fullName}</p>
+            <p className="mt-1 font-medium">{order.billingAddress.fullName}</p>
             <p className="text-ink-soft">
               {order.billingAddress.line1}
               {order.billingAddress.line2 ? `, ${order.billingAddress.line2}` : ""} —{" "}

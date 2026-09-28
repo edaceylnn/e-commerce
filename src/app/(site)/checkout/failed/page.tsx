@@ -8,8 +8,8 @@ export default async function CheckoutFailedPage({
   const { order } = await searchParams;
 
   return (
-    <div className="mx-auto max-w-md px-4 py-20 text-center">
-      <h1 className="font-display text-4xl">
+    <div className="page-x py-20 text-center [&>*]:mx-auto [&>*]:max-w-md">
+      <h1 className="font-light tracking-title text-4xl">
         Ödeme Tamamlanamadı
       </h1>
       <p className="mt-3 text-sm text-ink-soft">

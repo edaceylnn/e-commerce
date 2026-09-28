@@ -75,7 +75,7 @@ export function OrderTimeline({ status }: { status: string }) {
               )}
               <span
                 aria-hidden
-                className={`relative z-10 mt-1 h-[11px] w-[11px] shrink-0 rounded-full sm:mt-0 ${
+                className={`relative z-10 mt-1 h-[11px] w-[11px] shrink-0 sm:mt-0 ${
                   state === "done"
                     ? "bg-ink"
                     : state === "current"

@@ -22,10 +22,10 @@ export default async function CheckoutConfirmationPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-16">
+    <div className="page-x py-16 [&>*]:max-w-2xl">
       <ClearCartOnMount />
       <div className="text-center">
-        <h1 className="font-display text-4xl">
+        <h1 className="font-light tracking-title text-4xl">
           Siparişiniz Alındı ✓
         </h1>
         <p className="mt-2 text-sm text-ink-soft">

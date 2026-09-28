@@ -35,17 +35,17 @@ export default async function CheckoutReviewPage({
   const sameAddress = shippingAddress.id === billingAddress.id;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="font-display text-4xl sm:text-5xl">
+    <div className="page-x py-12 [&>*]:max-w-2xl">
+      <h1 className="font-light tracking-title text-4xl sm:text-5xl">
         Sipariş Özeti
       </h1>
 
       <div className="mt-6 space-y-4">
         <div className="border border-line p-4 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">
             {sameAddress ? "Teslimat & Fatura Adresi" : "Teslimat Adresi"}
           </p>
-          <p className="mt-1 font-semibold">{shippingAddress.fullName}</p>
+          <p className="mt-1 font-medium">{shippingAddress.fullName}</p>
           <p className="text-ink-soft">
             {shippingAddress.line1}
             {shippingAddress.line2 ? `, ${shippingAddress.line2}` : ""} —{" "}
@@ -55,10 +55,10 @@ export default async function CheckoutReviewPage({
 
         {!sameAddress && (
           <div className="border border-line p-4 text-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">
               Fatura Adresi
             </p>
-            <p className="mt-1 font-semibold">{billingAddress.fullName}</p>
+            <p className="mt-1 font-medium">{billingAddress.fullName}</p>
             <p className="text-ink-soft">
               {billingAddress.line1}
               {billingAddress.line2 ? `, ${billingAddress.line2}` : ""} —{" "}

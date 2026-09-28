@@ -8,11 +8,7 @@ export function Alert({ variant, children }: { variant: "success" | "error"; chi
   return (
     <div
       role={isSuccess ? "status" : "alert"}
-      className={`flex items-start gap-2 border px-3 py-2.5 text-sm ${
-        isSuccess
-          ? "border-success/25 bg-success-soft text-success"
-          : "border-danger/25 bg-danger-soft text-danger"
-      }`}
+      className={`flex items-start gap-2 text-card ${isSuccess ? "text-ink" : "text-sale"}`}
     >
       {isSuccess ? (
         <CheckIcon className="mt-0.5 h-4 w-4 shrink-0" />

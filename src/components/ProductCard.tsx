@@ -1,98 +1,151 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { isNewProduct, type Product } from "@/lib/products";
+// Type-only: a runtime import would pull @/lib/db (Prisma + pg) into this
+// client bundle and break the build on Node-only modules like `dns`.
+import type { Product } from "@/lib/products";
 import { formatPrice } from "@/lib/format";
-import { StarRating } from "@/components/StarRating";
-import { QuickAddButton } from "@/components/QuickAddButton";
+import {
+  SWATCH_RING,
+  colorSwatches,
+  discountedPrice,
+  imageForColor,
+  sizeOptions,
+} from "@/lib/product-view";
+import { useAddToBag } from "@/lib/use-add-to-bag";
 import { WishlistButton } from "@/components/WishlistButton";
+import { ProductQuickView } from "@/components/ProductQuickView";
+import { PlusIcon } from "@/components/icons/Ph";
 
-const BADGE_STYLES = {
-  Yeni: "bg-ink text-background",
-  "İndirimde": "bg-accent text-accent-ink",
-  "Çok Satan": "bg-ink text-background",
-  "Editörün Seçimi": "bg-ivory text-ink",
-} as const;
-
-type Badge = keyof typeof BADGE_STYLES;
-
-function autoBadge(product: Product): Badge | null {
-  if (isNewProduct(product)) return "Yeni";
-  if (product.discountPercentage >= 20) return "İndirimde";
-  if (product.rating >= 4.7) return "Çok Satan";
-  return null;
-}
-
-const HOVER_ICON_CLASS =
-  "flex h-10 w-10 items-center justify-center rounded-full bg-ivory text-ink shadow-md transition hover:bg-accent hover:text-cream";
-
+// Design handoff → Product card (identical on home, category and "Complete
+// the look"): a 2:3 image with no card chrome, a wishlist heart, and — on
+// desktop — a quick-add strip of sizes that slides up on hover. Mobile gets
+// a "+" button that opens the quick view instead.
 export function ProductCard({
   product,
-  badge,
+  sizes = "(max-width: 759px) 50vw, (max-width: 1099px) 33vw, 25vw",
+  priority = false,
 }: {
   product: Product;
-  /** Override the auto-detected badge, e.g. "Editörün Seçimi" for a curated pick. */
-  badge?: Badge | null;
+  /** `sizes` for next/image — override when the card sits in a narrower column. */
+  sizes?: string;
+  priority?: boolean;
 }) {
-  const discounted = product.price * (1 - product.discountPercentage / 100);
-  const resolvedBadge = badge === undefined ? autoBadge(product) : badge;
+  const swatches = colorSwatches(product);
+  const [pickedColorId, setPickedColorId] = useState<string | null>(null);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const addToBag = useAddToBag(product);
+
+  const activeColorId = pickedColorId ?? swatches[0]?.colorId ?? null;
+  const options = sizeOptions(product, activeColorId);
+  const soldOut = product.stock <= 0 || (options.length > 0 && options.every((o) => !o.available));
+  const href = `/products/${product.id}`;
+  const onSale = product.discountPercentage > 0;
 
   return (
-    <Link href={`/products/${product.id}`} className="group flex flex-col gap-3">
-      <div className="relative aspect-[3/4] overflow-hidden bg-cream-deep">
-        <Image
-          src={product.thumbnail}
-          alt={product.title}
-          fill
-          sizes="(max-width: 640px) 50vw, 25vw"
-          className="object-cover transition duration-500 group-hover:scale-[1.04]"
-        />
-        {resolvedBadge && (
-          <span
-            className={`absolute left-2.5 top-2.5 px-2 py-1 font-mono text-caption font-medium uppercase tracking-label ${BADGE_STYLES[resolvedBadge]}`}
-          >
-            {resolvedBadge}
-          </span>
-        )}
+    <div className="group/card flex flex-col gap-1.5">
+      <div className="relative mb-2.5 aspect-[2/3] overflow-hidden bg-cream-deep">
+        {/* Duplicate of the name link below, hidden from AT and tab order. */}
+        <Link href={href} tabIndex={-1} aria-hidden className="absolute inset-0">
+          <Image
+            src={imageForColor(product, pickedColorId)}
+            alt={product.title}
+            fill
+            sizes={sizes}
+            priority={priority}
+            className="object-cover"
+          />
+        </Link>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex translate-y-3 justify-center gap-2 opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-          <div className="pointer-events-auto flex gap-2">
-            <QuickAddButton
-              id={product.id}
-              title={product.title}
-              price={discounted}
-              thumbnail={product.thumbnail}
-              className={HOVER_ICON_CLASS}
-            />
-            <WishlistButton productId={product.id} className={HOVER_ICON_CLASS} />
-          </div>
+        <WishlistButton
+          productId={product.id}
+          className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center text-ink transition-opacity duration-300 aria-pressed:opacity-100 tab:opacity-[.62] tab:group-hover/card:opacity-100"
+        />
+
+        {/* Desktop quick-add strip. */}
+        <div className="absolute inset-x-0 bottom-0 hidden h-[42px] translate-y-full items-center bg-background/[.78] px-4 opacity-0 transition-[transform,opacity] duration-500 ease-soft group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100 group-hover/card:translate-y-0 group-hover/card:opacity-100 tab:flex">
+          {soldOut ? (
+            <span className="w-full text-center text-caption uppercase tracking-label text-text-3">
+              Tükendi
+            </span>
+          ) : options.length > 0 ? (
+            <div className="flex w-full justify-around">
+              {options.map((o) => (
+                <button
+                  key={o.label}
+                  type="button"
+                  disabled={!o.available}
+                  onClick={() => addToBag(o.variant)}
+                  aria-label={o.available ? `${o.label} beden sepete ekle` : `${o.label} beden tükendi`}
+                  className="h-[30px] min-w-[34px] border-b border-transparent text-[12px] text-ink transition-colors enabled:hover:border-ink disabled:cursor-default disabled:text-disabled disabled:line-through"
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => addToBag(null)}
+              aria-label="Sepete ekle"
+              className="h-full w-full text-nav uppercase tracking-cta text-ink"
+            >
+              Sepete ekle
+            </button>
+          )}
         </div>
+
+        {/* Mobile: "+" opens the quick view (no hover on touch). */}
+        <button
+          type="button"
+          onClick={() => setQuickViewOpen(true)}
+          aria-label="Hızlı görünüm"
+          className="absolute bottom-0 right-0 flex h-11 w-11 items-center justify-center text-ink tab:hidden"
+        >
+          <PlusIcon size={18} />
+        </button>
       </div>
-      <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-body-sm font-medium">{product.title}</h3>
-        <span className="shrink-0 font-mono text-body-sm font-medium">
-          {formatPrice(discounted)}
+
+      <Link href={href} className="self-start text-card">
+        {product.title}
+      </Link>
+      <div className="flex items-baseline gap-2 text-card">
+        <span className={onSale ? "text-sale" : "text-ink-soft"}>
+          {formatPrice(discountedPrice(product))}
         </span>
+        {onSale && (
+          <span className="text-text-4 line-through">{formatPrice(product.price)}</span>
+        )}
       </div>
-      {(product.volumeLabel || product.skinTypes.length > 0) && (
-        <p className="-mt-2 text-caption text-ink-soft">
-          {[product.volumeLabel, product.skinTypes[0]].filter(Boolean).join(" · ")}
-        </p>
+
+      {swatches.length > 0 && (
+        <div className="mt-1 flex items-center gap-[9px]">
+          {swatches.map((s) => (
+            <button
+              key={s.colorId}
+              type="button"
+              aria-label={s.name}
+              aria-pressed={s.colorId === activeColorId}
+              title={s.name}
+              onClick={() => setPickedColorId(s.colorId)}
+              className={`h-[11px] w-[11px] rounded-full border border-ink/20 ${
+                s.colorId === activeColorId ? SWATCH_RING : ""
+              }`}
+              style={{ background: s.hex }}
+            />
+          ))}
+        </div>
       )}
-      <div className="-mt-1 flex items-center gap-2">
-        {/* Stars only once real approved reviews exist — an empty 0-star row
-            (or seeded placeholder ratings) reads as fake social proof. */}
-        {product.ratingCount > 0 && (
-          <>
-            <StarRating rating={product.rating} />
-            <span className="text-xs text-ink-soft">({product.ratingCount})</span>
-          </>
-        )}
-        {product.discountPercentage > 0 && (
-          <span className="text-xs text-ink-soft line-through">
-            {formatPrice(product.price)}
-          </span>
-        )}
-      </div>
-    </Link>
+
+      {quickViewOpen && (
+        <ProductQuickView
+          product={product}
+          initialColorId={activeColorId}
+          onClose={() => setQuickViewOpen(false)}
+        />
+      )}
+    </div>
   );
 }

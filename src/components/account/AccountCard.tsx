@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 const PADDING = {
-  sm: "p-4",
-  md: "p-5 sm:p-6",
-  lg: "p-6 sm:p-8",
+  sm: "pt-5",
+  md: "pt-6",
+  lg: "pt-8",
 } as const;
 
 // The one card shell every account screen builds on — an outlined region on
@@ -23,7 +23,7 @@ export function AccountCard({
   padding?: keyof typeof PADDING;
 }) {
   return (
-    <div className={`border border-line bg-background ${PADDING[padding]} ${className}`}>
+    <div className={`border-t border-line ${PADDING[padding]} ${className}`}>
       {children}
     </div>
   );

@@ -11,7 +11,7 @@ import { PillButton, PillLink } from "@/components/Pill";
 
 type Size = "sm" | "md";
 const SIZE_CLASS: Record<Size, string> = {
-  sm: "!px-5 !py-2 !text-xs",
+  sm: "!h-10 !px-6",
   md: "",
 };
 
@@ -74,7 +74,7 @@ export function SecondaryLink({
 }
 
 const TEXT_BUTTON_CLASS =
-  "text-xs font-semibold uppercase tracking-wide text-primary underline underline-offset-4 transition hover:text-primary-dark disabled:opacity-50 disabled:no-underline";
+  "text-[12px] text-ink-soft underline decoration-disabled underline-offset-4 transition-colors hover:text-ink disabled:opacity-50 disabled:no-underline";
 
 export function TextButton({
   children,

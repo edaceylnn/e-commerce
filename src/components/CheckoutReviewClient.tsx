@@ -159,7 +159,7 @@ export function CheckoutReviewClient({
             <span>
               {item.title} × {item.quantity}
             </span>
-            <span className="font-semibold">
+            <span className="font-medium">
               {formatPrice(item.price * item.quantity)}
             </span>
           </li>
@@ -184,7 +184,7 @@ export function CheckoutReviewClient({
                 setAppliedCoupon(null);
                 setCouponCode("");
               }}
-              className="text-xs font-semibold uppercase tracking-wide text-ink-soft hover:text-ink"
+              className="text-xs font-medium uppercase tracking-wide text-ink-soft hover:text-ink"
             >
               Kaldır
             </button>
@@ -201,7 +201,7 @@ export function CheckoutReviewClient({
               type="button"
               onClick={handleApplyCoupon}
               disabled={applyingCoupon || !couponCode.trim()}
-              className="border border-ink px-4 text-xs font-semibold uppercase tracking-wide hover:bg-ink hover:text-background disabled:opacity-50"
+              className="border border-ink px-4 text-xs font-medium uppercase tracking-wide hover:bg-ink hover:text-background disabled:opacity-50"
             >
               {applyingCoupon ? "Uygulanıyor…" : "Uygula"}
             </button>
@@ -231,7 +231,7 @@ export function CheckoutReviewClient({
           <span>Kargo</span>
           <span>{shippingCost === 0 ? "Ücretsiz" : formatPrice(shippingCost)}</span>
         </div>
-        <div className="flex justify-between text-base font-bold">
+        <div className="flex justify-between text-base font-medium">
           <span>Toplam</span>
           <span>{formatPrice(total)}</span>
         </div>

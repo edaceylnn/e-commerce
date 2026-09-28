@@ -39,7 +39,7 @@ export function CheckoutAddressForm({
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-soft">
           Teslimat Adresi
         </h2>
         <AddressPicker
@@ -62,7 +62,7 @@ export function CheckoutAddressForm({
 
       {!sameAsShipping && (
         <div>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-soft">
             Fatura Adresi
           </h2>
           <AddressPicker

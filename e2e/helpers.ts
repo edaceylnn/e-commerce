@@ -27,7 +27,7 @@ export async function registerNewCustomer(
   await page.getByLabel("E-posta").fill(email);
   await page.getByLabel("Parola").fill(password);
   await page.locator("form").getByRole("button", { name: "Kayıt Ol" }).click();
-  await expect(page.getByText("Merhaba,")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Tekrar hoş geldin,/ })).toBeVisible();
 }
 
 // Fills whichever AddressForm is currently on screen (shipping or billing —
@@ -62,4 +62,15 @@ export async function fillAndSaveAddress(
   await form.getByLabel("İl *", { exact: true }).selectOption(overrides.city ?? "İstanbul");
   await form.getByLabel("Posta Kodu").fill(overrides.postalCode ?? "34710");
   await form.getByRole("button", { name: "Adresi Kaydet" }).click();
+}
+
+// On a product page: pick the first available size (products with variants
+// require one — the button otherwise shows "Lütfen bir beden seç.") and
+// press the main "Sepete ekle" button. Scoped to the first match in <main>
+// because product cards further down ("Kombini tamamla") have their own
+// quick-add buttons with the same label.
+export async function addCurrentProductToBag(page: Page) {
+  const sizes = page.locator("main").getByRole("button", { name: /^\S+ beden$/ });
+  if ((await sizes.count()) > 0) await sizes.first().click();
+  await page.locator("main").getByRole("button", { name: "Sepete ekle", exact: true }).first().click();
 }

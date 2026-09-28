@@ -1,234 +1,337 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getProductsByCategory } from "@/lib/products";
-import { ProductCard } from "@/components/ProductCard";
+import {
+  getProductsByCategory,
+  getUnitsSoldByProduct,
+  selectNewArrivals,
+  type Product,
+} from "@/lib/products";
+import { BestSellers } from "@/components/home/BestSellers";
+import { ShopByCategory, type ShopRow } from "@/components/home/ShopByCategory";
+import { NewArrivalsRail } from "@/components/home/NewArrivalsRail";
+import { NewsletterSignup } from "@/components/home/NewsletterSignup";
+import { formatPrice } from "@/lib/format";
+import { discountedPrice } from "@/lib/product-view";
+import { ArrowRightIcon } from "@/components/icons/Ph";
 
-const CATEGORY_TILES = [
-  {
-    slug: "loungewear" as const,
-    label: "Loungewear",
-    image: "/categories/loungewear.webp",
-    position: "50% 12%",
-    copy: "Yumuşak dokular, dışarıya taşan ev rahatlığı.",
-    className: "md:col-span-2 md:row-span-2",
-    imageClassName: "aspect-[4/5] md:min-h-[620px]",
-  },
-  {
-    slug: "spor" as const,
-    label: "Spor",
-    image: "/categories/spor-studyo.webp",
-    position: "50% 22%",
-    copy: "Hareket için sade, güçlü ve hafif parçalar.",
-    className: "",
-    imageClassName: "aspect-[4/5] md:aspect-[4/3]",
-  },
-  {
-    slug: "pijama" as const,
-    label: "Pijama",
-    image: "/categories/pijama.webp",
-    position: "50% 4%",
-    copy: "Geceye ve yavaş sabahlara hazır seçimler.",
-    className: "",
-    imageClassName: "aspect-[4/5] md:aspect-[4/3]",
-  },
-];
+// Homepage — design handoff screen 1, mapped onto the
+// store's real catalogue: the three categories stand in for the design's
+// Women / Men / Sportswear / Accessories.
 
-const FEATURED_PRODUCT_IDS = [1, 3, 2, 4];
-
-const HOME_INTRO_CSS = `
-@keyframes home-fade-up {
-  from { transform: translateY(18px); opacity: 0 }
-  to { transform: translateY(0); opacity: 1 }
-}
-@keyframes home-image-settle {
-  from { transform: scale(1.035) }
-  to { transform: scale(1) }
-}
-.home-fade-up {
-  animation: home-fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) var(--home-delay, 0s) both;
-}
-.home-image-settle {
-  animation: home-image-settle 1.35s cubic-bezier(0.25, 0.6, 0.3, 1) both;
-}
-@media (prefers-reduced-motion: reduce) {
-  .home-fade-up, .home-image-settle { animation: none }
-}
-`;
-
-const delay = (ms: number) => ({ "--home-delay": `${ms}ms` }) as CSSProperties;
+// Stagger for the hero's rise-in animation (see animate-hero-rise).
+const delay = (ms: number) => ({ "--delay": `${ms}ms` }) as CSSProperties;
 
 export default async function HomePage() {
-  const [loungewear, spor, pijama] = await Promise.all([
+  const [loungewear, spor, pijama, unitsSold] = await Promise.all([
     getProductsByCategory("loungewear"),
     getProductsByCategory("spor"),
     getProductsByCategory("pijama"),
+    getUnitsSoldByProduct(),
   ]);
 
-  const counts: Record<(typeof CATEGORY_TILES)[number]["slug"], number> = {
-    loungewear: loungewear.length,
-    spor: spor.length,
-    pijama: pijama.length,
+  const all = [...loungewear, ...spor, ...pijama];
+  // Units sold first; reviews and rating only break ties (most products
+  // have no sales or reviews yet on a fresh store).
+  const byBestSelling = (a: Product, b: Product) =>
+    (unitsSold.get(b.id) ?? 0) - (unitsSold.get(a.id) ?? 0) ||
+    b.ratingCount - a.ratingCount ||
+    b.rating - a.rating ||
+    a.id - b.id;
+  const bestSellers = [...all].sort(byBestSelling);
+  const newArrivals = selectNewArrivals(all);
+  const onSale = all.filter((p) => p.discountPercentage > 0);
+  const editPicks = [...pijama].sort(byBestSelling).slice(0, 2);
+  const sporPicks = [...spor].sort(byBestSelling).slice(0, 3);
+
+  // Editorial slots each take a photo not yet used elsewhere on the page —
+  // with five campaign images and ~15 image slots, reusing the same shot in
+  // several places made the page look repetitive. The campaign shots are
+  // claimed first; product photos fill the rest in priority order.
+  const used = new Set([
+    "/hero/evde-rahatlik.webp",
+    "/categories/loungewear.webp",
+    "/categories/pijama.webp",
+    "/categories/spor-studyo.webp",
+    "/editorial/rahatlik-seninle.webp",
+    ...editPicks.map((p) => p.thumbnail),
+  ]);
+  const pick = (candidates: Product[], fallback: string) => {
+    const found = candidates.find((p) => !used.has(p.thumbnail));
+    if (!found) return fallback;
+    used.add(found.thumbnail);
+    return found.thumbnail;
   };
 
-  const all = [...loungewear, ...spor, ...pijama];
-  const curated = FEATURED_PRODUCT_IDS.flatMap((id) => all.find((p) => p.id === id) ?? []);
-  const featuredProducts = [
-    ...curated,
-    ...all
-      .filter((p) => !curated.includes(p))
-      .sort((a, b) => b.rating - a.rating),
-  ].slice(0, 4);
+  const categoryCards = [
+    { href: "/products?category=loungewear", label: "Loungewear", image: "/categories/loungewear.webp", position: "50% 12%" },
+    // The Spor campaign shot is the editorial banner below.
+    { href: "/products?category=spor", label: "Spor", image: pick([...spor].sort(byBestSelling), "/categories/spor-studyo.webp"), position: "50% 20%" },
+    { href: "/products?category=pijama", label: "Pijama", image: "/categories/pijama.webp", position: "50% 4%" },
+    { href: "/products?filter=new", label: "Yeni Gelenler", image: pick(newArrivals, "/hero/evde-rahatlik.webp"), position: "50% 20%" },
+  ];
+  // The seasonal edit is the largest image after the hero, so it keeps the
+  // calm Pijama campaign shot (shared with the Pijama card) rather than
+  // whichever product photo happens to be left — Pijama has only 3 products.
+  const seasonalImage = "/categories/pijama.webp";
+  const lifestylePortrait = pick([...loungewear].sort(byBestSelling), "/categories/loungewear.webp");
+
+  const shopRows: ShopRow[] = [
+    { href: "/products?category=loungewear", label: "Loungewear", count: loungewear.length, image: pick(loungewear, "/categories/loungewear.webp") },
+    { href: "/products?category=spor", label: "Spor", count: spor.length, image: pick(spor, "/categories/spor-studyo.webp") },
+    { href: "/products?category=pijama", label: "Pijama", count: pijama.length, image: pick(pijama, "/categories/pijama.webp") },
+    { href: "/products?filter=new", label: "Yeni Gelenler", count: newArrivals.length, image: pick(newArrivals, "/hero/evde-rahatlik.webp") },
+    ...(onSale.length > 0
+      ? [{ href: "/products?sort=discount", label: "İndirimdekiler", count: onSale.length, image: pick(onSale, onSale[0].thumbnail) }]
+      : []),
+    { href: "/products", label: "Tüm Ürünler", count: all.length, image: pick(all, "/hero/evde-rahatlik.webp") },
+  ];
 
   return (
-    <div className="overflow-hidden">
-      <style dangerouslySetInnerHTML={{ __html: HOME_INTRO_CSS }} />
-
-      <section className="relative min-h-[78svh] overflow-hidden bg-ink text-background lg:min-h-[calc(100svh-116px)]">
+    <div className="overflow-x-clip">
+      {/* 1. Hero — full-bleed. The photo is anchored to its top edge: the
+          models' heads sit ~5% from the top, so any crop has to come off the
+          floor, never the top. A flat 18% scrim (no gradients) keeps the
+          copy legible over the light sofa/rug area. Entrance: the image
+          settles, then the copy rises in sequence (off with reduced motion). */}
+      <section className="relative h-[calc(100dvh-140px)] min-h-[620px] overflow-hidden bg-[#a29786] hdr:h-[calc(100dvh-96px)]">
         <Image
           src="/hero/evde-rahatlik.webp"
           alt="Güneşli bir salonda EDACEY loungewear takımlarıyla yürüyen iki kadın"
           fill
           sizes="100vw"
-          className="home-image-settle object-cover object-[54%_34%]"
           priority
+          className="animate-hero-settle origin-top object-cover object-[54%_0%]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/78 via-ink/16 to-transparent" />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(22,21,15,0.48),rgba(22,21,15,0.08)_48%,rgba(22,21,15,0))]" />
-
-        <div className="relative z-10 flex min-h-[78svh] items-end px-5 pb-10 pt-20 sm:px-10 sm:pb-14 lg:min-h-[calc(100svh-116px)] lg:px-16 lg:pb-16">
-          <div className="max-w-[720px]">
-            <p className="home-fade-up font-sans text-xs font-semibold uppercase tracking-label text-background/80">
-              EDACEY
-            </p>
-            <h1
-              className="home-fade-up mt-4 max-w-[11ch] font-display text-[clamp(3.5rem,10vw,9rem)] leading-[0.9] tracking-display"
-              style={delay(110)}
-            >
-              Gün içinde rahatlık.
-            </h1>
-            <p
-              className="home-fade-up mt-5 max-w-[36ch] font-sans text-base leading-7 text-background/88 sm:text-lg"
-              style={delay(220)}
-            >
-              Evden dışarıya uzanan yumuşak, net ve kendinden emin parçalar.
-            </p>
-            <div className="home-fade-up mt-7 flex flex-wrap gap-3" style={delay(310)}>
-              <Link
-                href="/products"
-                className="inline-flex items-center justify-center bg-background px-7 py-4 font-sans text-xs font-semibold uppercase tracking-label text-ink transition hover:bg-accent hover:text-accent-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-background active:translate-y-px"
+        <div className="pointer-events-none absolute inset-0 bg-ink/[.18]" />
+        <div className="absolute inset-x-0 bottom-12 tab:bottom-16">
+          <div className="page-x flex items-end justify-between gap-10 text-on-image">
+            <div className="flex max-w-[720px] flex-col">
+              <span
+                className="animate-hero-rise text-caption uppercase tracking-eyebrow"
+                style={delay(150)}
               >
-                Koleksiyonu Gör
-              </Link>
-              <Link
-                href="/products?filter=new"
-                className="inline-flex items-center justify-center border border-background/65 px-7 py-4 font-sans text-xs font-semibold uppercase tracking-label text-background transition hover:border-background hover:bg-background/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-background active:translate-y-px"
+                Yeni sezon — Sonbahar 2026
+              </span>
+              <h1
+                className="animate-hero-rise mt-5 text-[clamp(3.25rem,7.2vw,7.5rem)] font-light leading-[0.95] tracking-[-0.03em]"
+                style={delay(300)}
               >
-                Yeni Gelenler
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 py-16 sm:px-10 lg:px-16 lg:py-24">
-        <div className="mx-auto max-w-[1440px]">
-          <div className="max-w-2xl">
-            <h2 className="font-display text-display-lg tracking-display">
-              Evde başlayan stil, günün ritmine karışır.
-            </h2>
-            <p className="mt-4 max-w-[52ch] font-sans text-body-lg text-ink-soft">
-              EDACEY seçimi; lounge, spor ve pijama kategorilerini aynı sakin güvenle bir araya getirir.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-5 md:grid-cols-3 md:auto-rows-fr">
-            {CATEGORY_TILES.map((tile) => (
-              <Link
-                key={tile.slug}
-                href={`/products?category=${tile.slug}`}
-                className={`group flex flex-col bg-ivory transition hover:-translate-y-1 hover:shadow-lift ${tile.className}`}
+                Gün içinde
+                <br />
+                rahatlık
+              </h1>
+              <p
+                className="animate-hero-rise mt-6 max-w-[38ch] text-body-lg font-light"
+                style={delay(450)}
               >
-                <div className={`relative overflow-hidden bg-cream-deep ${tile.imageClassName}`}>
-                  <Image
-                    src={tile.image}
-                    alt={tile.label}
-                    fill
-                    sizes={tile.slug === "loungewear" ? "(max-width: 768px) 100vw, 66vw" : "(max-width: 768px) 100vw, 33vw"}
-                    className="object-cover transition duration-700 group-hover:scale-[1.035]"
-                    style={{ objectPosition: tile.position }}
-                  />
-                </div>
-                <div className="flex min-h-36 flex-col justify-between gap-5 px-5 py-5 sm:px-6">
-                  <div>
-                    <h3 className="font-display text-display-md tracking-display">{tile.label}</h3>
-                    <p className="mt-2 max-w-[28ch] text-body-sm text-ink-soft">{tile.copy}</p>
-                  </div>
-                  <span className="font-sans text-xs font-semibold uppercase tracking-label text-accent">
-                    {counts[tile.slug]} Ürün
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-ivory px-5 py-16 sm:px-10 lg:px-16 lg:py-24">
-        <div className="mx-auto max-w-[1440px]">
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <div>
-              <h2 className="font-display text-display-lg tracking-display">Öne çıkan seçimler</h2>
-              <p className="mt-3 max-w-[44ch] text-body-lg text-ink-soft">
-                En sevdiğimiz dokuları ve kolay kombinlenen siluetleri tek bakışta gör.
+                Evden dışarıya uzanan yumuşak dokular; taş, krem ve antrasit tonlarında.
               </p>
+              <div
+                className="animate-hero-rise mt-8 flex flex-wrap items-center gap-x-8 gap-y-5"
+                style={delay(600)}
+              >
+                <Link
+                  href="/products?category=loungewear"
+                  className="inline-flex h-[52px] items-center bg-on-image px-9 text-nav uppercase tracking-[0.16em] text-ink transition-colors duration-300 hover:bg-background"
+                >
+                  Koleksiyonu keşfet
+                </Link>
+                <Link href="/products?filter=new" className="text-cta">
+                  Yeni gelenler
+                </Link>
+              </div>
             </div>
-            <Link
-              href="/products"
-              className="border-b border-ink pb-1 font-sans text-xs font-semibold uppercase tracking-label transition hover:text-accent"
+            {/* A plain link group, not a <nav>: it repeats the header's
+                category links, so a second navigation landmark would just be
+                noise for screen-reader users. */}
+            <div
+              className="animate-hero-rise hidden flex-col items-end gap-2 text-caption uppercase tracking-eyebrow desk:flex"
+              style={delay(750)}
             >
-              Tümünü Gör
+              <Link href="/products?category=loungewear" className="transition-opacity hover:opacity-70">
+                Loungewear
+              </Link>
+              <Link href="/products?category=spor" className="transition-opacity hover:opacity-70">
+                Spor
+              </Link>
+              <Link href="/products?category=pijama" className="transition-opacity hover:opacity-70">
+                Pijama
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Category cards — 1.3fr 1.3fr 1fr 1fr, bottom-aligned. */}
+      <section className="page-x pt-[120px]">
+        <div className="grid grid-cols-2 items-end gap-x-2 gap-y-8 desk:grid-cols-[1.3fr_1.3fr_1fr_1fr] desk:gap-2">
+          {categoryCards.map((c, i) => (
+            <Link key={c.href} href={c.href} className="group flex flex-col gap-3.5">
+              <div
+                className={`relative aspect-[3/4] overflow-hidden bg-cream-deep ${i >= 2 ? "desk:aspect-[2/3]" : ""}`}
+              >
+                <Image
+                  src={c.image}
+                  alt=""
+                  fill
+                  sizes="(max-width: 1099px) 50vw, 30vw"
+                  className="object-cover transition-transform duration-[1200ms] ease-soft group-hover:scale-[1.03]"
+                  style={{ objectPosition: c.position }}
+                />
+              </div>
+              <span className="self-start border-b border-transparent pb-1 text-nav uppercase tracking-cta transition-colors duration-300 group-hover:border-ink">
+                {c.label}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* 3. Seasonal edit — 7-col image, text bottom-aligned in cols 9–12. */}
+      <section className="page-x pt-40">
+        <div className="grid grid-cols-12 items-end gap-2">
+          <div className="relative col-span-12 aspect-[3/4] bg-image-alt tab:col-span-7">
+            <Image
+              src={seasonalImage}
+              alt="Pijama takımıyla sabah ışığında dinlenen kadın"
+              fill
+              sizes="(max-width: 759px) 100vw, 58vw"
+              className="object-cover object-[50%_4%]"
+            />
+          </div>
+          <div className="col-span-12 mt-10 flex flex-col gap-12 tab:col-start-8 tab:col-span-5 tab:mt-0 desk:col-start-9 desk:col-span-4">
+            <div className="flex flex-col gap-[18px]">
+              <span className="text-caption uppercase tracking-eyebrow text-text-3">Sezon seçkisi</span>
+              <h2 className="headline text-display-lg">Gece &amp; Sabah</h2>
+              <p className="max-w-[38ch] text-pretty text-body font-light text-ink-soft">
+                Yumuşak modal ve pamuklu pijamalar; geceden yavaş sabahlara aynı rahatlıkla.
+              </p>
+              <Link href="/products?category=pijama" className="text-cta mt-2 self-start">
+                Seçkiyi keşfet
+              </Link>
+            </div>
+            {editPicks.length > 0 && (
+              <div className="grid grid-cols-2 gap-2">
+                {editPicks.map((p) => (
+                  <Link key={p.id} href={`/products/${p.id}`} className="flex flex-col gap-1.5">
+                    <div className="relative mb-2 aspect-[2/3] bg-cream-deep">
+                      <Image src={p.thumbnail} alt="" fill sizes="(max-width: 759px) 50vw, 15vw" className="object-cover" />
+                    </div>
+                    <span className="text-card">{p.title}</span>
+                    <span className="text-card text-text-3">{formatPrice(discountedPrice(p))}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Best sellers — tabs + 4-col grid. */}
+      <BestSellers products={bestSellers} />
+
+      {/* 5. Spor editorial — photo left, copy right (beside the photo rather
+          than over it: the model fills the middle of this shot, so overlaid
+          text sat on her and didn't read). Lists real Spor best sellers so
+          the block leads somewhere (names only — no prices in an editorial
+          block). Mobile: photo first. */}
+      <section className="page-x pt-40">
+        <div className="grid grid-cols-12 items-end gap-x-2 gap-y-10">
+          <div className="relative col-span-12 aspect-[4/3] bg-[#6f675c] tab:col-span-7 desk:col-span-8">
+            <Image
+              src="/categories/spor-studyo.webp"
+              alt="Stüdyoda EDACEY spor takımıyla esneyen kadın"
+              fill
+              sizes="(max-width: 759px) 100vw, 66vw"
+              className="object-cover"
+            />
+          </div>
+          <div className="col-span-12 flex flex-col gap-[18px] tab:col-start-8 tab:col-span-5 tab:pl-6 desk:col-start-9 desk:col-span-4 desk:pl-10">
+            <span className="text-caption uppercase tracking-eyebrow text-text-3">Spor</span>
+            <h2 className="headline text-balance text-display-lg">Sakin renklerle hareket et</h2>
+            <p className="max-w-[36ch] text-pretty text-body font-light text-ink-soft">
+              Toparlayıcı taytlar, ikinci ten gibi üstler ve takımlar; antrenman gününe de dinlenme
+              gününe de.
+            </p>
+            {sporPicks.length > 0 && (
+              <ul className="mt-4 border-t border-line">
+                {sporPicks.map((p) => (
+                  <li key={p.id} className="border-b border-line">
+                    <Link
+                      href={`/products/${p.id}`}
+                      className="group flex items-center justify-between gap-4 py-3.5 text-card"
+                    >
+                      <span className="transition-colors group-hover:text-text-3">{p.title}</span>
+                      <ArrowRightIcon
+                        size={14}
+                        className="flex-none text-text-3 transition-transform duration-300 group-hover:translate-x-1"
+                      />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link href="/products?category=spor" className="text-cta mt-4 self-start">
+              Spor&apos;u keşfet
             </Link>
           </div>
-
-          <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-5 lg:gap-x-6">
-            {featuredProducts.map((p, index) => (
-              <div
-                key={p.id}
-                className={index === 0 ? "col-span-2" : "col-span-1"}
-              >
-                <ProductCard product={p} badge={null} />
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
-      <section className="px-5 py-16 sm:px-10 lg:px-16 lg:py-24">
-        <div className="mx-auto grid max-w-[1440px] gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-          <div className="relative aspect-[5/4] overflow-hidden bg-cream-deep lg:aspect-[16/10]">
+      {/* 6. Shop by category — hover list + crossfading image. */}
+      <ShopByCategory rows={shopRows} />
+
+      {/* 7. New arrivals — scroll-snap rail. */}
+      {newArrivals.length > 0 && <NewArrivalsRail products={newArrivals} />}
+
+      {/* 8. Lifestyle — 3:2 landscape + offset portrait and copy. */}
+      <section className="page-x pt-40">
+        <div className="grid grid-cols-12 items-start gap-2">
+          <div className="relative col-span-12 aspect-[3/2] bg-[#ddd6ca] tab:col-span-8">
             <Image
               src="/editorial/rahatlik-seninle.webp"
               alt="Taş kemerli bir avluda EDACEY parçalarıyla yürüyen kadın"
               fill
-              sizes="(max-width: 1024px) 100vw, 58vw"
+              sizes="(max-width: 759px) 100vw, 66vw"
               className="object-cover object-[40%_20%]"
             />
           </div>
-          <div className="pb-1 lg:pb-10">
-            <h2 className="font-display text-display-lg tracking-display">
-              Rahatlık, üstünde taşıdığın bir tavır.
-            </h2>
-            <p className="mt-5 max-w-[42ch] text-body-lg text-ink-soft">
-              Hafif katmanlar, yumuşak renkler ve gün boyu bozulmayan bir sadelik.
-            </p>
-            <Link
-              href="/products?category=loungewear"
-              className="mt-7 inline-flex border-b border-ink pb-1 font-sans text-xs font-semibold uppercase tracking-label transition hover:text-accent"
-            >
-              Loungewear Keşfet
-            </Link>
+          <div className="col-span-12 mt-10 flex flex-col gap-10 tab:col-start-9 tab:col-span-4 tab:mt-0 desk:col-start-10 desk:col-span-3 desk:mt-[22%]">
+            <div className="relative aspect-[3/4] w-3/5 bg-image-alt tab:w-full">
+              <Image
+                src={lifestylePortrait}
+                alt=""
+                fill
+                sizes="(max-width: 759px) 60vw, 25vw"
+                className="object-cover"
+              />
+            </div>
+            <div className="flex flex-col gap-4">
+              <h2 className="headline text-[clamp(30px,2.6vw,42px)] leading-[1.08]">
+                Yavaş pazarlar, yumuşak dokular
+              </h2>
+              <p className="max-w-[34ch] text-body font-light text-ink-soft">
+                Fırçalanmış pamuk ve modal loungewear; evde kalmak için.
+              </p>
+              <Link href="/products?category=loungewear" className="text-cta mt-2 self-start">
+                Loungewear&apos;ı keşfet
+              </Link>
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* 9. Newsletter. */}
+      <section className="page-x pb-4 pt-44">
+        <div className="mx-auto flex max-w-[520px] flex-col items-center gap-4 text-center">
+          <h2 className="text-[clamp(28px,2.6vw,38px)] font-light leading-[1.1] tracking-title">
+            Yeni sezonu ilk sen gör
+          </h2>
+          <p className="max-w-[40ch] text-body font-light text-ink-soft">
+            Yeni koleksiyonlar, özel indirim tarihleri ve kampanyalardan ilk sen haberdar ol.
+          </p>
+          <NewsletterSignup />
         </div>
       </section>
     </div>

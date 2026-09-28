@@ -61,7 +61,7 @@ export default async function AccountOrdersPage({
   return (
     <AccountCard>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="font-display text-2xl">Siparişlerim</h2>
+        <h2 className="font-light tracking-title text-2xl">Siparişlerim</h2>
         {allOrders.length > 0 && (
           <form action="/account/orders" className="flex flex-wrap gap-2">
             <select
@@ -89,7 +89,7 @@ export default async function AccountOrdersPage({
             </select>
             <button
               type="submit"
-              className="border border-ink px-4 py-2 text-xs font-semibold uppercase tracking-wide hover:bg-ink hover:text-background"
+              className="border border-ink px-4 py-2 text-xs font-medium uppercase tracking-wide hover:bg-ink hover:text-background"
             >
               Filtrele
             </button>
@@ -111,7 +111,7 @@ export default async function AccountOrdersPage({
           action={
             <Link
               href="/account/orders"
-              className="text-sm font-semibold text-primary underline underline-offset-4"
+              className="text-sm font-medium text-primary underline underline-offset-4"
             >
               Filtreleri temizle
             </Link>
@@ -131,7 +131,7 @@ export default async function AccountOrdersPage({
                 <Link
                   key={p}
                   href={buildHref({ page: p })}
-                  className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${
+                  className={`flex h-9 w-9 items-center justify-center text-sm font-medium ${
                     p === currentPage
                       ? "bg-primary text-cream"
                       : "border border-line hover:border-primary"

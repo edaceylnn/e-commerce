@@ -25,7 +25,7 @@ export default async function FavorilerPage() {
 
   return (
     <AccountCard>
-      <h2 className="font-display text-2xl">Favorilerim</h2>
+      <h2 className="font-light tracking-title text-2xl">Favorilerim</h2>
 
       {products.length === 0 ? (
         <EmptyState

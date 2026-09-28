@@ -16,7 +16,7 @@ const variantSchema = z.object({
 });
 
 // Accepts either a full URL (external CDN) or a root-relative path into
-// /public (e.g. "/products/blue-knit.jpg", how every seeded EDACEY product
+// /public (e.g. "/products/stripe-modal.jpg", how every seeded EDACEY product
 // image is stored) — plain z.string().url() rejects the latter outright.
 const imageRefSchema = z
   .string()

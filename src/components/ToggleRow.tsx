@@ -19,7 +19,7 @@ export function ToggleRow({
   return (
     <div className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
       <div className="pr-4">
-        <p className="text-sm font-semibold">{label}</p>
+        <p className="text-sm font-medium">{label}</p>
         {description && <p className="mt-0.5 text-xs text-ink-soft">{description}</p>}
       </div>
       <Switch checked={checked} onChange={onChange} disabled={disabled} label={label} />

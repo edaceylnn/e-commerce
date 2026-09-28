@@ -34,7 +34,7 @@ export function CancelOrderButton({ orderNumber }: { orderNumber: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="border border-danger/50 px-4 py-2.5 text-xs font-semibold uppercase tracking-label text-danger transition hover:border-danger hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-danger"
+        className="border border-danger/50 px-4 py-2.5 text-xs font-medium uppercase tracking-label text-danger transition hover:border-danger hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-danger"
       >
         Siparişi İptal Et
       </button>

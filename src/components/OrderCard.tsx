@@ -27,7 +27,7 @@ export function OrderCard({ order }: { order: OrderListItem }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
           <OrderStatusText status={order.status} />
-          <p className="font-mono text-sm">{formatPrice(order.total)}</p>
+          <p className="text-sm">{formatPrice(order.total)}</p>
         </div>
         <p className="mt-1 text-xs text-ink-soft">
           {order.orderNumber} ·{" "}
@@ -38,7 +38,7 @@ export function OrderCard({ order }: { order: OrderListItem }) {
         <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 pt-3">
           <Link
             href={detailHref}
-            className="text-xs font-semibold uppercase tracking-label text-ink underline underline-offset-4 hover:text-accent"
+            className="text-xs font-medium uppercase tracking-label text-ink underline underline-offset-4 hover:text-accent"
           >
             Detayları gör
           </Link>

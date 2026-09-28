@@ -1,13 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { formatPrice } from "@/lib/format";
-import { PillLink } from "@/components/Pill";
+import { ArrowUUpLeftIcon, LockSimpleIcon, TruckIcon } from "@/components/icons/Ph";
 
-// Compact order summary: quiet line items, then the two things that should
-// win the eye — the total and the checkout button. Campaign and free-shipping
-// status are small inline notes, not boxes. The coupon field is passed in by
-// the cart page (it owns that state) and sits right above the total. Trust
-// info lives outside the card as a single line, keeping the card short.
+// Design handoff → bag summary: small-caps title over a hairline, quiet
+// rows, the free-shipping note, the promo field (owned by the cart page),
+// then the estimated total, a 56px checkout button and reassurance lines.
+// No box, no fill — it sits straight on the page.
 export function CartOrderSummary({
   subtotal,
   discount,
@@ -15,7 +14,6 @@ export function CartOrderSummary({
   total,
   campaign,
   freeShippingRemaining,
-  freeShippingProgress,
   deliveryEstimate,
   coupon,
 }: {
@@ -31,102 +29,85 @@ export function CartOrderSummary({
     products?: string[];
   } | null;
   freeShippingRemaining: number;
-  /** 0–100; only drawn while the threshold isn't reached yet. */
-  freeShippingProgress: number;
   deliveryEstimate: string;
   coupon: ReactNode;
 }) {
   return (
-    <div>
-      <section aria-labelledby="order-summary-title" className="border border-line bg-ivory p-6">
-        <h2
-          id="order-summary-title"
-          className="font-mono text-caption uppercase tracking-eyebrow text-ink-soft"
-        >
-          Sipariş Özeti
-        </h2>
+    <section aria-labelledby="order-summary-title">
+      <h2 id="order-summary-title" className="border-b border-line-strong pb-5 text-body-sm uppercase tracking-eyebrow">
+        Sipariş Özeti
+      </h2>
 
-        <dl className="mt-4 space-y-2 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-ink-soft">Ara toplam</dt>
-            <dd className="font-mono">{formatPrice(subtotal)}</dd>
-          </div>
-
-          {discount > 0 && (
-            <div>
-              <div className="flex justify-between">
-                <dt className="text-ink-soft">İndirim</dt>
-                <dd className="font-mono text-accent">−{formatPrice(discount)}</dd>
-              </div>
-              {campaign && (
-                <p className="mt-0.5 text-xs text-accent">
-                  {campaign.name}
-                  {campaign.percentage && campaign.products?.length ? (
-                    campaign.products.map((title) => (
-                      <span key={title} className="block text-ink-soft">
+      <dl className="flex flex-col gap-3 py-6 text-card">
+        <div className="flex justify-between">
+          <dt>Ara toplam</dt>
+          <dd>{formatPrice(subtotal)}</dd>
+        </div>
+        {discount > 0 && (
+          <div>
+            <div className="flex justify-between">
+              <dt>İndirim</dt>
+              <dd className="text-sale">−{formatPrice(discount)}</dd>
+            </div>
+            {campaign && (
+              <p className="mt-1 text-[12px] text-text-3">
+                {campaign.name}
+                {campaign.percentage && campaign.products?.length
+                  ? campaign.products.map((title) => (
+                      <span key={title} className="block">
                         {title} · %{campaign.percentage!.toLocaleString("tr-TR")} indirim
                       </span>
                     ))
-                  ) : campaign.percentage ? (
-                    <span className="block text-ink-soft">
-                      {campaign.scope ? `${campaign.scope} ürünlerinde` : "Tüm sepette"} %
-                      {campaign.percentage.toLocaleString("tr-TR")}
-                    </span>
-                  ) : (
-                    " uygulandı"
-                  )}
-                </p>
-              )}
-            </div>
-          )}
-
-          <div>
-            <div className="flex justify-between">
-              <dt className="text-ink-soft">Kargo</dt>
-              <dd className="font-mono">{shippingCost === 0 ? "Ücretsiz" : formatPrice(shippingCost)}</dd>
-            </div>
-            {/* Only while the threshold isn't met — once it is, the "Ücretsiz"
-                value above already says it. */}
-            {freeShippingRemaining > 0 && (
-              <div className="mt-1">
-                <p className="text-xs text-ink-soft">
-                  Ücretsiz kargoya <span className="font-medium text-ink">{formatPrice(freeShippingRemaining)}</span> kaldı
-                </p>
-                <div
-                  className="mt-1.5 h-0.5 w-full bg-line"
-                  role="progressbar"
-                  aria-label="Ücretsiz kargo eşiği"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(freeShippingProgress)}
-                >
-                  <div className="h-full bg-ink" style={{ width: `${freeShippingProgress}%` }} />
-                </div>
-              </div>
+                  : campaign.percentage
+                    ? ` — ${campaign.scope ? `${campaign.scope} ürünlerinde` : "tüm sepette"} %${campaign.percentage.toLocaleString("tr-TR")}`
+                    : " uygulandı"}
+              </p>
             )}
           </div>
-        </dl>
-
-        <div className="mt-4">{coupon}</div>
-
-        <div className="mt-4 flex items-baseline justify-between border-t border-ink pt-4">
-          <span className="text-sm font-medium">Toplam</span>
-          <span className="font-display text-4xl leading-none">{formatPrice(total)}</span>
+        )}
+        <div className="flex justify-between">
+          <dt>Kargo</dt>
+          <dd>{shippingCost === 0 ? "Ücretsiz" : formatPrice(shippingCost)}</dd>
         </div>
+        <p className="text-[12px] text-text-3">
+          {freeShippingRemaining > 0
+            ? `Ücretsiz kargo için ${formatPrice(freeShippingRemaining)} daha ekle.`
+            : "Ücretsiz kargo uygulandı."}
+        </p>
+      </dl>
 
-        <PillLink href="/checkout/address" className="mt-4 w-full">
-          Ödemeye Geç
-        </PillLink>
+      <div className="border-y border-line py-5">{coupon}</div>
 
-        <p className="mt-2.5 text-center text-xs text-ink-soft">Tahmini teslimat: {deliveryEstimate}</p>
-      </section>
+      <div className="flex items-baseline justify-between pt-6">
+        <span className="text-[14px]">Tahmini toplam</span>
+        <span className="text-xl font-medium">{formatPrice(total)}</span>
+      </div>
+      <p className="mt-1 text-caption text-text-4">KDV dahil · Tahmini teslimat {deliveryEstimate}</p>
 
-      <p className="mt-3 text-center text-xs text-ink-soft">
-        Güvenli ödeme · 14 gün iade ·{" "}
-        <Link href="/iletisim" className="underline underline-offset-2 hover:text-ink">
-          Yardım
-        </Link>
-      </p>
-    </div>
+      <Link
+        href="/checkout/address"
+        className="mt-6 flex h-14 items-center justify-center bg-ink text-nav uppercase tracking-[0.16em] text-background transition-colors hover:bg-ink-hover"
+      >
+        Ödemeye geç
+      </Link>
+      <Link href="/products" className="text-cta mx-auto mt-5 block w-fit">
+        Alışverişe devam et
+      </Link>
+
+      <div className="mt-8 flex flex-col gap-2.5 text-card text-ink-soft">
+        <span className="flex items-center gap-3">
+          <LockSimpleIcon size={17} className="flex-none text-text-3" />
+          iyzico ile güvenli ödeme
+        </span>
+        <span className="flex items-center gap-3">
+          <ArrowUUpLeftIcon size={17} className="flex-none text-text-3" />
+          14 gün içinde kolay iade
+        </span>
+        <span className="flex items-center gap-3">
+          <TruckIcon size={17} className="flex-none text-text-3" />
+          1-5 iş gününde teslimat
+        </span>
+      </div>
+    </section>
   );
 }

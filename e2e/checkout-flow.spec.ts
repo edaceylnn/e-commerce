@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { registerNewCustomer, fillAndSaveAddress } from "./helpers";
+import { registerNewCustomer, fillAndSaveAddress, addCurrentProductToBag } from "./helpers";
 
 // Stops at the review step, before "Ödemeyi Başlat" — that click triggers a
 // real server-to-server call to iyzico's sandbox, which this suite
@@ -17,7 +17,7 @@ test("checkout: address form leads to a review page with the right total", async
   await page.locator("a[href^='/products/']").first().click();
   await page.waitForURL(/\/products\/\d+$/);
   const productTitle = (await page.locator("h1").textContent())?.trim() ?? "";
-  await page.getByRole("button", { name: "Sepete Ekle" }).click();
+  await addCurrentProductToBag(page);
 
   await page.goto("/cart");
   await page.getByRole("link", { name: "Ödemeye Geç" }).click();
@@ -47,7 +47,7 @@ test("checkout: a different billing address is recorded separately", async ({
   await page.goto("/products");
   await page.locator("a[href^='/products/']").first().click();
   await page.waitForURL(/\/products\/\d+$/);
-  await page.getByRole("button", { name: "Sepete Ekle" }).click();
+  await addCurrentProductToBag(page);
 
   await page.goto("/cart");
   await page.getByRole("link", { name: "Ödemeye Geç" }).click();

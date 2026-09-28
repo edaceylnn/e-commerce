@@ -1,53 +1,55 @@
 @import "tailwindcss";
 
 :root {
-  /* EDACEY brand palette — cream/ink/sage. --primary and --primary-dark are
-     deliberately *aliases* of --ink/--accent rather than independent
-     colors, so every bg-primary/hover:bg-primary-dark call site (buttons
-     across the storefront) stays in sync with the brand colors below with
-     no per-component changes needed. */
-  --background: #f2efe8;
-  --foreground: #16150f;
-  --ink: #16150f;
-  /* The only muted text color (5.4:1 on --background, WCAG AA). The design
-     system deliberately has no lighter text tint: de-emphasis comes from
-     size and weight, never from dropping below AA contrast. */
-  --ink-soft: rgba(22, 21, 15, 0.65);
+  /* Storefront palette — from the design handoff's design tokens. Warm
+     stone neutrals, one ink, no accent hue: hierarchy comes from the
+     text-2…text-5 steps, and the only colour with meaning is the
+     rust --sale (sale prices, validation errors — use sparingly).
+     --primary/--accent/--cream/… are kept as *aliases* onto this palette so
+     every existing bg-primary/hover:bg-accent call site picks it up. */
+  --background: #f6f5f1;
+  --foreground: #1d1c1a;
+  --ink: #1d1c1a;
+  --ink-hover: #3a3733;
+  --ink-soft: #4a453e; /* text-2: body copy, secondary text, prices */
+  --text-3: #6f6559; /* labels, meta, inactive tabs */
+  --text-4: #8b7f70; /* counts, struck-through prices, hints */
+  --text-5: #9a9083; /* product reference / SKU */
+  --disabled: #b3aa9c; /* disabled sizes, soft underline colour */
+  --on-image: #faf8f4; /* text on photography */
+  --sale: #9a3d25;
   --primary: var(--ink);
-  --primary-dark: var(--accent);
-  --primary-soft: #e7e9de;
-  --cream: #ede9e0;
-  --cream-deep: #e4e0d5;
-  --ivory: #ffffff;
-  /* Input fill for forms sitting directly on the cream page (no white card):
-     a hair lighter than --background so the field reads as a field. */
-  --field: #f8f6f2;
-  --rose: #4e5b3a;
-  --rose-soft: #e3e7da;
-  --line: rgba(22, 21, 15, 0.14);
-  /* Boundary of interactive controls (inputs). --line is decorative only;
-     WCAG 1.4.11 asks 3:1 for a control's edge, which this meets (3.4:1). */
-  --line-strong: rgba(22, 21, 15, 0.5);
+  --primary-dark: var(--ink-hover);
+  --primary-soft: #ebe7df;
+  --cream: #ebe7df; /* announcement bar, menu hover */
+  --cream-deep: #e8e4dc; /* product image placeholder */
+  --image-alt: #e2dcd1; /* editorial image placeholder */
+  --ivory: #f6f5f1; /* no white surfaces — cards sit on the page colour */
+  --field: #f6f5f1;
+  --rose: var(--sale);
+  --rose-soft: #ebe7df;
+  --line: #e4dfd6;
+  --line-strong: #d8d2c7;
 
-  /* Sage green — the one accent color, used sparingly for hover states,
-     price emphasis and sale tags (never large tinted areas). --accent-ink
-     is the text color to put ON a solid --accent fill. */
-  --accent: #4e5b3a;
-  --accent-dark: #3c4730;
-  --accent-soft: #e3e7da;
-  --accent-ink: #ffffff;
-  --shadow-soft: 0 1px 0 rgba(22, 21, 15, 0.06);
-  --shadow-lift: 0 14px 34px -18px rgba(22, 21, 15, 0.28);
+  --accent: var(--ink-hover);
+  --accent-dark: var(--ink);
+  --accent-soft: #ebe7df;
+  --accent-ink: #f6f5f1;
+  /* No shadows, no gradients anywhere on the storefront. */
+  --shadow-soft: none;
+  --shadow-lift: none;
+  --scrim: rgba(29, 28, 26, 0.14);
+  --modal-scrim: rgba(29, 28, 26, 0.3);
+  --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Semantic status colors — admin back-office only. Clear and legible
-     (a modern SaaS dashboard needs status pills to read at a glance),
-     not neon, and not fighting the warm brand palette. */
+  /* Semantic status colors. Storefront errors use --sale's rust; the rest
+     stay for admin/back-office pills. */
   --success: #16794a;
   --success-soft: #dcf5e7;
-  --warning: #b06b12;
-  --warning-soft: #fbe8cf;
-  --danger: #c23b52;
-  --danger-soft: #fbe1e6;
+  --warning: #6f6559;
+  --warning-soft: #ebe7df;
+  --danger: #9a3d25;
+  --danger-soft: #f3e6e0;
   --info: #2f6690;
   --info-soft: #dfedf6;
 
@@ -132,6 +134,17 @@
   --color-foreground: var(--foreground);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
+  --color-ink-hover: var(--ink-hover);
+  --color-text-3: var(--text-3);
+  --color-text-4: var(--text-4);
+  --color-text-5: var(--text-5);
+  --color-disabled: var(--disabled);
+  --color-on-image: var(--on-image);
+  --color-sale: var(--sale);
+  --color-image-alt: var(--image-alt);
+  --color-scrim: var(--scrim);
+  --color-modal-scrim: var(--modal-scrim);
+  --ease-soft: var(--ease-soft);
   --color-primary: var(--primary);
   --color-primary-dark: var(--primary-dark);
   --color-primary-soft: var(--primary-soft);
@@ -157,13 +170,11 @@
   --color-danger-soft: var(--danger-soft);
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
-  /* EDACEY typography: Archivo for body/UI text, an italic Instrument Serif
-     for editorial headings (font-display — the dozens of existing call
-     sites for section titles/h1s pick this up with no per-file changes),
-     and DM Mono for the small-caps eyebrow labels, prices and pills. */
-  --font-sans: var(--font-archivo);
-  --font-display: var(--font-instrument-serif);
-  --font-mono: var(--font-dm-mono);
+  /* Single family (Hanken Grotesk, see layout.tsx). display/mono stay as
+     aliases so older call sites render in the one family. */
+  --font-sans: var(--font-hanken), system-ui, sans-serif;
+  --font-display: var(--font-hanken), system-ui, sans-serif;
+  --font-mono: var(--font-hanken), system-ui, sans-serif;
 
   --color-adm-bg: var(--adm-bg);
   --color-adm-surface-card: var(--adm-surface-card);
@@ -231,47 +242,154 @@
   --font-adm-body: var(--font-plus-jakarta-sans);
 }
 
-/* Storefront type scale and letter-spacing — derived from what the pages
-   already used, not invented. Display sizes are fluid (clamp) for the serif
-   headlines; UI text adds body-sm (13px) and caption (11px) between
-   Tailwind's text-xs/sm steps. Letter-spacing has four steps plus Tailwind's
-   tracking-wide for small uppercase UI labels. See /design-system. */
+/* Storefront type scale — design handoff → Typography. Headlines are
+   weight 300 with negative tracking; UI text is small uppercase with wide
+   tracking. Fixed px sizes below are the handoff's exact values. */
 @theme {
-  --text-display-2xl: clamp(3rem, 5vw, 7.5rem);
-  --text-display-2xl--line-height: 0.88;
-  --text-display-xl: clamp(2.25rem, 3.2vw, 4.25rem);
-  --text-display-xl--line-height: 0.88;
-  --text-display-lg: clamp(1.9rem, 4.6vw, 3.4rem);
+  --text-display-2xl: clamp(2.75rem, 4.6vw, 4.5rem); /* hero 44-72px */
+  --text-display-2xl--line-height: 1.02;
+  --text-display-xl: clamp(2.375rem, 3.8vw, 3.75rem); /* editorial 38-60px */
+  --text-display-xl--line-height: 1.04;
+  --text-display-lg: clamp(2.125rem, 3.2vw, 3rem); /* 34-48px */
   --text-display-lg--line-height: 1.05;
-  --text-display-md: clamp(1.75rem, 4vw, 2.75rem);
+  --text-display-md: clamp(1.75rem, 2.6vw, 2.375rem); /* page titles 28-38px */
   --text-display-md--line-height: 1.1;
-  --text-body-lg: 0.9375rem;
-  --text-body-lg--line-height: 1.625;
-  --text-body-sm: 0.8125rem;
+  --text-body-lg: 0.9375rem; /* 15px */
+  --text-body-lg--line-height: 1.6;
+  --text-body: 0.875rem; /* 14px body copy */
+  --text-body--line-height: 1.7;
+  --text-body-sm: 0.8125rem; /* 13px — section titles */
   --text-body-sm--line-height: 1.5;
-  --text-caption: 0.6875rem;
+  --text-card: 0.78125rem; /* 12.5px — product name/price, footer links */
+  --text-card--line-height: 1.4;
+  --text-nav: 0.71875rem; /* 11.5px — nav, buttons, text CTAs */
+  --text-nav--line-height: 1.4;
+  --text-caption: 0.6875rem; /* 11px — labels */
   --text-caption--line-height: 1.5;
 
   --tracking-display: -0.02em;
-  --tracking-eyebrow: 0.2em;
+  --tracking-title: -0.015em;
+  --tracking-eyebrow: 0.14em;
   --tracking-label: 0.12em;
-  --tracking-logo: 0.34em;
+  --tracking-nav: 0.09em;
+  --tracking-cta: 0.14em;
+  --tracking-logo: 0.42em;
+
+  /* Handoff breakpoints, added alongside (not replacing) Tailwind's so the
+     admin panel is unaffected: tab ≥760 (mobile below), desk ≥1100 (4-col
+     grids), wide ≥1280 (PLP tabs in toolbar), hdr ≥1360 (one-row header). */
+  --breakpoint-tab: 47.5rem;
+  --breakpoint-desk: 68.75rem;
+  --breakpoint-wide: 80rem;
+  --breakpoint-hdr: 85rem;
+}
+
+/* Page container — every storefront section sits on the same grid: content
+   max 1280px, centred, with a 20px (mobile) / 40px (≥760px) gutter. */
+:root {
+  --container: 1280px;
+  --gutter: 20px;
+}
+@media (min-width: 47.5rem) {
+  :root {
+    --gutter: 40px;
+  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  /* Clips full-bleed children (50vw includes the scrollbar); `clip` rather
+     than `hidden` so position: sticky keeps working. */
+  overflow-x: clip;
 }
 
-@keyframes marquee-scroll {
+@utility page-x {
+  width: 100%;
+  max-width: calc(var(--container) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Inside .page-x: break out to the full viewport width (photography,
+   hairlines, sticky bars). Pair with an inner .page-x to re-align content. */
+@utility full-bleed {
+  margin-inline: calc(50% - 50vw);
+}
+
+/* Inside .page-x: extend a horizontally scrolling row into the gutter so
+   it scrolls edge to edge, while its first item stays on the content line. */
+@utility bleed-gutter {
+  margin-inline: calc(var(--gutter) * -1);
+  padding-inline: var(--gutter);
+}
+
+/* Headline utility used across the storefront: light weight, tight tracking. */
+@utility headline {
+  font-weight: 300;
+  letter-spacing: var(--tracking-display);
+}
+
+/* Small uppercase UI text: nav links, buttons, text CTAs. */
+@utility ui-label {
+  font-size: var(--text-nav);
+  letter-spacing: var(--tracking-cta);
+  text-transform: uppercase;
+}
+
+/* Text CTA — "Shop Women", "View all": 11.5px uppercase over a 1px rule. */
+@utility text-cta {
+  font-size: var(--text-nav);
+  letter-spacing: var(--tracking-cta);
+  text-transform: uppercase;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 5px;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Homepage hero entrance: the photo settles from a slight zoom while the
+   copy rises in sequence (each element sets --delay). The reduced-motion
+   rule below collapses both to their end state. */
+@keyframes hero-settle {
   from {
-    transform: translateX(0);
+    transform: scale(1.06);
   }
   to {
-    transform: translateX(-50%);
+    transform: scale(1);
   }
 }
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@utility animate-hero-settle {
+  animation: hero-settle 1.8s var(--ease-soft) both;
+}
+@utility animate-hero-rise {
+  animation: hero-rise 1s var(--ease-soft) var(--delay, 0ms) both;
+}
 
-.animate-marquee {
-  animation: marquee-scroll 28s linear infinite;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }

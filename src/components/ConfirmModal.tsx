@@ -50,7 +50,7 @@ export function ConfirmModal({
         aria-labelledby="confirm-modal-title"
         className="relative w-full max-w-sm border border-line bg-background p-6"
       >
-        <h2 id="confirm-modal-title" className="font-display text-xl">
+        <h2 id="confirm-modal-title" className="font-light tracking-title text-xl">
           {title}
         </h2>
         {description && <p className="mt-2 text-sm text-ink-soft">{description}</p>}
@@ -58,7 +58,7 @@ export function ConfirmModal({
           <button
             type="button"
             onClick={onCancel}
-            className="text-sm font-semibold uppercase tracking-wide text-ink-soft hover:text-ink"
+            className="text-sm font-medium uppercase tracking-wide text-ink-soft hover:text-ink"
           >
             {cancelLabel}
           </button>
@@ -66,7 +66,7 @@ export function ConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={submitting}
-            className={`px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-background transition disabled:opacity-50 ${
+            className={`px-5 py-2.5 text-sm font-medium uppercase tracking-wide text-background transition disabled:opacity-50 ${
               danger ? "bg-danger hover:brightness-95" : "bg-primary hover:bg-primary-dark hover:text-accent-ink"
             }`}
           >

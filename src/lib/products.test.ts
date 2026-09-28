@@ -15,6 +15,9 @@ import {
   getProductsByCategory,
   isNewProduct,
   searchProducts,
+  selectNewArrivals,
+  NEW_ARRIVAL_COUNT,
+  type Product,
 } from "./products";
 
 const row = {
@@ -128,5 +131,39 @@ describe("products", () => {
         skinTypes: [],
       })
     ).toBe(true);
+  });
+});
+
+describe("selectNewArrivals", () => {
+  const product = (id: number, isNew = false): Product => ({
+    id,
+    title: `Ürün ${id}`,
+    description: "",
+    category: "loungewear",
+    price: 100,
+    discountPercentage: 0,
+    rating: 0,
+    ratingCount: 0,
+    stock: 5,
+    tags: [],
+    thumbnail: `/products/${id}.webp`,
+    images: [],
+    isNew,
+    variants: [],
+    volumeLabel: null,
+    skinTypes: [],
+  });
+
+  it("puts flagged-new products first, then tops up with the newest ids", () => {
+    const products = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((id) => product(id, id === 2 || id === 4));
+    const ids = selectNewArrivals(products).map((p) => p.id);
+
+    expect(ids).toHaveLength(NEW_ARRIVAL_COUNT);
+    expect(ids.slice(0, 2)).toEqual([4, 2]);
+    expect(ids.slice(2)).toEqual([10, 9, 8, 7, 6, 5]);
+  });
+
+  it("returns everything when there are fewer products than the rail holds", () => {
+    expect(selectNewArrivals([product(1), product(3, true)]).map((p) => p.id)).toEqual([3, 1]);
   });
 });

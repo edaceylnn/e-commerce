@@ -2,15 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useWishlistStore } from "@/lib/store/wishlist-store";
-import { HeartIcon } from "@/components/icons/HeartIcon";
+import { showToast } from "@/lib/store/toast-store";
+import { HeartPhIcon } from "@/components/icons/Ph";
 
 export function WishlistButton({
   productId,
   showLabel = false,
-  className = "absolute right-3 top-14 flex h-9 w-9 items-center justify-center rounded-full bg-background text-primary shadow-md transition hover:bg-primary hover:text-cream",
+  iconSize = 20,
+  className = "flex h-11 w-11 items-center justify-center text-ink",
 }: {
   productId: number;
   showLabel?: boolean;
+  iconSize?: number;
   className?: string;
 }) {
   const router = useRouter();
@@ -37,7 +40,9 @@ export function WishlistButton({
     if (res.status === 401) {
       remove(productId);
       router.push("/account");
+      return;
     }
+    showToast("Favorilere eklendi");
   }
 
   return (
@@ -45,12 +50,12 @@ export function WishlistButton({
       type="button"
       onClick={handleClick}
       aria-label={isWishlisted ? "Favorilerden çıkar" : "Favorilere ekle"}
+      aria-pressed={isWishlisted}
+      data-saved={isWishlisted || undefined}
       className={className}
     >
-      <HeartIcon filled={isWishlisted} className="h-4 w-4" />
-      {showLabel && (
-        <span>{isWishlisted ? "Favorilerde ✓" : "Favorilere Ekle"}</span>
-      )}
+      <HeartPhIcon size={iconSize} weight={isWishlisted ? "fill" : "light"} />
+      {showLabel && <span>{isWishlisted ? "Favorilerde" : "Favorilere ekle"}</span>}
     </button>
   );
 }

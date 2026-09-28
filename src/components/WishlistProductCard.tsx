@@ -14,7 +14,7 @@ import { HeartIcon } from "@/components/icons/HeartIcon";
 import { SearchIcon } from "@/components/icons/SearchIcon";
 
 const HOVER_ICON_CLASS =
-  "flex h-10 w-10 items-center justify-center rounded-full bg-ivory text-ink shadow-md transition hover:bg-accent hover:text-cream";
+  "flex h-10 w-10 items-center justify-center bg-ivory text-ink transition hover:bg-accent hover:text-cream";
 
 export function WishlistProductCard({
   product,
@@ -54,7 +54,7 @@ export function WishlistProductCard({
               className="object-cover transition duration-500 group-hover:scale-[1.04]"
             />
             {priceDropped && (
-              <span className="absolute left-2.5 top-2.5 bg-accent px-2 py-1 font-mono text-caption font-medium uppercase tracking-label text-accent-ink">
+              <span className="absolute left-2.5 top-2.5 bg-accent px-2 py-1 text-caption font-medium uppercase tracking-label text-accent-ink">
                 Fiyat Düştü
               </span>
             )}
@@ -62,7 +62,7 @@ export function WishlistProductCard({
               type="button"
               onClick={handleRemove}
               aria-label="Favorilerden çıkar"
-              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-ivory text-primary shadow-md transition hover:bg-primary hover:text-cream"
+              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center bg-ivory text-primary transition hover:bg-primary hover:text-cream"
             >
               <HeartIcon filled className="h-4 w-4" />
             </button>
@@ -94,7 +94,7 @@ export function WishlistProductCard({
 
           <div className="mt-3 flex items-baseline justify-between gap-2">
             <h3 className="text-body-sm font-medium">{product.title}</h3>
-            <span className="shrink-0 font-mono text-body-sm font-medium">
+            <span className="shrink-0 text-body-sm font-medium">
               {formatPrice(discounted)}
             </span>
           </div>

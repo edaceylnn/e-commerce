@@ -53,7 +53,7 @@ test("profile: update name/email and change password", async ({ page }) => {
   await expect(page.getByText("Şifreniz başarıyla değiştirildi.")).toBeVisible();
 
   await page.goto("/account");
-  await expect(page.getByText("Merhaba, Profile")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Tekrar hoş geldin, Profile/ })).toBeVisible();
   await Promise.all([
     page.waitForResponse(
       (res) => res.url().includes("/api/auth/logout") && res.request().method() === "POST"
@@ -69,5 +69,5 @@ test("profile: update name/email and change password", async ({ page }) => {
 
   await page.getByLabel("Parola").fill(newPassword);
   await page.locator("form").getByRole("button", { name: "Giriş Yap" }).click();
-  await expect(page.getByText("Merhaba,")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Tekrar hoş geldin,/ })).toBeVisible();
 });

@@ -26,7 +26,7 @@ function Section({
   return (
     <section className="border-t border-line pt-6">
       <div className="mb-4 flex items-baseline justify-between gap-4">
-        <h2 className="font-mono text-caption uppercase tracking-eyebrow text-ink-soft">{title}</h2>
+        <h2 className="text-caption uppercase tracking-eyebrow text-text-3">{title}</h2>
         {action}
       </div>
       {children}
@@ -50,14 +50,11 @@ export function AccountOverview({
     activeOrderCount: number;
   };
 }) {
-  const firstName = session.name.trim().split(/\s+/)[0] ?? session.name;
   const [latest, ...rest] = orders;
   const otherOrders = rest.slice(0, 2);
 
   return (
     <div className="space-y-10">
-      <p className="font-display text-3xl">Merhaba, {firstName}</p>
-
       <Section
         title="Son sipariş"
         action={

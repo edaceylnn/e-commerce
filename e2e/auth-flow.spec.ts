@@ -20,7 +20,7 @@ test("register, log out, log back in, and reject a wrong password", async ({
   await page.getByLabel("Parola").fill(password);
   await submitButton(page, "Kayıt Ol").click();
 
-  await expect(page.getByText("Merhaba,")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Tekrar hoş geldin,/ })).toBeVisible();
   await expect(page.getByText(email)).toBeVisible();
 
   // The sidebar renders both a desktop and a mobile logout button (only one
@@ -40,7 +40,7 @@ test("register, log out, log back in, and reject a wrong password", async ({
   // Correct password logs back in.
   await page.getByLabel("Parola").fill(password);
   await submitButton(page, "Giriş Yap").click();
-  await expect(page.getByText("Merhaba,")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Tekrar hoş geldin,/ })).toBeVisible();
 });
 
 test("a signed-in customer cannot reach /admin", async ({ page }) => {
@@ -52,7 +52,7 @@ test("a signed-in customer cannot reach /admin", async ({ page }) => {
   await page.getByLabel("E-posta").fill(email);
   await page.getByLabel("Parola").fill("some-password");
   await submitButton(page, "Kayıt Ol").click();
-  await expect(page.getByText("Merhaba,")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Tekrar hoş geldin,/ })).toBeVisible();
 
   // The admin back-office is a separate, admin-only area — a signed-in
   // customer is sent to the admin login screen, not the customer /account
@@ -70,7 +70,7 @@ test("admin login rejects a valid non-admin account", async ({ page }) => {
   await page.getByLabel("E-posta").fill(email);
   await page.getByLabel("Parola").fill("some-password");
   await submitButton(page, "Kayıt Ol").click();
-  await expect(page.getByText("Merhaba,")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Tekrar hoş geldin,/ })).toBeVisible();
   await page.request.post("/api/auth/logout");
 
   await page.goto("/admin/login");

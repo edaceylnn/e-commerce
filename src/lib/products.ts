@@ -10,6 +10,9 @@ export type ProductVariantSummary = {
   id: string;
   label: string;
   colorId: string;
+  colorName: string;
+  colorHex: string;
+  sizeLabel: string;
   sku: string;
   stock: number;
   price: number | null;
@@ -92,6 +95,9 @@ function toProduct(row: ProductWithRelations): Product {
       id: v.id,
       label: `${v.size.label} / ${v.color.name}`,
       colorId: v.colorId,
+      colorName: v.color.name,
+      colorHex: v.color.hex,
+      sizeLabel: v.size.label,
       sku: v.sku,
       stock: v.stock,
       price: v.priceOverride ? Number(v.priceOverride) : null,
@@ -168,6 +174,35 @@ export function isNewProduct(product: Product): boolean {
   return product.isNew;
 }
 
+export const NEW_ARRIVAL_COUNT = 8;
+
+// The one definition of "Yeni Gelenler", shared by the homepage rail, its
+// "Tümünü gör" link (/products?filter=new) and the category-list count so
+// they always show the same products: flagged-new products first, topped
+// up with the most recently added ones (highest id) to NEW_ARRIVAL_COUNT.
+export function selectNewArrivals(products: Product[]): Product[] {
+  const newestFirst = [...products].sort((a, b) => b.id - a.id);
+  return [...newestFirst.filter(isNewProduct), ...newestFirst.filter((p) => !isNewProduct(p))].slice(
+    0,
+    NEW_ARRIVAL_COUNT
+  );
+}
+
+// Units sold per product, from orders that were actually paid and not
+// reversed (cancelled / returned orders and refunded lines don't count).
+// Drives the homepage "Çok Satanlar" ordering.
+export async function getUnitsSoldByProduct(): Promise<Map<number, number>> {
+  const rows = await prisma.orderItem.groupBy({
+    by: ["productId"],
+    where: {
+      refundedAt: null,
+      order: { status: { in: ["HAZIRLANIYOR", "KARGOLANDI", "TESLIM_EDILDI"] } },
+    },
+    _sum: { quantity: true },
+  });
+  return new Map(rows.map((r) => [r.productId, r._sum.quantity ?? 0]));
+}
+
 // Lightweight id-only listing for sitemap.ts — avoids pulling every
 // relation a full Product needs just to build a list of URLs.
 export async function getAllActiveProductIds(): Promise<number[]> {
@@ -192,4 +227,54 @@ export async function searchProducts(query: string): Promise<Product[]> {
     orderBy: { id: "asc" },
   });
   return rows.map(toProduct);
+}
+
+export type SizeChartView = {
+  unit: string;
+  columns: string[];
+  rows: { size: string; values: Record<string, string | number | null> }[];
+};
+
+export type ProductExtras = {
+  sizeChart: SizeChartView | null;
+  composition: string | null;
+  care: string | null;
+  warnings: string | null;
+};
+
+// Product-page-only extras kept out of the shared Product shape (cards and
+// listings never need them): the size chart for the size-guide drawer and
+// the composition/care copy for the accordions.
+export async function getProductExtras(id: number): Promise<ProductExtras> {
+  const row = await prisma.product.findUnique({
+    where: { id },
+    select: {
+      fullIngredients: true,
+      usageInstructions: true,
+      warnings: true,
+      sizeChart: {
+        include: { rows: { include: { size: true } } },
+      },
+    },
+  });
+
+  const chart = row?.sizeChart;
+  return {
+    sizeChart:
+      chart && chart.rows.length > 0
+        ? {
+            unit: chart.unit,
+            columns: chart.columns,
+            rows: [...chart.rows]
+              .sort((a, b) => a.size.position - b.size.position)
+              .map((r) => ({
+                size: r.size.label,
+                values: (r.measurements ?? {}) as Record<string, string | number | null>,
+              })),
+          }
+        : null,
+    composition: row?.fullIngredients ?? null,
+    care: row?.usageInstructions ?? null,
+    warnings: row?.warnings ?? null,
+  };
 }

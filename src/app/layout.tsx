@@ -1,28 +1,15 @@
 import type { Metadata } from "next";
-import { Archivo, Instrument_Serif, DM_Mono } from "next/font/google";
+import { Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 import { UrqlProvider } from "@/components/UrqlProvider";
 
-// EDACEY brand type system: Archivo (body/UI), Instrument Serif (editorial
-// headings — see the font-display token in globals.css), DM Mono (eyebrow
-// labels, prices, pills).
-const archivo = Archivo({
-  variable: "--font-archivo",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "800"],
-});
-
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-});
-
-const dmMono = DM_Mono({
-  variable: "--font-dm-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
+// Storefront type system: a single family, Hanken Grotesk 300/400/500 — no
+// serif, no mono (per the design handoff). The
+// font-sans/font-display/font-mono tokens in globals.css all point here.
+const hanken = Hanken_Grotesk({
+  variable: "--font-hanken",
+  subsets: ["latin", "latin-ext"],
+  weight: ["300", "400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -40,7 +27,7 @@ export default function RootLayout({
   return (
     <html
       lang="tr"
-      className={`${archivo.variable} ${instrumentSerif.variable} ${dmMono.variable} h-full antialiased`}
+      className={`${hanken.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
         <UrqlProvider>{children}</UrqlProvider>

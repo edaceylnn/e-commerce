@@ -11,11 +11,13 @@ test("wishlist: add from a product card and see it on /account/favoriler", async
   await page.getByLabel("E-posta").fill(email);
   await page.getByLabel("Parola").fill("some-password");
   await page.locator("form").getByRole("button", { name: "Kayıt Ol" }).click();
-  await expect(page.getByText("Merhaba,")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Tekrar hoş geldin,/ })).toBeVisible();
 
   await page.goto("/products");
-  const firstCard = page.locator("a[href^='/products/']").first();
-  const productTitle = (await firstCard.locator("h3").textContent())?.trim() ?? "";
+  // Product cards are div.group/card: a hidden image link, the name link,
+  // price and the wishlist heart.
+  const firstCard = page.locator("main div.group\\/card").first();
+  const productTitle = (await firstCard.getByRole("link").textContent())?.trim() ?? "";
 
   const [response] = await Promise.all([
     page.waitForResponse(

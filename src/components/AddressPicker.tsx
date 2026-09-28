@@ -60,7 +60,7 @@ export function AddressPicker({
             className="mt-1"
           />
           <div>
-            <p className="font-semibold">
+            <p className="font-medium">
               {address.fullName}
               {address.label ? ` · ${address.label}` : ""}
             </p>
@@ -86,7 +86,7 @@ export function AddressPicker({
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="text-xs font-semibold uppercase tracking-wide text-primary underline underline-offset-4"
+          className="text-xs font-medium uppercase tracking-wide text-primary underline underline-offset-4"
         >
           Yeni adres ekle
         </button>

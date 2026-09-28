@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { registerNewCustomer, fillAndSaveAddress, adminCredentials } from "./helpers";
+import { registerNewCustomer, fillAndSaveAddress, adminCredentials, addCurrentProductToBag } from "./helpers";
 
 const { email: ADMIN_EMAIL, password: ADMIN_PASSWORD } = adminCredentials();
 
@@ -13,7 +13,7 @@ test("coupon: admin-created code applies a discount at checkout review", async (
   await page.getByLabel("E-posta").fill(ADMIN_EMAIL);
   await page.getByLabel("Parola").fill(ADMIN_PASSWORD);
   await page.locator("form").getByRole("button", { name: "Giriş Yap" }).click();
-  await expect(page.getByText("Merhaba,")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Tekrar hoş geldin,/ })).toBeVisible();
 
   await page.goto("/admin/campaigns");
   await page.getByPlaceholder("Kod (örn. HOSGELDIN10)").fill(couponCode);
@@ -38,7 +38,7 @@ test("coupon: admin-created code applies a discount at checkout review", async (
   await page.goto("/products");
   await page.locator("a[href^='/products/']").first().click();
   await page.waitForURL(/\/products\/\d+$/);
-  await page.getByRole("button", { name: "Sepete Ekle" }).click();
+  await addCurrentProductToBag(page);
 
   await page.goto("/cart");
   await page.getByRole("link", { name: "Ödemeye Geç" }).click();
@@ -50,7 +50,7 @@ test("coupon: admin-created code applies a discount at checkout review", async (
   await page.getByPlaceholder("Kupon kodu").fill(couponCode);
   await page.getByRole("button", { name: "Uygula" }).click();
 
-  await expect(page.getByText("İndirim")).toBeVisible();
+  await expect(page.locator("main").getByText("İndirim", { exact: true })).toBeVisible();
   await expect(page.getByText(`Kupon uygulandı: ${couponCode}`)).toBeVisible();
 });
 
@@ -63,7 +63,7 @@ test("coupon: an unknown code is rejected", async ({ page }) => {
   await page.goto("/products");
   await page.locator("a[href^='/products/']").first().click();
   await page.waitForURL(/\/products\/\d+$/);
-  await page.getByRole("button", { name: "Sepete Ekle" }).click();
+  await addCurrentProductToBag(page);
 
   await page.goto("/cart");
   await page.getByRole("link", { name: "Ödemeye Geç" }).click();

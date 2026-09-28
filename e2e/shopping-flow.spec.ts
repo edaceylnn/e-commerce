@@ -1,9 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { addCurrentProductToBag } from "./helpers";
 
 test("browsing, category filtering and the cart badge", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("banner").getByRole("link", { name: "EDACEY" })).toBeVisible();
-  await expect(page.getByRole("heading", { level: 1, name: /Yumuşak/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /Gün içinde rahatlık/ })).toBeVisible();
 
   await page.getByRole("navigation").getByRole("link", { name: "Pijama" }).click();
   await expect(page).toHaveURL(/category=pijama/);
@@ -19,12 +20,12 @@ test("adding a product to the cart updates the badge and cart page", async ({ pa
   // textContent (not innerText) so CSS text-transform: uppercase on the
   // heading doesn't change the string we later search for.
   const productTitle = (await page.locator("h1").textContent())?.trim() ?? "";
-  await page.getByRole("button", { name: "Sepete Ekle" }).click();
+  await addCurrentProductToBag(page);
   await expect(page.getByRole("button", { name: /Sepete eklendi/ })).toBeVisible();
 
   await page.getByRole("banner").getByRole("link", { name: "Sepet" }).click();
   await expect(page).toHaveURL("/cart");
-  await expect(page.getByText(productTitle)).toBeVisible();
+  await expect(page.locator("main").getByRole("link", { name: productTitle }).first()).toBeVisible();
 });
 
 test("GraphQL review submission goes into moderation, not straight to the list", async ({
@@ -33,7 +34,7 @@ test("GraphQL review submission goes into moderation, not straight to the list",
   await page.goto("/products/2");
 
   const comment = `E2E test yorumu ${Date.now()}`;
-  await page.getByPlaceholder("Yorumunuz").fill(comment);
+  await page.getByPlaceholder("Yorumun", { exact: true }).fill(comment);
 
   const [response] = await Promise.all([
     page.waitForResponse(
@@ -44,7 +45,7 @@ test("GraphQL review submission goes into moderation, not straight to the list",
   expect(response.ok()).toBeTruthy();
 
   await expect(
-    page.getByText("Yorumunuz alındı! Onaylandıktan sonra burada görünecek.")
+    page.getByText("Yorumun alındı. Onaylandıktan sonra burada görünecek.")
   ).toBeVisible();
   await expect(page.getByText(comment)).not.toBeVisible();
 });

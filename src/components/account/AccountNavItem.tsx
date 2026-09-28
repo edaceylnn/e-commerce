@@ -1,34 +1,31 @@
 import Link from "next/link";
-import type { ComponentType } from "react";
 
-// The one place active-state styling for account nav is defined — used by
-// both the desktop sidebar and the mobile drawer so "only one item active,
-// same logic everywhere" can't drift between the two.
+// The one place active-state styling for account nav is defined. Design
+// handoff → Account: plain text rows; the active one is weight 500 with a
+// 14px rule before it. On mobile the same items become a scrolling tab row.
 export function AccountNavItem({
   href,
   label,
-  icon: Icon,
   active,
-  onClick,
 }: {
   href: string;
   label: string;
-  icon: ComponentType<{ className?: string }>;
   active: boolean;
-  onClick?: () => void;
 }) {
   return (
     <Link
       href={href}
-      onClick={onClick}
       aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-3 border-l-[3px] px-3 py-2.5 text-sm font-medium transition ${
+      className={`flex items-center gap-2.5 whitespace-nowrap py-2 text-[13.5px] transition-colors max-tab:border-b max-tab:pb-1.5 ${
         active
-          ? "border-primary bg-primary-soft text-primary"
-          : "border-transparent text-ink-soft hover:bg-cream-deep/50 hover:text-ink"
+          ? "font-medium text-ink max-tab:border-ink"
+          : "text-ink-soft hover:text-ink max-tab:border-transparent"
       }`}
     >
-      <Icon className="h-[18px] w-[18px] shrink-0" />
+      <span
+        aria-hidden
+        className={`hidden h-px w-3.5 tab:block ${active ? "bg-ink" : "bg-transparent"}`}
+      />
       {label}
     </Link>
   );

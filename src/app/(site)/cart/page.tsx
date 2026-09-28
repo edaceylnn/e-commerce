@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCartStore, selectCartTotal } from "@/lib/store/cart-store";
 import { useHasMounted } from "@/lib/use-has-mounted";
-import { formatDeliveryWindow } from "@/lib/format";
-import { PillButton, PillLink, pillClassName } from "@/components/Pill";
+import { formatDeliveryWindow, formatPrice } from "@/lib/format";
 import { FREE_SHIPPING_THRESHOLD, computeShippingCost } from "@/lib/shipping";
 import { computeCouponDiscount } from "@/lib/coupons";
 import { CartLineItem, type CartLineStock } from "@/components/CartLineItem";
@@ -26,7 +25,6 @@ type CampaignPreview = {
 export default function CartPage() {
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore(selectCartTotal);
-  const clear = useCartStore((s) => s.clear);
   const mounted = useHasMounted();
 
   const [stockByKey, setStockByKey] = useState<Record<string, CartLineStock>>({});
@@ -103,11 +101,20 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-24 text-center">
-        <h1 className="font-display text-4xl sm:text-5xl">Sepetiniz boş</h1>
-        <div className="mt-8 flex justify-center">
-          <PillLink href="/products">Alışverişe Başla</PillLink>
-        </div>
+      <div className="page-x flex flex-col items-center gap-4 pt-28 text-center">
+        <h1 className="headline text-display-md">Sepetin boş</h1>
+        <p className="max-w-[40ch] text-body font-light text-ink-soft">
+          Beğendiğin parçaları sepete ekle; ödeme adımına kadar burada seni bekler.
+        </p>
+        <Link
+          href="/products"
+          className="mt-4 flex h-[52px] items-center bg-ink px-12 text-nav uppercase tracking-[0.16em] text-background transition-colors hover:bg-ink-hover"
+        >
+          Alışverişe devam et
+        </Link>
+        <Link href="/products?filter=new" className="text-cta mt-3">
+          Yeni gelenlere göz at
+        </Link>
       </div>
     );
   }
@@ -130,7 +137,6 @@ export default function CartPage() {
   });
 
   const freeShippingRemaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
-  const freeShippingProgress = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
 
   async function handleApplyCoupon() {
     setCouponError(null);
@@ -151,18 +157,12 @@ export default function CartPage() {
     setAppliedCoupon(data);
   }
 
-  function handleClear() {
-    if (window.confirm("Sepetteki tüm ürünler kaldırılsın mı?")) {
-      clear();
-    }
-  }
-
   const couponField = (
     <div>
       {appliedCoupon ? (
-        <div className="flex items-center justify-between gap-3 text-sm">
+        <div className="flex items-baseline justify-between gap-3 text-card">
           <span>
-            Kupon uygulandı: <strong className="font-mono font-medium">{appliedCoupon.code}</strong>
+            <span className="text-text-3">Kupon</span> {appliedCoupon.code}
           </span>
           <button
             type="button"
@@ -170,67 +170,81 @@ export default function CartPage() {
               setAppliedCoupon(null);
               setCouponCode("");
             }}
-            className="text-xs text-ink-soft underline-offset-4 hover:text-ink hover:underline"
+            className="text-[12px] text-ink-soft underline decoration-disabled underline-offset-4 hover:text-ink"
           >
             Kaldır
           </button>
         </div>
       ) : couponOpen ? (
-        <div className="flex gap-2">
-          <input
-            placeholder="Kupon kodu"
-            aria-label="Kupon kodu"
-            autoFocus
-            value={couponCode}
-            onChange={(e) => setCouponCode(e.target.value)}
-            // Left empty → fold back to the "İndirim kodunuz var mı? +" row.
-            onBlur={() => {
-              if (!couponCode.trim() && !applyingCoupon) setCouponOpen(false);
-            }}
-            className="h-10 min-w-0 flex-1 border border-line-strong bg-background px-3 text-sm outline-none transition focus:border-ink"
-          />
-          <PillButton
-            type="button"
-            variant="outline"
-            onClick={handleApplyCoupon}
-            disabled={applyingCoupon || !couponCode.trim()}
-            className="!h-10 !px-4 !py-0"
-          >
-            {applyingCoupon ? "Uygulanıyor…" : "Uygula"}
-          </PillButton>
-        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (couponCode.trim()) handleApplyCoupon();
+          }}
+          className="flex flex-col gap-2"
+        >
+          <label htmlFor="coupon" className="text-caption uppercase tracking-label text-text-3">
+            İndirim kodu
+          </label>
+          <div className={`flex border-b ${couponError ? "border-sale" : "border-ink"}`}>
+            <input
+              id="coupon"
+              placeholder="Örn. HOSGELDIN10"
+              autoFocus
+              value={couponCode}
+              onChange={(e) => {
+                setCouponCode(e.target.value);
+                setCouponError(null);
+              }}
+              // Left empty → fold back to the "İndirim kodun var mı?" link.
+              onBlur={() => {
+                if (!couponCode.trim() && !applyingCoupon) setCouponOpen(false);
+              }}
+              className="min-w-0 flex-1 border-0 bg-transparent py-2.5 text-[14px] font-light uppercase text-ink outline-none placeholder:normal-case placeholder:text-text-4"
+            />
+            <button
+              type="submit"
+              disabled={applyingCoupon || !couponCode.trim()}
+              className="pl-4 text-nav uppercase tracking-cta text-ink disabled:text-disabled"
+            >
+              {applyingCoupon ? "…" : "Uygula"}
+            </button>
+          </div>
+        </form>
       ) : (
         <button
           type="button"
           onClick={() => setCouponOpen(true)}
-          className="flex w-full items-center justify-between text-sm text-ink hover:text-accent"
+          className="text-card underline decoration-disabled underline-offset-4 hover:decoration-ink"
         >
-          İndirim kodunuz var mı?
-          <span aria-hidden className="font-mono text-base leading-none">+</span>
+          İndirim kodun var mı?
         </button>
       )}
-      {couponError && <p className="mt-2 text-xs text-danger">{couponError}</p>}
+      {couponError && <p className="mt-2 text-[12px] text-sale">{couponError}</p>}
       {appliedCoupon && campaignWins && (
-        <p className="mt-2 text-xs text-ink-soft">
-          &quot;{campaign?.name}&quot; kampanyası kuponunuzdan daha yüksek indirim
-          sağladığı için kuponunuz uygulanmadı.
+        <p className="mt-2 text-[12px] text-text-3">
+          &quot;{campaign?.name}&quot; kampanyası kuponundan daha yüksek indirim sağladığı için
+          kupon uygulanmadı.
         </p>
       )}
     </div>
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-6 pb-16 pt-12 sm:px-10">
-      <div className="flex items-end justify-between gap-4">
-        <h1 className="font-display text-4xl sm:text-5xl">Sepetim</h1>
-        <span className="font-mono text-caption uppercase tracking-eyebrow text-ink-soft">
-          {itemCount} adet ürün
-        </span>
-      </div>
-
-      <div className="mt-10 grid gap-12 lg:grid-cols-[1fr_360px] lg:items-start lg:gap-16">
-        <div>
-          <ul className="divide-y divide-line border-y border-line">
+    // Bottom padding on mobile clears the fixed total/checkout bar.
+    <div className="page-x pb-24 pt-12 tab:pb-0">
+      <div className="grid grid-cols-12 items-start gap-x-2 gap-y-16">
+        <div className="col-span-12 tab:col-span-7">
+          <div className="border-b border-line pb-6">
+            <div className="flex items-baseline gap-3.5">
+              <h1 className="headline text-[clamp(28px,2.6vw,38px)] leading-[1.1]">Sepetim</h1>
+              <span className="text-body-sm text-text-3">{itemCount} ürün</span>
+            </div>
+            <p className="mt-2.5 text-[12px] text-text-4">
+              Sepetteki ürünler ödeme adımına kadar rezerve edilmez.
+            </p>
+          </div>
+          <ul>
             {items.map((item) => (
               <CartLineItem
                 key={`${item.id}-${item.variantId ?? ""}`}
@@ -239,22 +253,9 @@ export default function CartPage() {
               />
             ))}
           </ul>
-
-          <div className="mt-6 flex items-center justify-between gap-4">
-            <Link href="/products" className={pillClassName("ghost")}>
-              ← Alışverişe devam et
-            </Link>
-            <button
-              type="button"
-              onClick={handleClear}
-              className="text-xs text-ink-soft underline-offset-4 hover:text-ink hover:underline"
-            >
-              Sepeti boşalt
-            </button>
-          </div>
         </div>
 
-        <div className="lg:sticky lg:top-24">
+        <div className="col-span-12 tab:sticky tab:top-[132px] tab:col-start-8 tab:col-span-5 tab:pl-6 desk:col-start-9 desk:col-span-4 desk:pl-0 hdr:top-[88px]">
           <CartOrderSummary
             subtotal={subtotal}
             discount={discount}
@@ -262,7 +263,6 @@ export default function CartPage() {
             total={total}
             campaign={campaignWins && campaign ? { ...campaign, products: campaignProducts } : null}
             freeShippingRemaining={freeShippingRemaining}
-            freeShippingProgress={freeShippingProgress}
             deliveryEstimate={formatDeliveryWindow(new Date(), 2, 4)}
             coupon={couponField}
           />
@@ -270,6 +270,20 @@ export default function CartPage() {
       </div>
 
       <CartCrossSell cartProductIds={items.map((i) => i.id)} />
+
+      {/* Mobile: fixed bottom bar with the total and checkout. */}
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-4 border-t border-line bg-background px-5 py-2.5 tab:hidden">
+        <div className="flex flex-col">
+          <span className="text-caption uppercase tracking-label text-text-3">Toplam</span>
+          <span className="text-base font-medium">{formatPrice(total)}</span>
+        </div>
+        <Link
+          href="/checkout/address"
+          className="flex h-[52px] flex-1 items-center justify-center bg-ink text-nav uppercase tracking-[0.14em] text-background"
+        >
+          Ödemeye geç
+        </Link>
+      </div>
     </div>
   );
 }

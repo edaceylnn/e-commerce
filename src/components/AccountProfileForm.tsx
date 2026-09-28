@@ -82,10 +82,10 @@ export function AccountProfileForm({
   return (
     <AccountCard>
       <form onSubmit={handleSubmit} className="space-y-6">
-        <h2 className="font-display text-2xl">Hesap Bilgilerim</h2>
+        <h2 className="font-light tracking-title text-2xl">Hesap Bilgilerim</h2>
 
         <div>
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          <h3 className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-soft">
             Kişisel Bilgiler
           </h3>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -119,7 +119,7 @@ export function AccountProfileForm({
         </div>
 
         <div className="border-t border-line pt-6">
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          <h3 className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-soft">
             İletişim
           </h3>
           <div className="grid gap-4 sm:grid-cols-2">

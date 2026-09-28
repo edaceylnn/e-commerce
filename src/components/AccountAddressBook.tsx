@@ -127,7 +127,7 @@ export function AccountAddressBook({
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="font-display text-2xl">Adreslerim</h2>
+        <h2 className="font-light tracking-title text-2xl">Adreslerim</h2>
         {!showNewForm && (
           <PrimaryButton size="sm" onClick={() => setShowNewForm(true)}>
             + Yeni Adres Ekle

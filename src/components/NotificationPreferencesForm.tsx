@@ -91,7 +91,7 @@ export function NotificationPreferencesForm({ initial }: { initial: Prefs }) {
 
   return (
     <AccountCard>
-      <h2 className="font-display text-2xl">Bildirim Tercihleri</h2>
+      <h2 className="font-light tracking-title text-2xl">Bildirim Tercihleri</h2>
       <ul className="mt-4 divide-y divide-line">
         {ITEMS.map(({ key, label, description }) => (
           <ToggleRow
@@ -108,15 +108,15 @@ export function NotificationPreferencesForm({ initial }: { initial: Prefs }) {
       {pushStatus !== "unsupported" && (
         <div className="flex items-center justify-between gap-4 border-t border-line py-4">
           <div className="pr-4">
-            <p className="text-sm font-semibold">Push bildirimleri</p>
+            <p className="text-sm font-medium">Push bildirimleri</p>
             <p className="mt-0.5 text-xs text-ink-soft">
               Tarayıcınız üzerinden anlık stok ve sipariş bildirimleri alın.
             </p>
           </div>
           {pushStatus === "granted" ? (
-            <span className="text-xs font-semibold uppercase tracking-wide text-success">Açık</span>
+            <span className="text-xs font-medium uppercase tracking-wide text-success">Açık</span>
           ) : pushStatus === "denied" ? (
-            <span className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+            <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">
               Engellendi
             </span>
           ) : (

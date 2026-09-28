@@ -58,7 +58,7 @@ export function AccountPasswordForm() {
   return (
     <AccountCard>
       <form onSubmit={handleSubmit} className="space-y-5">
-        <h2 className="font-display text-2xl">Şifre Değiştir</h2>
+        <h2 className="font-light tracking-title text-2xl">Şifre Değiştir</h2>
 
         <PasswordField
           label="Mevcut Şifre"

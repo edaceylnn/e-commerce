@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery } from "urql";
-import { PillButton } from "@/components/Pill";
 import { StarRating } from "@/components/StarRating";
 
 const REVIEWS_QUERY = `
@@ -75,69 +74,80 @@ export function ReviewSection({ productId }: { productId: number }) {
     reexecuteQuery({ requestPolicy: "network-only" });
   }
 
+  const FIELD =
+    "w-full border-0 border-b border-line-strong bg-transparent py-3 text-body-lg font-light text-ink outline-none transition-colors placeholder:text-text-4 focus:border-ink";
+
   return (
-    <section className="mt-14 border-t border-line pt-10">
-      <h2 className="font-display text-2xl">
-        Değerlendirmeler
-        {data?.averageRating != null && (
-          <span className="ml-2 font-sans text-sm text-ink-soft">
-            Ortalama {data.averageRating.toFixed(1)} / 5
-          </span>
-        )}
-      </h2>
+    <section className="page-x pt-28">
+      <div className="grid grid-cols-12 gap-x-2 gap-y-10">
+        <div className="col-span-12 desk:col-span-4">
+          <h2 className="text-body-sm uppercase tracking-eyebrow">Değerlendirmeler</h2>
+          {data?.averageRating != null && (
+            <p className="mt-3 text-card text-text-3">Ortalama {data.averageRating.toFixed(1)} / 5</p>
+          )}
 
-      <form onSubmit={handleSubmit} className="mt-5 grid gap-3 sm:grid-cols-2">
-        <input
-          placeholder="Adınız (opsiyonel)"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          className="border border-line px-3 py-2 text-sm outline-none focus:border-ink"
-        />
-        <div className="flex items-center">
-          <StarRating rating={rating} onChange={setRating} />
-        </div>
-        <textarea
-          placeholder="Yorumunuz"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          required
-          className="sm:col-span-2 border border-line px-3 py-2 text-sm outline-none focus:border-ink"
-          rows={3}
-        />
-        <PillButton type="submit" disabled={submitting} className="sm:col-span-2 w-fit">
-          {submitting ? "Gönderiliyor…" : "Yorumu Gönder"}
-        </PillButton>
-        {justSubmitted && (
-          <p className="text-xs text-ink-soft sm:col-span-2">
-            Yorumunuz alındı! Onaylandıktan sonra burada görünecek.
-          </p>
-        )}
-      </form>
-
-      <ul className="mt-6 space-y-4">
-        {fetching && <p className="text-sm text-ink-soft">Yükleniyor…</p>}
-        {data?.reviews.length === 0 && !fetching && (
-          <p className="text-sm text-ink-soft">
-            Henüz yorum yok. İlk yorumu siz yazın!
-          </p>
-        )}
-        {data?.reviews.map((r) => (
-          <li key={r.id} className="border border-line p-4">
-            <div className="flex items-center justify-between text-sm font-semibold">
-              <span className="flex items-center gap-2">
-                {r.author}
-                {r.verified && (
-                  <span className="rounded-full bg-primary-soft px-2 py-0.5 text-caption font-semibold uppercase tracking-wide text-primary">
-                    Doğrulanmış Alışveriş
-                  </span>
-                )}
-              </span>
-              <span className="text-primary">{"★".repeat(r.rating)}</span>
+          <form onSubmit={handleSubmit} className="mt-8 flex max-w-md flex-col gap-5">
+            <input
+              aria-label="Adın"
+              placeholder="Adın (isteğe bağlı)"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              className={FIELD}
+            />
+            <div className="flex items-center gap-3 text-card text-text-3">
+              Puanın
+              <StarRating rating={rating} onChange={setRating} />
             </div>
-            <p className="mt-1 text-sm text-ink">{r.comment}</p>
-          </li>
-        ))}
-      </ul>
+            <textarea
+              aria-label="Yorumun"
+              placeholder="Yorumun"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              required
+              rows={3}
+              className={`${FIELD} resize-none`}
+            />
+            <button
+              type="submit"
+              disabled={submitting}
+              className="h-12 self-start border border-ink px-11 text-nav uppercase tracking-cta transition-colors hover:bg-ink hover:text-background disabled:opacity-50"
+            >
+              {submitting ? "Gönderiliyor…" : "Yorumu gönder"}
+            </button>
+            {justSubmitted && (
+              <p className="text-[12px] text-text-3">
+                Yorumun alındı. Onaylandıktan sonra burada görünecek.
+              </p>
+            )}
+          </form>
+        </div>
+
+        <ul className="col-span-12 border-t border-line desk:col-start-6 desk:col-span-7">
+          {fetching && <li className="py-6 text-card text-text-3">Yükleniyor…</li>}
+          {data?.reviews.length === 0 && !fetching && (
+            <li className="py-6 text-card text-text-3">Henüz yorum yok. İlk yorumu sen yaz.</li>
+          )}
+          {data?.reviews.map((r) => (
+            <li key={r.id} className="border-b border-line py-6">
+              <div className="flex items-baseline justify-between gap-4 text-card">
+                <span className="flex items-baseline gap-3">
+                  {r.author}
+                  {r.verified && (
+                    <span className="text-caption uppercase tracking-label text-text-3">
+                      Doğrulanmış alışveriş
+                    </span>
+                  )}
+                </span>
+                <span aria-label={`${r.rating} / 5`} className="tracking-[0.1em]">
+                  {"★".repeat(r.rating)}
+                  <span className="text-disabled">{"★".repeat(5 - r.rating)}</span>
+                </span>
+              </div>
+              <p className="mt-2 max-w-[60ch] text-body font-light text-ink-soft">{r.comment}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }

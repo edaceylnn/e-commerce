@@ -1,29 +1,32 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   PRODUCT_CATEGORIES,
   getAllFeaturedProducts,
   getProductsByCategoryId,
   getCategoryBySlug,
-  isNewProduct,
+  selectNewArrivals,
 } from "@/lib/products";
-import { ProductCard } from "@/components/ProductCard";
-import { ProductSortSelect } from "@/components/ProductSortSelect";
-import { ProductFilterDrawer } from "@/components/ProductFilterDrawer";
 import { formatPrice } from "@/lib/format";
 import {
   parseFilters,
   applyFilters,
   sortProducts,
   computeFacets,
-  hasActiveFilters,
   typeLabel,
-  type ProductFilters,
+  listingHref,
+  EMPTY_FILTERS,
+  type ListingContext,
   type SortKey,
 } from "@/lib/product-filters";
+import { ProductListing, type Chip, type Editorial, type ListingTab } from "@/components/plp/ProductListing";
+
+// Category / product listing — design handoff screen 2.
 
 const PAGE_TITLES: Record<string, string> = {
-  new: "Yeni Ürünler",
+  new: "Yeni Gelenler",
   bestseller: "Çok Satanlar",
+  discount: "İndirim",
 };
 
 // Category.description is empty for every seeded row — this is presentation
@@ -34,8 +37,18 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   spor: "Yogadan sokağa; taytlar, büstiyerler ve takımlar.",
   pijama: "Pijama takımları ve gecelikler; yavaşlayan akşamlar için.",
 };
+const PAGE_DESCRIPTIONS: Record<string, string> = {
+  all: "Loungewear, spor ve pijama; taş, krem ve antrasit tonlarında sakin parçalar.",
+  new: "Sezonun yeni parçaları, gelir gelmez burada.",
+  discount: "Seçili parçalarda sezon sonu fiyatları.",
+};
 
-const PAGE_SIZE = 12;
+const CATEGORY_IMAGES: Record<string, { src: string; position: string }> = {
+  loungewear: { src: "/categories/loungewear.webp", position: "50% 22%" },
+  spor: { src: "/categories/spor-studyo.webp", position: "50% 30%" },
+  pijama: { src: "/categories/pijama.webp", position: "50% 18%" },
+};
+const DEFAULT_IMAGE = { src: "/hero/evde-rahatlik.webp", position: "54% 34%" };
 
 type SearchParams = {
   category?: string;
@@ -45,11 +58,12 @@ type SearchParams = {
   brand?: string | string[];
   type?: string | string[];
   skinType?: string | string[];
+  size?: string | string[];
+  color?: string | string[];
   minPrice?: string;
   maxPrice?: string;
   rating?: string;
   inStock?: string;
-  page?: string;
 };
 
 export default async function ProductsPage({
@@ -57,288 +71,173 @@ export default async function ProductsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const {
-    category: categorySlug,
-    q,
-    filter,
-    sort: sortParam,
-    brand,
-    type,
-    skinType,
-    minPrice,
-    maxPrice,
-    rating,
-    inStock,
-    page: pageParam,
-  } = await searchParams;
+  const sp = await searchParams;
+  const { category: categorySlug, q, filter, sort: sortParam } = sp;
 
   const category = categorySlug ? await getCategoryBySlug(categorySlug) : null;
+  const allProducts = await getAllFeaturedProducts();
 
-  let baseProducts = category
-    ? await getProductsByCategoryId(category.id)
-    : await getAllFeaturedProducts();
+  let baseProducts = category ? await getProductsByCategoryId(category.id) : allProducts;
 
   if (q) {
-    const needle = q.toLowerCase();
+    const needle = q.toLocaleLowerCase("tr-TR");
     baseProducts = baseProducts.filter(
       (p) =>
-        p.title.toLowerCase().includes(needle) ||
-        p.description.toLowerCase().includes(needle)
+        p.title.toLocaleLowerCase("tr-TR").includes(needle) ||
+        p.description.toLocaleLowerCase("tr-TR").includes(needle)
     );
   }
   if (!q && filter === "new") {
-    baseProducts = baseProducts.filter(isNewProduct);
+    // Same set the homepage "Yeni Gelenler" rail shows.
+    const newIds = new Set(selectNewArrivals(allProducts).map((p) => p.id));
+    baseProducts = baseProducts.filter((p) => newIds.has(p.id));
   }
+  if (sortParam === "discount") baseProducts = baseProducts.filter((p) => p.discountPercentage > 0);
 
-  // Facets reflect the category's full list — options never disappear as
-  // filters narrow the grid below.
+  // Facets reflect the unfiltered list — options never disappear as filters
+  // narrow the grid.
   const facets = computeFacets(baseProducts);
-  const filters = parseFilters({ brand, type, skinType, minPrice, maxPrice, rating, inStock });
-  const filtered = applyFilters(baseProducts, filters);
-
+  const filters = parseFilters(sp);
   const sortKey: SortKey = (sortParam as SortKey) || "onerilen";
-  const sorted = sortProducts(filtered, sortKey);
+  const products = sortProducts(applyFilters(baseProducts, filters), sortKey);
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const currentPage = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
-  const paginated = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const ctx: ListingContext = { category: categorySlug, q, filter, sort: sortParam };
+  const clearHref = listingHref(ctx, {
+    ...EMPTY_FILTERS,
+    brands: filters.brands,
+    skinTypes: filters.skinTypes,
+    minRating: filters.minRating,
+  });
 
   const heading = category
     ? category.label
     : q
       ? `"${q}" için sonuçlar`
-      : (filter && PAGE_TITLES[filter]) || (sortParam && PAGE_TITLES[sortParam]) || "Ürünler";
-
+      : (filter && PAGE_TITLES[filter]) || (sortParam && PAGE_TITLES[sortParam]) || "Tüm Ürünler";
   const description = category
-    ? category.description || CATEGORY_DESCRIPTIONS[category.slug]
-    : undefined;
+    ? category.description || CATEGORY_DESCRIPTIONS[category.slug] || CATEGORY_DESCRIPTIONS[category.parent?.slug ?? ""]
+    : q
+      ? `${products.length} ürün bulundu.`
+      : PAGE_DESCRIPTIONS[filter ?? sortParam ?? "all"] ?? PAGE_DESCRIPTIONS.all;
+  const headImage =
+    CATEGORY_IMAGES[category?.slug ?? ""] ?? CATEGORY_IMAGES[category?.parent?.slug ?? ""] ?? DEFAULT_IMAGE;
 
-  // Every link on the page (pagination, "remove this filter" chips, "clear
-  // all") is the current URL with some filters/page swapped out.
-  function hrefFor(f: ProductFilters, page = 1): string {
-    const params = new URLSearchParams();
-    if (categorySlug) params.set("category", categorySlug);
-    if (q) params.set("q", q);
-    if (filter) params.set("filter", filter);
-    if (sortParam) params.set("sort", sortParam);
-    f.brands.forEach((b) => params.append("brand", b));
-    f.types.forEach((t) => params.append("type", t));
-    f.skinTypes.forEach((st) => params.append("skinType", st));
-    if (f.minPrice !== undefined) params.set("minPrice", String(f.minPrice));
-    if (f.maxPrice !== undefined) params.set("maxPrice", String(f.maxPrice));
-    if (f.minRating !== undefined) params.set("rating", String(f.minRating));
-    if (f.inStockOnly) params.set("inStock", "1");
-    if (page > 1) params.set("page", String(page));
-    const qs = params.toString();
-    return `/products${qs ? `?${qs}` : ""}`;
-  }
+  // Tabs: a category's subcategories when it has any, else the top-level
+  // categories (with counts) — the design's sub-category tab row.
+  const tabs: ListingTab[] =
+    category && category.children.length > 0
+      ? [
+          { href: `/products?category=${category.slug}`, label: "Tümü", count: baseProducts.length, active: true },
+          ...category.children.map((c) => ({
+            href: `/products?category=${c.slug}`,
+            label: c.label,
+            active: false,
+          })),
+        ]
+      : q || filter || sortParam === "discount"
+        ? []
+        : [
+            { href: "/products", label: "Tümü", count: allProducts.length, active: !category },
+            ...PRODUCT_CATEGORIES.map((c) => ({
+              href: `/products?category=${c.slug}`,
+              label: c.label,
+              count: allProducts.filter((p) => p.category === c.slug).length,
+              active: category?.slug === c.slug || category?.parent?.slug === c.slug,
+            })),
+          ];
 
-  const clearHref = hrefFor({ brands: [], types: [], skinTypes: [], inStockOnly: false });
-
-  // One removable chip per active filter.
-  const chips: { label: string; href: string }[] = [
-    ...filters.types.map((t) => ({
-      label: typeLabel(t),
-      href: hrefFor({ ...filters, types: filters.types.filter((x) => x !== t) }),
-    })),
+  // "Filtreler  M ×  Krem ×  Tümünü temizle" — one link per active value.
+  const without = (patch: Partial<typeof filters>) => listingHref(ctx, { ...filters, ...patch });
+  const chips: Chip[] = [
+    ...filters.sizes.map((s) => ({ label: `Beden ${s}`, href: without({ sizes: filters.sizes.filter((x) => x !== s) }) })),
+    ...filters.colors.map((c) => ({ label: c, href: without({ colors: filters.colors.filter((x) => x !== c) }) })),
+    ...filters.types.map((t) => ({ label: typeLabel(t), href: without({ types: filters.types.filter((x) => x !== t) }) })),
     ...(filters.minPrice !== undefined || filters.maxPrice !== undefined
       ? [
           {
             label:
               filters.minPrice !== undefined && filters.maxPrice !== undefined
-                ? `${formatPrice(filters.minPrice)} - ${formatPrice(filters.maxPrice)}`
+                ? `${formatPrice(filters.minPrice)} – ${formatPrice(filters.maxPrice)}`
                 : filters.minPrice !== undefined
                   ? `${formatPrice(filters.minPrice)} üzeri`
                   : `${formatPrice(filters.maxPrice!)} altı`,
-            href: hrefFor({ ...filters, minPrice: undefined, maxPrice: undefined }),
+            href: without({ minPrice: undefined, maxPrice: undefined }),
           },
         ]
       : []),
-    ...(filters.inStockOnly
-      ? [{ label: "Stokta olanlar", href: hrefFor({ ...filters, inStockOnly: false }) }]
-      : []),
-    ...(filters.minRating !== undefined
-      ? [{ label: `${filters.minRating}+ puan`, href: hrefFor({ ...filters, minRating: undefined }) }]
-      : []),
-    ...filters.brands.map((b) => ({
-      label: b,
-      href: hrefFor({ ...filters, brands: filters.brands.filter((x) => x !== b) }),
-    })),
+    ...(filters.inStockOnly ? [{ label: "Stokta olanlar", href: without({ inStockOnly: false }) }] : []),
   ];
 
-  const otherCategories = PRODUCT_CATEGORIES.filter(
-    (c) => c.slug !== category?.slug && c.slug !== category?.parent?.slug
-  );
-  const bestsellers =
-    baseProducts.length > 4
-      ? [...baseProducts].sort((a, b) => b.rating - a.rating).slice(0, 4)
-      : [];
+  const other = PRODUCT_CATEGORIES.find((c) => c.slug !== (category?.parent?.slug ?? category?.slug)) ?? PRODUCT_CATEGORIES[0];
+  const editorials: { wide?: Editorial; block?: Editorial } = {
+    wide: {
+      title: "Evde rahatlık",
+      text: "Yumuşak dokular, dışarıya taşan ev rahatlığı.",
+      href: "/products?category=loungewear",
+      cta: "Loungewear'ı keşfet",
+      image: "/editorial/rahatlik-seninle.webp",
+      imagePosition: "40% 25%",
+    },
+    block: {
+      title: other.label,
+      text: CATEGORY_DESCRIPTIONS[other.slug],
+      href: `/products?category=${other.slug}`,
+      cta: "Seçkiye göz at",
+      image: CATEGORY_IMAGES[other.slug].src,
+      imagePosition: CATEGORY_IMAGES[other.slug].position,
+    },
+  };
 
   return (
-    <div className="mx-auto max-w-[1440px] px-4 pb-16 pt-6 sm:px-6 lg:px-8 lg:pt-8">
-      <nav aria-label="Konum" className="text-caption text-ink-soft">
+    <div className="page-x pt-5">
+      <nav aria-label="Konum" className="flex flex-wrap gap-2.5 text-nav tracking-[0.02em] text-text-3">
         <Link href="/" className="hover:text-ink">
           Anasayfa
         </Link>
+        <span aria-hidden>/</span>
         {category?.parent && (
           <>
-            {" / "}
             <Link href={`/products?category=${category.parent.slug}`} className="hover:text-ink">
               {category.parent.label}
             </Link>
+            <span aria-hidden>/</span>
           </>
         )}
-        {" / "}
         <span className="text-ink">{heading}</span>
       </nav>
 
-      <header className="mt-4 grid gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end lg:mt-5">
-        <div>
-          <h1 className="font-display text-display-lg tracking-display">{heading}</h1>
+      <header className="mt-7 grid grid-cols-12 items-end gap-x-2 gap-y-6">
+        <div className="col-span-12 flex flex-col gap-3 pb-1 tab:col-span-5 tab:pr-6">
+          <h1 className="headline text-[clamp(36px,3.4vw,52px)] leading-[1.02]">{heading}</h1>
           {description && (
-            <p className="mt-2 max-w-lg text-body-sm text-ink-soft sm:text-sm">{description}</p>
-          )}
-
-          {category && category.children.length > 0 && (
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-body-sm">
-              {category.children.map((child) => (
-                <Link
-                  key={child.slug}
-                  href={`/products?category=${child.slug}`}
-                  className="text-ink-soft underline-offset-4 transition hover:text-ink hover:underline"
-                >
-                  {child.label}
-                </Link>
-              ))}
-            </div>
+            <p className="max-w-[44ch] text-pretty text-body font-light text-ink-soft">{description}</p>
           )}
         </div>
-
-        <div className="flex min-w-0 items-center justify-between gap-5 md:justify-end md:pb-1">
-          <p className="whitespace-nowrap text-caption text-ink-soft">
-            {sorted.length} ürün
-          </p>
-          <div className="flex items-center gap-5 sm:gap-7">
-            <ProductFilterDrawer
-              facets={facets}
-              activeFilters={filters}
-              totalCount={baseProducts.length}
-              preserved={{ category: categorySlug, q, filter, sort: sortParam }}
-              clearHref={clearHref}
-            />
-            <ProductSortSelect value={sortKey} />
-          </div>
+        <div className="relative col-span-12 aspect-video bg-image-alt tab:col-start-7 tab:col-span-6 tab:aspect-[4/1] desk:aspect-[3/1]">
+          <Image
+            src={headImage.src}
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 759px) 100vw, 50vw"
+            className="object-cover"
+            style={{ objectPosition: headImage.position }}
+          />
         </div>
       </header>
 
-      {chips.length > 0 && (
-        <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-line pt-4">
-          {chips.map((chip) => (
-            <Link
-              key={chip.label}
-              href={chip.href}
-              aria-label={`${chip.label} filtresini kaldır`}
-              className="group flex items-center gap-2 border border-line px-3 py-1.5 text-xs transition hover:border-ink"
-            >
-              {chip.label}
-              <span aria-hidden className="text-ink-soft group-hover:text-ink">×</span>
-            </Link>
-          ))}
-          <Link
-            href={clearHref}
-            className="ml-1 text-xs text-ink-soft underline underline-offset-4 hover:text-ink"
-          >
-            Tümünü temizle
-          </Link>
-        </div>
-      )}
-
-      <div className="mt-5 sm:mt-6">
-        {paginated.length === 0 ? (
-          <div className="py-16 text-center">
-            <p className="text-ink-soft">Sonuç bulunamadı.</p>
-            {hasActiveFilters(filters) && (
-              <Link
-                href={clearHref}
-                className="mt-3 inline-block text-sm font-medium text-ink underline underline-offset-4"
-              >
-                Filtreleri temizle
-              </Link>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-x-2.5 gap-y-9 sm:gap-x-4 lg:grid-cols-4 lg:gap-x-5 lg:gap-y-14">
-            {paginated.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        )}
-
-        {totalPages > 1 && (
-          <nav aria-label="Sayfalar" className="mt-14 flex items-center justify-center gap-1 font-mono text-sm">
-            <Link
-              href={hrefFor(filters, Math.max(1, currentPage - 1))}
-              aria-label="Önceki sayfa"
-              aria-disabled={currentPage === 1}
-              className={`flex h-9 w-9 items-center justify-center ${
-                currentPage === 1 ? "pointer-events-none opacity-30" : "hover:text-accent"
-              }`}
-            >
-              ←
-            </Link>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <Link
-                key={p}
-                href={hrefFor(filters, p)}
-                aria-current={p === currentPage ? "page" : undefined}
-                className={`flex h-9 w-9 items-center justify-center border-b ${
-                  p === currentPage ? "border-ink text-ink" : "border-transparent text-ink-soft hover:text-ink"
-                }`}
-              >
-                {p}
-              </Link>
-            ))}
-            <Link
-              href={hrefFor(filters, Math.min(totalPages, currentPage + 1))}
-              aria-label="Sonraki sayfa"
-              aria-disabled={currentPage === totalPages}
-              className={`flex h-9 w-9 items-center justify-center ${
-                currentPage === totalPages ? "pointer-events-none opacity-30" : "hover:text-accent"
-              }`}
-            >
-              →
-            </Link>
-          </nav>
-        )}
-      </div>
-
-      {otherCategories.length > 0 && (
-        <section className="mt-20 border-t border-line pt-10">
-          <h2 className="font-display text-2xl">Benzer kategoriler</h2>
-          <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
-            {otherCategories.map((c) => (
-              <Link
-                key={c.slug}
-                href={`/products?category=${c.slug}`}
-                className="border-b border-ink pb-0.5 text-xs font-semibold uppercase tracking-label transition hover:border-accent hover:text-accent"
-              >
-                {c.label}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {bestsellers.length > 0 && (
-        <section className="mt-14 border-t border-line pt-10">
-          <h2 className="font-display text-2xl">En Çok Satanlar</h2>
-          <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-10 sm:grid-cols-4 sm:gap-x-5">
-            {bestsellers.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </section>
-      )}
+      <ProductListing
+        products={products}
+        tabs={tabs}
+        chips={chips}
+        clearHref={clearHref}
+        facets={facets}
+        filters={filters}
+        ctx={ctx}
+        sortKey={sortKey}
+        totalCount={baseProducts.length}
+        editorials={editorials}
+      />
     </div>
   );
 }
