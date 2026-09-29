@@ -5,6 +5,8 @@ export const STOCK_MOVEMENT_TYPE_LABELS: Record<string, string> = {
   RETURN: "İade",
   DAMAGE: "Hasarlı Ürün",
   MANUAL_ADJUSTMENT: "Manuel Düzeltme",
+  RESERVATION: "Rezervasyon",
+  RESERVATION_RELEASE: "Rezervasyon İadesi",
 };
 
 // Only these are legitimately admin-initiated from the manual movement

@@ -6,12 +6,13 @@ import {
 } from "@/lib/automation";
 import { prisma } from "@/lib/db";
 import { retrieveCheckoutForm, verifyResponseSignature } from "@/lib/iyzico";
-
-// Thrown inside the payment-confirmation transaction when an item's stock
-// can't cover the order any more (two concurrent payments racing for the
-// last unit). Rolls the whole transaction back — the order is left
-// PENDING_PAYMENT rather than silently oversold.
-class InsufficientStockError extends Error {}
+import { refundUnfulfillablePayment } from "@/lib/orders";
+import {
+  InsufficientStockError,
+  markOrderPaid,
+  OrderNotPayableError,
+  releaseReservation,
+} from "@/lib/stock-reservation";
 
 // iyzico's hosted payment page redirects the buyer's browser here with a
 // POST (form-encoded `token`) once they finish the payment attempt. We never
@@ -39,6 +40,13 @@ export async function POST(request: NextRequest) {
       303
     );
   }
+
+  const refundedUrl = new URL(`/checkout/failed?order=${order.orderNumber}&refund=done`, request.url);
+  const manualRefundUrl = new URL(`/checkout/failed?order=${order.orderNumber}&refund=manual`, request.url);
+  // A payment for this order was already refunded or flagged for a manual
+  // refund — e.g. the browser re-posted the callback. Never refund twice.
+  if (order.refundedAt) return NextResponse.redirect(refundedUrl, 303);
+  if (order.iyzicoPaymentId) return NextResponse.redirect(manualRefundUrl, 303);
 
   const result = await retrieveCheckoutForm({
     token,
@@ -72,36 +80,39 @@ export async function POST(request: NextRequest) {
 
   const failUrl = new URL(`/checkout/failed?order=${order.orderNumber}`, request.url);
 
+  // Unverified answer (network error, bad signature, wrong amount): we
+  // can't tell whether money moved, so the stock stays reserved and the
+  // expiry sweep releases it later if nothing else happens.
   if (!result || result.status !== "success" || !signatureOk || !amountOk) {
     return NextResponse.redirect(failUrl, 303);
   }
 
+  // iyzico confirmed the payment failed: give the reservation back now
+  // rather than making other buyers wait for it to expire.
   if (result.paymentStatus !== "SUCCESS") {
+    await prisma.$transaction((tx) => releaseReservation(tx, order, "Ödeme başarısız"));
     return NextResponse.redirect(failUrl, 303);
   }
 
   const paidAt = new Date();
-  const lowStockEvents: LowStockAutomationEvent[] = [];
+  // A refund is issued per item transaction, not against the top-level
+  // payment — save these now, since CF-Retrieve is the only place they're
+  // ever returned to us.
+  const itemTransactions = (result.itemTransactions ?? []).map((t) => ({
+    itemId: t.itemId,
+    paymentTransactionId: t.paymentTransactionId,
+    price: t.price,
+  }));
 
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.order.update({
-        where: { id: order.id },
-        data: {
-          status: "HAZIRLANIYOR",
-          paidAt,
-          iyzicoPaymentId: result.paymentId,
-          // A refund is issued per item transaction, not against the
-          // top-level payment — save these now, since CF-Retrieve is the
-          // only place they're ever returned to us.
-          iyzicoItemTransactions: result.itemTransactions
-            ? result.itemTransactions.map((t) => ({
-                itemId: t.itemId,
-                paymentTransactionId: t.paymentTransactionId,
-                price: t.price,
-              }))
-            : undefined,
-        },
+      // Turns the reservation into the sale — or, if the reservation had
+      // already lapsed, takes the stock again (see stock-reservation.ts).
+      await markOrderPaid(tx, order, {
+        status: "HAZIRLANIYOR",
+        paidAt,
+        iyzicoPaymentId: result.paymentId,
+        iyzicoItemTransactions: itemTransactions.length ? itemTransactions : undefined,
       });
       await tx.orderEvent.create({
         data: {
@@ -110,88 +121,6 @@ export async function POST(request: NextRequest) {
           message: "Ödeme onaylandı, sipariş hazırlanıyor.",
         },
       });
-
-      // Stock is only decremented once payment is actually confirmed — an
-      // abandoned checkout never touches inventory. A line tied to a variant
-      // decrements that variant's own stock instead of the product's.
-      //
-      // The decrement is conditioned on the row still having enough stock
-      // (`stock: { gte: quantity }`) so two payments confirmed concurrently
-      // for the last unit(s) can't both succeed and drive stock negative —
-      // whichever transaction commits second sees `count: 0` and aborts.
-      for (const item of order.items) {
-        if (item.variantId) {
-          const updated = await tx.productVariant.updateMany({
-            where: { id: item.variantId, stock: { gte: item.quantity } },
-            data: { stock: { decrement: item.quantity } },
-          });
-          if (updated.count === 0) {
-            throw new InsufficientStockError(
-              `Variant ${item.variantId} no longer has enough stock`
-            );
-          }
-          const currentVariant = await tx.productVariant.findUniqueOrThrow({
-            where: { id: item.variantId },
-            select: { stock: true },
-          });
-          await tx.stockMovement.create({
-            data: {
-              productId: item.productId,
-              variantId: item.variantId,
-              type: "SALE",
-              quantity: -item.quantity,
-              previousStock: currentVariant.stock + item.quantity,
-              newStock: currentVariant.stock,
-              note: `Sipariş #${order.orderNumber}`,
-            },
-          });
-          continue;
-        }
-
-        const updated = await tx.product.updateMany({
-          where: { id: item.productId, stock: { gte: item.quantity } },
-          data: { stock: { decrement: item.quantity } },
-        });
-        if (updated.count === 0) {
-          throw new InsufficientStockError(
-            `Product ${item.productId} no longer has enough stock`
-          );
-        }
-
-        // Only plain (non-variant) stock carries a configured threshold. Re-read
-        // the row inside the same transaction rather than computing from the
-        // pre-transaction snapshot fetched above — that snapshot can be stale
-        // if another order decremented this product's stock in between, and
-        // this read always sees our own just-committed decrement.
-        const current = await tx.product.findUniqueOrThrow({
-          where: { id: item.productId },
-          select: { stock: true, title: true, lowStockThreshold: true },
-        });
-        await tx.stockMovement.create({
-          data: {
-            productId: item.productId,
-            type: "SALE",
-            quantity: -item.quantity,
-            previousStock: current.stock + item.quantity,
-            newStock: current.stock,
-            note: `Sipariş #${order.orderNumber}`,
-          },
-        });
-        if (current.stock <= current.lowStockThreshold) {
-          lowStockEvents.push({
-            event: "product.low_stock",
-            eventVersion: "1.0",
-            requestId: `product.low_stock.${item.productId}.${order.id}`,
-            product: {
-              id: item.productId,
-              title: current.title,
-              remainingStock: current.stock,
-              threshold: current.lowStockThreshold,
-            },
-            detectedAt: paidAt.toISOString(),
-          });
-        }
-      }
 
       // Usage is only counted once payment is actually confirmed — an
       // abandoned checkout never consumes the coupon's usage limit.
@@ -203,31 +132,56 @@ export async function POST(request: NextRequest) {
       }
     });
   } catch (err) {
-    if (err instanceof InsufficientStockError) {
-      // The payment itself already succeeded at iyzico — this is a genuine
-      // oversell edge case, not a payment failure. We don't have an
-      // automated refund flow yet, so leave the order visibly flagged for
-      // manual handling instead of silently failing it.
-      console.error("Order oversold after payment capture", {
+    if (err instanceof InsufficientStockError || err instanceof OrderNotPayableError) {
+      // The money has already been taken, but the order can't be shipped:
+      // its stock sold out after the reservation lapsed, or it was cancelled
+      // while the buyer was still paying. Refund it right away.
+      const reason =
+        err instanceof InsufficientStockError
+          ? "ürün, rezervasyon süresi dolduktan sonra tükendi"
+          : "sipariş ödeme tamamlanmadan iptal edilmişti";
+      console.error("Paid order can't be fulfilled, refunding", {
         orderId: order.id,
         orderNumber: order.orderNumber,
         paymentId: result.paymentId,
-        error: err.message,
+        reason,
       });
-      const oversellNote = `Ödeme alındı (paymentId: ${result.paymentId}) ancak stok tükendiği için sipariş işlenemedi — manuel inceleme ve iade gerekiyor.`;
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          iyzicoPaymentId: result.paymentId,
-          internalNote: oversellNote,
-        },
-      });
-      await prisma.orderEvent.create({
-        data: { orderId: order.id, type: "NOTE", message: oversellNote },
-      });
-      return NextResponse.redirect(failUrl, 303);
+      const { refunded } = await refundUnfulfillablePayment(
+        order,
+        { paymentId: result.paymentId, itemTransactions },
+        reason,
+        { ip: request.headers.get("x-forwarded-for") ?? "127.0.0.1" }
+      );
+      return NextResponse.redirect(refunded ? refundedUrl : manualRefundUrl, 303);
     }
     throw err;
+  }
+
+  // Only plain (non-variant) stock carries a configured threshold. Read after
+  // the payment committed so it reflects this sale.
+  const lowStockEvents: LowStockAutomationEvent[] = [];
+  const plainProductIds = [...new Set(order.items.filter((i) => !i.variantId).map((i) => i.productId))];
+  if (plainProductIds.length) {
+    const products = await prisma.product.findMany({
+      where: { id: { in: plainProductIds } },
+      select: { id: true, stock: true, title: true, lowStockThreshold: true },
+    });
+    for (const product of products) {
+      if (product.stock <= product.lowStockThreshold) {
+        lowStockEvents.push({
+          event: "product.low_stock",
+          eventVersion: "1.0",
+          requestId: `product.low_stock.${product.id}.${order.id}`,
+          product: {
+            id: product.id,
+            title: product.title,
+            remainingStock: product.stock,
+            threshold: product.lowStockThreshold,
+          },
+          detectedAt: paidAt.toISOString(),
+        });
+      }
+    }
   }
 
   for (const event of lowStockEvents) {

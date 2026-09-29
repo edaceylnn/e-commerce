@@ -11,6 +11,13 @@ import {
 import { computeShippingCost } from "@/lib/shipping";
 import { computeCouponDiscount } from "@/lib/coupons";
 import { computeCampaignDiscount, type CampaignCartLine } from "@/lib/campaigns";
+import {
+  InsufficientStockError,
+  releaseExpiredReservations,
+  releaseReservation,
+  reservationDeadline,
+  reserveStock,
+} from "@/lib/stock-reservation";
 
 const createSchema = z.object({
   shippingAddressId: z.string().min(1),
@@ -63,6 +70,10 @@ export async function POST(request: NextRequest) {
   ) {
     return NextResponse.json({ error: "Adres bulunamadı." }, { status: 404 });
   }
+
+  // Abandoned payment pages give their stock back here, before this
+  // checkout reads availability — no scheduler needed for that.
+  await releaseExpiredReservations(prisma);
 
   // Recompute everything from the DB — client-sent prices/quantities are
   // never trusted for the order total.
@@ -205,30 +216,53 @@ export async function POST(request: NextRequest) {
   const shippingCost = computeShippingCost(subtotal);
   const total = subtotal + shippingCost - discountTotal;
 
-  const order = await prisma.order.create({
-    data: {
-      orderNumber: generateOrderNumber(),
-      userId: session.userId,
-      shippingAddressId: shippingAddress.id,
-      billingAddressId: billingAddress.id,
-      subtotal,
-      shippingCost,
-      discountTotal,
-      couponId: appliedCouponId,
-      campaignId: appliedCampaignId,
-      total,
-      items: { create: orderItemsData },
-    },
-  });
-
-  await prisma.orderEvent.create({
-    data: {
-      orderId: order.id,
-      type: "STATUS_CHANGE",
-      message: "Sipariş oluşturuldu, ödeme bekleniyor.",
-      actorUserId: session.userId,
-    },
-  });
+  // The stock check above gives a friendly message; the reservation below
+  // is what actually guarantees the units — it takes them atomically, so of
+  // two buyers racing for the last one, the second is refused here, before
+  // reaching the payment page.
+  let order;
+  try {
+    order = await prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          orderNumber: generateOrderNumber(),
+          userId: session.userId,
+          shippingAddressId: shippingAddress.id,
+          billingAddressId: billingAddress.id,
+          subtotal,
+          shippingCost,
+          discountTotal,
+          couponId: appliedCouponId,
+          campaignId: appliedCampaignId,
+          total,
+          reservedUntil: reservationDeadline(),
+          items: { create: orderItemsData },
+        },
+        include: { items: true },
+      });
+      await reserveStock(tx, created, created.items);
+      await tx.orderEvent.create({
+        data: {
+          orderId: created.id,
+          type: "STATUS_CHANGE",
+          message: "Sipariş oluşturuldu, stok ayrıldı, ödeme bekleniyor.",
+          actorUserId: session.userId,
+        },
+      });
+      return created;
+    });
+  } catch (err) {
+    if (err instanceof InsufficientStockError) {
+      const item = orderItemsData.find(
+        (i) => i.productId === err.line.productId && (i.variantId ?? null) === (err.line.variantId ?? null)
+      );
+      return NextResponse.json(
+        { error: `"${item?.title ?? "Bir ürün"}" az önce tükendi — sepetinizi güncelleyip tekrar deneyin.` },
+        { status: 409 }
+      );
+    }
+    throw err;
+  }
 
   const callbackUrl = new URL("/checkout/callback", request.nextUrl.origin).toString();
 
@@ -293,11 +327,17 @@ export async function POST(request: NextRequest) {
     )
   ) {
     // No iyzico token was ever issued for this order, so it can never be
-    // paid or reach the callback route — delete it instead of leaving a
-    // dangling PENDING_PAYMENT row behind.
-    await prisma.order.delete({ where: { id: order.id } }).catch((err) => {
-      console.error("Failed to clean up unpayable order", { orderId: order.id, err });
-    });
+    // paid or reach the callback route — give its stock back and delete it
+    // instead of leaving a dangling PENDING_PAYMENT row behind.
+    const unpayable = order;
+    await prisma
+      .$transaction(async (tx) => {
+        await releaseReservation(tx, unpayable, "Ödeme başlatılamadı");
+        await tx.order.delete({ where: { id: unpayable.id } });
+      })
+      .catch((err) => {
+        console.error("Failed to clean up unpayable order", { orderId: unpayable.id, err });
+      });
     return NextResponse.json(
       { error: "Ödeme başlatılamadı. Lütfen tekrar deneyin." },
       { status: 502 }
@@ -309,6 +349,8 @@ export async function POST(request: NextRequest) {
     data: {
       iyzicoToken: initResponse.token,
       iyzicoConversationId: initResponse.conversationId,
+      // Hold the stock for as long as iyzico keeps this payment page open.
+      ...(initResponse.tokenExpireTime ? { reservedUntil: reservationDeadline(initResponse.tokenExpireTime) } : {}),
     },
   });
 

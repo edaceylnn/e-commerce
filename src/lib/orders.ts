@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import type { OrderSummaryData } from "@/components/OrderSummary";
 import { refundPayment, type IyzicoItemTransaction } from "@/lib/iyzico";
+import { releaseReservation } from "@/lib/stock-reservation";
 import {
   isOrderCancelable,
   isOrderRefundable,
@@ -314,15 +315,65 @@ export async function refundOrderItems(
   return { ok: true };
 }
 
+// A payment arrived for an order we can't ship — its stock sold out after
+// the reservation expired, or the order was cancelled while the buyer was
+// still on the payment page. The money goes straight back instead of
+// waiting for someone to notice. When iyzico refuses any part of it, the
+// order keeps its payment details and a visible "manuel iade" note; it is
+// never deleted by the pending-order cleanup (see that script).
+export async function refundUnfulfillablePayment(
+  order: { id: string; orderNumber: string },
+  payment: { paymentId?: string; itemTransactions: IyzicoItemTransaction[] },
+  reason: string,
+  { ip }: { ip: string }
+): Promise<{ refunded: boolean }> {
+  const results = await Promise.all(
+    payment.itemTransactions.map((t) =>
+      refundPayment({
+        paymentTransactionId: t.paymentTransactionId,
+        price: t.price ?? "0",
+        currency: "TRY",
+        ip,
+        conversationId: order.id,
+        reason: "other",
+      }).catch((err) => ({
+        status: "failure" as const,
+        errorMessage: err instanceof Error ? err.message : "Bilinmeyen hata",
+      }))
+    )
+  );
+  const failed = results.filter((r) => r.status !== "success");
+  const refunded = payment.itemTransactions.length > 0 && failed.length === 0;
+  const now = new Date();
+
+  const note = refunded
+    ? `Ödeme alındı ancak ${reason}; tutarın tamamı otomatik olarak iade edildi (${payment.itemTransactions.length} işlem).`
+    : `Ödeme alındı (paymentId: ${payment.paymentId ?? "?"}) ancak ${reason}. Otomatik iade tamamlanamadı${
+        failed.length ? ` (${failed.map((f) => f.errorMessage ?? "bilinmeyen hata").join("; ")})` : ""
+      } — iyzico panelinden manuel iade gerekiyor.`;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        iyzicoPaymentId: payment.paymentId,
+        iyzicoItemTransactions: payment.itemTransactions,
+        internalNote: note,
+        ...(refunded ? { status: "IPTAL", refundedAt: now } : {}),
+      },
+    });
+    await logOrderEvent(tx, order.id, note);
+  });
+  return { refunded };
+}
+
 export type CancelOrderResult = { ok: true } | { ok: false; error: string };
 
 // Shared by the customer-facing cancel action and the admin status-change
 // route, so "cancel" always means the same thing regardless of who does it:
-// flip to IPTAL, and — only if the order had actually been paid (stock is
-// decremented at payment confirmation, not at order creation, see
-// checkout/callback/route.ts) — give that stock back the same way it was
-// taken (variant-specific decrement mirrored by a variant-specific
-// increment).
+// flip to IPTAL and give back whatever stock the order was holding — the
+// sold units of a paid order, or the reservation of one still awaiting
+// payment (see src/lib/stock-reservation.ts).
 export async function cancelOrder(
   orderId: string,
   actorUserId?: string
@@ -344,6 +395,8 @@ export async function cancelOrder(
       for (const item of order.items) {
         await restockItem(tx, item, "CANCELLATION", `İptal #${order.orderNumber}`);
       }
+    } else {
+      await releaseReservation(tx, order, "Ödeme öncesi iptal");
     }
   });
 

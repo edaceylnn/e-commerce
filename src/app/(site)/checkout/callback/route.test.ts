@@ -1,57 +1,47 @@
 /**
  * @jest-environment node
  */
+// Covers the callback's decisions — sell, give the reservation back, or
+// refund. The stock mechanics themselves (atomic take, release-once,
+// expiry) live in src/lib/stock-reservation.ts and are tested against a
+// real database in stock-reservation.db.test.ts.
 const findUnique = jest.fn();
-const orderUpdate = jest.fn();
+const productFindMany = jest.fn();
 const couponUpdate = jest.fn();
-const productUpdateMany = jest.fn();
-const productFindUniqueOrThrow = jest.fn();
-const productVariantUpdateMany = jest.fn();
-const productVariantFindUniqueOrThrow = jest.fn();
-const stockMovementCreate = jest.fn();
 const orderEventCreate = jest.fn();
 
-function makeTx() {
-  return {
-    order: { update: (...args: unknown[]) => orderUpdate(...args) },
-    coupon: { update: (...args: unknown[]) => couponUpdate(...args) },
-    product: {
-      updateMany: (...args: unknown[]) => productUpdateMany(...args),
-      findUniqueOrThrow: (...args: unknown[]) => productFindUniqueOrThrow(...args),
-    },
-    productVariant: {
-      updateMany: (...args: unknown[]) => productVariantUpdateMany(...args),
-      findUniqueOrThrow: (...args: unknown[]) => productVariantFindUniqueOrThrow(...args),
-    },
-    stockMovement: {
-      create: (...args: unknown[]) => stockMovementCreate(...args),
-    },
-    orderEvent: {
-      create: (...args: unknown[]) => orderEventCreate(...args),
-    },
-  };
-}
-
-const transaction = jest.fn((cb: (tx: ReturnType<typeof makeTx>) => unknown) =>
-  Promise.resolve(cb(makeTx()))
-);
+const tx = {
+  coupon: { update: (...args: unknown[]) => couponUpdate(...args) },
+  orderEvent: { create: (...args: unknown[]) => orderEventCreate(...args) },
+};
+const transaction = jest.fn((cb: (t: typeof tx) => unknown) => Promise.resolve().then(() => cb(tx)));
 
 jest.mock("../../../../lib/db", () => ({
   prisma: {
-    order: {
-      findUnique: (...args: unknown[]) => findUnique(...args),
-      update: (...args: unknown[]) => orderUpdate(...args),
-    },
-    orderEvent: {
-      create: (...args: unknown[]) => orderEventCreate(...args),
-    },
-    $transaction: (cb: (tx: ReturnType<typeof makeTx>) => unknown) => transaction(cb),
+    order: { findUnique: (...args: unknown[]) => findUnique(...args) },
+    product: { findMany: (...args: unknown[]) => productFindMany(...args) },
+    $transaction: (cb: (t: typeof tx) => unknown) => transaction(cb),
   },
+}));
+
+const markOrderPaid = jest.fn();
+const releaseReservation = jest.fn();
+jest.mock("../../../../lib/stock-reservation", () => {
+  const actual = jest.requireActual("../../../../lib/stock-reservation");
+  return {
+    ...actual,
+    markOrderPaid: (...args: unknown[]) => markOrderPaid(...args),
+    releaseReservation: (...args: unknown[]) => releaseReservation(...args),
+  };
+});
+
+const refundUnfulfillablePayment = jest.fn();
+jest.mock("../../../../lib/orders", () => ({
+  refundUnfulfillablePayment: (...args: unknown[]) => refundUnfulfillablePayment(...args),
 }));
 
 const retrieveCheckoutForm = jest.fn();
 const verifyResponseSignature = jest.fn();
-
 jest.mock("../../../../lib/iyzico", () => ({
   retrieveCheckoutForm: (...args: unknown[]) => retrieveCheckoutForm(...args),
   verifyResponseSignature: (...args: unknown[]) => verifyResponseSignature(...args),
@@ -68,6 +58,7 @@ jest.mock("next/server", () => ({
 }));
 
 import { NextRequest } from "next/server";
+import { InsufficientStockError, OrderNotPayableError } from "../../../../lib/stock-reservation";
 import { POST } from "./route";
 
 function makeRequest(token?: string) {
@@ -83,250 +74,170 @@ const baseOrder = {
   id: "order_1",
   orderNumber: "BS-20260910-ABC123",
   iyzicoConversationId: "order_1",
+  iyzicoPaymentId: null,
   total: 38.84,
   createdAt: new Date("2026-09-18T11:30:00.000Z"),
   paidAt: null,
-  user: {
-    id: "user_1",
-    name: "Demo User",
-    email: "demo@example.com",
-  },
-  items: [
-    {
-      productId: 1,
-      variantId: null,
-      sku: null,
-      title: "Rose Serum",
-      unitPrice: 19.42,
-      quantity: 2,
-    },
-  ],
+  refundedAt: null,
+  couponId: null,
+  user: { id: "user_1", name: "Demo User", email: "demo@example.com" },
+  items: [{ productId: 1, variantId: null, sku: null, title: "Rose Serum", unitPrice: 19.42, quantity: 2 }],
 };
 
-// Plenty of headroom above any lowStockThreshold used in these tests, so a
-// test that isn't specifically about the low-stock signal doesn't
-// accidentally trip it.
-const abundantStock = { stock: 500, title: "Rose Serum", lowStockThreshold: 10 };
+const verifiedSuccess = {
+  status: "success",
+  paymentStatus: "SUCCESS",
+  paymentId: "pay_1",
+  paidPrice: "38.84",
+  price: "38.84",
+  currency: "TRY",
+  basketId: "order_1",
+  conversationId: "order_1",
+  token: "tok_x",
+  signature: "sig",
+  itemTransactions: [{ itemId: "1", paymentTransactionId: "txn_1", price: "38.84" }],
+};
+
+function location(res: Response) {
+  return res.headers.get("location") ?? "";
+}
 
 beforeEach(() => {
-  findUnique.mockReset();
-  orderUpdate.mockReset();
-  couponUpdate.mockReset();
-  productUpdateMany.mockReset().mockResolvedValue({ count: 1 });
-  productFindUniqueOrThrow.mockReset().mockResolvedValue(abundantStock);
-  productVariantUpdateMany.mockReset().mockResolvedValue({ count: 1 });
-  productVariantFindUniqueOrThrow.mockReset().mockResolvedValue({ stock: 500 });
-  stockMovementCreate.mockReset();
-  orderEventCreate.mockReset();
-  transaction.mockClear();
-  retrieveCheckoutForm.mockReset();
-  verifyResponseSignature.mockReset();
+  jest.clearAllMocks();
+  findUnique.mockResolvedValue(baseOrder);
+  productFindMany.mockResolvedValue([{ id: 1, stock: 500, title: "Rose Serum", lowStockThreshold: 10 }]);
+  markOrderPaid.mockResolvedValue(undefined);
+  releaseReservation.mockResolvedValue(true);
+  refundUnfulfillablePayment.mockResolvedValue({ refunded: true });
+  retrieveCheckoutForm.mockResolvedValue(verifiedSuccess);
+  verifyResponseSignature.mockReturnValue(true);
 });
 
 describe("POST /checkout/callback", () => {
   it("redirects to the failed page when no token is posted", async () => {
     const res = await POST(makeRequest());
     expect(res.status).toBe(303);
-    expect(res.headers.get("location")).toContain("/checkout/failed");
+    expect(location(res)).toContain("/checkout/failed");
   });
 
   it("redirects to the failed page when the token matches no order", async () => {
     findUnique.mockResolvedValue(null);
-    const res = await POST(makeRequest("tok_x"));
-    expect(res.headers.get("location")).toContain("/checkout/failed");
+    expect(location(await POST(makeRequest("tok_x")))).toContain("/checkout/failed");
   });
 
-  it("marks the order paid and redirects to confirmation on a verified success", async () => {
-    findUnique.mockResolvedValue(baseOrder);
-    retrieveCheckoutForm.mockResolvedValue({
-      status: "success",
-      paymentStatus: "SUCCESS",
-      paymentId: "pay_1",
-      paidPrice: "38.84",
-      price: "38.84",
-      currency: "TRY",
-      basketId: "order_1",
-      conversationId: "order_1",
-      token: "tok_x",
-      signature: "sig",
-      itemTransactions: [
-        { itemId: "1", paymentTransactionId: "txn_1", price: "38.84" },
-      ],
-    });
-    verifyResponseSignature.mockReturnValue(true);
-
+  it("turns the reservation into a paid order on a verified success", async () => {
     const res = await POST(makeRequest("tok_x"));
 
-    expect(orderUpdate).toHaveBeenCalledWith(
+    expect(markOrderPaid).toHaveBeenCalledWith(
+      tx,
+      baseOrder,
       expect.objectContaining({
-        where: { id: "order_1" },
-        data: expect.objectContaining({
-          status: "HAZIRLANIYOR",
-          iyzicoPaymentId: "pay_1",
-          iyzicoItemTransactions: [
-            { itemId: "1", paymentTransactionId: "txn_1", price: "38.84" },
-          ],
-        }),
+        status: "HAZIRLANIYOR",
+        paidAt: expect.any(Date),
+        iyzicoPaymentId: "pay_1",
+        iyzicoItemTransactions: [{ itemId: "1", paymentTransactionId: "txn_1", price: "38.84" }],
       })
     );
-    expect(productUpdateMany).toHaveBeenCalledWith({
-      where: { id: 1, stock: { gte: 2 } },
-      data: { stock: { decrement: 2 } },
-    });
-    expect(stockMovementCreate).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        productId: 1,
-        type: "SALE",
-        quantity: -2,
-        previousStock: abundantStock.stock + 2,
-        newStock: abundantStock.stock,
-        note: expect.stringContaining("BS-20260910-ABC123"),
-      }),
-    });
+    expect(releaseReservation).not.toHaveBeenCalled();
+    expect(refundUnfulfillablePayment).not.toHaveBeenCalled();
     expect(couponUpdate).not.toHaveBeenCalled();
-    expect(res.headers.get("location")).toContain(
-      "/checkout/confirmation/BS-20260910-ABC123"
-    );
+    expect(location(res)).toContain("/checkout/confirmation/BS-20260910-ABC123");
   });
 
   it("increments the coupon's usedCount when the order used one", async () => {
     findUnique.mockResolvedValue({ ...baseOrder, couponId: "coupon_1" });
-    retrieveCheckoutForm.mockResolvedValue({
-      status: "success",
-      paymentStatus: "SUCCESS",
-      paymentId: "pay_1",
-      paidPrice: "38.84",
-      signature: "sig",
-    });
-    verifyResponseSignature.mockReturnValue(true);
-
     await POST(makeRequest("tok_x"));
-
     expect(couponUpdate).toHaveBeenCalledWith({
       where: { id: "coupon_1" },
       data: { usedCount: { increment: 1 } },
     });
   });
 
-  it("redirects without duplicate side effects when the order is already paid", async () => {
-    findUnique.mockResolvedValue({
-      ...baseOrder,
-      paidAt: new Date("2026-09-18T11:35:00.000Z"),
-    });
-
+  it("redirects without side effects when the order is already paid", async () => {
+    findUnique.mockResolvedValue({ ...baseOrder, paidAt: new Date() });
     const res = await POST(makeRequest("tok_x"));
-
     expect(retrieveCheckoutForm).not.toHaveBeenCalled();
-    expect(orderUpdate).not.toHaveBeenCalled();
-    expect(productUpdateMany).not.toHaveBeenCalled();
+    expect(markOrderPaid).not.toHaveBeenCalled();
+    expect(location(res)).toContain("/checkout/confirmation/BS-20260910-ABC123");
+  });
+
+  it("never refunds twice when the callback is posted again", async () => {
+    findUnique.mockResolvedValue({ ...baseOrder, refundedAt: new Date(), iyzicoPaymentId: "pay_1" });
+    const res = await POST(makeRequest("tok_x"));
+    expect(retrieveCheckoutForm).not.toHaveBeenCalled();
+    expect(refundUnfulfillablePayment).not.toHaveBeenCalled();
+    expect(location(res)).toContain("refund=done");
+
+    findUnique.mockResolvedValue({ ...baseOrder, iyzicoPaymentId: "pay_1" });
+    expect(location(await POST(makeRequest("tok_x")))).toContain("refund=manual");
+    expect(refundUnfulfillablePayment).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["the signature is invalid", () => verifyResponseSignature.mockReturnValue(false)],
+    ["the confirmed amount does not match", () => retrieveCheckoutForm.mockResolvedValue({ ...verifiedSuccess, paidPrice: "1.00" })],
+    ["iyzico could not be reached", () => retrieveCheckoutForm.mockRejectedValue(new Error("timeout"))],
+  ])("keeps the reservation (unverified result) when %s", async (_label, arrange) => {
+    arrange();
+    const res = await POST(makeRequest("tok_x"));
+    expect(markOrderPaid).not.toHaveBeenCalled();
+    // We can't tell whether money moved — the expiry sweep releases it later.
+    expect(releaseReservation).not.toHaveBeenCalled();
+    expect(location(res)).toContain("/checkout/failed");
+  });
+
+  it("gives the reservation back at once when iyzico confirms the payment failed", async () => {
+    retrieveCheckoutForm.mockResolvedValue({ ...verifiedSuccess, paymentStatus: "FAILURE" });
+    const res = await POST(makeRequest("tok_x"));
+    expect(markOrderPaid).not.toHaveBeenCalled();
+    expect(releaseReservation).toHaveBeenCalledWith(tx, baseOrder, "Ödeme başarısız");
+    expect(location(res)).toContain("/checkout/failed");
+    expect(location(res)).not.toContain("refund=");
+  });
+
+  it("refunds automatically when the stock sold out after the reservation lapsed", async () => {
+    markOrderPaid.mockRejectedValue(new InsufficientStockError({ productId: 1, quantity: 2 }));
+    findUnique.mockResolvedValue({ ...baseOrder, couponId: "coupon_1" });
+
+    const res = await POST(makeRequest("tok_x"));
+
+    expect(refundUnfulfillablePayment).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "order_1" }),
+      { paymentId: "pay_1", itemTransactions: verifiedSuccess.itemTransactions },
+      expect.stringContaining("tükendi"),
+      { ip: "127.0.0.1" }
+    );
+    // The paid transaction rolled back: no coupon use is counted.
     expect(couponUpdate).not.toHaveBeenCalled();
-    expect(res.headers.get("location")).toContain(
-      "/checkout/confirmation/BS-20260910-ABC123"
+    expect(location(res)).toContain("refund=done");
+  });
+
+  it("refunds a payment for an order that was cancelled mid-payment", async () => {
+    markOrderPaid.mockRejectedValue(new OrderNotPayableError());
+    await POST(makeRequest("tok_x"));
+    expect(refundUnfulfillablePayment).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.stringContaining("iptal"),
+      expect.anything()
     );
   });
 
-  it("does not mark the order paid if the response signature is invalid", async () => {
-    findUnique.mockResolvedValue(baseOrder);
-    retrieveCheckoutForm.mockResolvedValue({
-      status: "success",
-      paymentStatus: "SUCCESS",
-      paidPrice: "38.84",
-      signature: "bad-sig",
-    });
-    verifyResponseSignature.mockReturnValue(false);
-
-    const res = await POST(makeRequest("tok_x"));
-
-    expect(orderUpdate).not.toHaveBeenCalled();
-    expect(res.headers.get("location")).toContain("/checkout/failed");
+  it("tells the buyer a manual refund is coming when iyzico refuses the refund", async () => {
+    markOrderPaid.mockRejectedValue(new InsufficientStockError({ productId: 1, quantity: 2 }));
+    refundUnfulfillablePayment.mockResolvedValue({ refunded: false });
+    expect(location(await POST(makeRequest("tok_x")))).toContain("refund=manual");
   });
 
-  it("does not mark the order paid if the confirmed amount does not match", async () => {
-    findUnique.mockResolvedValue(baseOrder);
-    retrieveCheckoutForm.mockResolvedValue({
-      status: "success",
-      paymentStatus: "SUCCESS",
-      paidPrice: "1.00",
-      signature: "sig",
-    });
-    verifyResponseSignature.mockReturnValue(true);
-
+  it("checks plain (non-variant) products for low stock after the sale", async () => {
+    productFindMany.mockResolvedValue([{ id: 1, stock: 3, title: "Rose Serum", lowStockThreshold: 10 }]);
     const res = await POST(makeRequest("tok_x"));
+    expect(productFindMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: { in: [1] } } }));
+    expect(location(res)).toContain("/checkout/confirmation/");
 
-    expect(orderUpdate).not.toHaveBeenCalled();
-    expect(res.headers.get("location")).toContain("/checkout/failed");
-  });
-
-  it("does not mark the order paid if iyzico reports a non-SUCCESS payment status", async () => {
-    findUnique.mockResolvedValue(baseOrder);
-    retrieveCheckoutForm.mockResolvedValue({
-      status: "success",
-      paymentStatus: "FAILURE",
-      paidPrice: "38.84",
-      signature: "sig",
-    });
-    verifyResponseSignature.mockReturnValue(true);
-
-    const res = await POST(makeRequest("tok_x"));
-
-    expect(orderUpdate).not.toHaveBeenCalled();
-    expect(res.headers.get("location")).toContain("/checkout/failed");
-  });
-
-  it("flags the order for manual review instead of overselling when stock ran out concurrently", async () => {
-    findUnique.mockResolvedValue(baseOrder);
-    retrieveCheckoutForm.mockResolvedValue({
-      status: "success",
-      paymentStatus: "SUCCESS",
-      paymentId: "pay_1",
-      paidPrice: "38.84",
-      signature: "sig",
-    });
-    verifyResponseSignature.mockReturnValue(true);
-    // Another concurrently-confirmed order already took the last units.
-    productUpdateMany.mockResolvedValue({ count: 0 });
-
-    const res = await POST(makeRequest("tok_x"));
-
-    expect(couponUpdate).not.toHaveBeenCalled();
-    // The order is flagged (outside the rolled-back transaction), not left
-    // silently as if nothing happened.
-    expect(orderUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "order_1" },
-        data: expect.objectContaining({
-          iyzicoPaymentId: "pay_1",
-          internalNote: expect.stringContaining("stok"),
-        }),
-      })
-    );
-    expect(res.headers.get("location")).toContain("/checkout/failed");
-  });
-
-  it("emits a low-stock signal once a product's stock drops to its threshold", async () => {
-    findUnique.mockResolvedValue(baseOrder);
-    retrieveCheckoutForm.mockResolvedValue({
-      status: "success",
-      paymentStatus: "SUCCESS",
-      paymentId: "pay_1",
-      paidPrice: "38.84",
-      signature: "sig",
-    });
-    verifyResponseSignature.mockReturnValue(true);
-    productFindUniqueOrThrow.mockResolvedValue({
-      stock: 3,
-      title: "Rose Serum",
-      lowStockThreshold: 10,
-    });
-
-    const res = await POST(makeRequest("tok_x"));
-
-    expect(productFindUniqueOrThrow).toHaveBeenCalledWith({
-      where: { id: 1 },
-      select: { stock: true, title: true, lowStockThreshold: true },
-    });
-    expect(res.headers.get("location")).toContain(
-      "/checkout/confirmation/BS-20260910-ABC123"
-    );
+    productFindMany.mockClear();
+    findUnique.mockResolvedValue({ ...baseOrder, items: [{ ...baseOrder.items[0], variantId: "v1" }] });
+    await POST(makeRequest("tok_x"));
+    expect(productFindMany).not.toHaveBeenCalled();
   });
 });

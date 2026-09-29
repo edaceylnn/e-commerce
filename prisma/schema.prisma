@@ -225,6 +225,10 @@ enum StockMovementType {
   RETURN
   DAMAGE
   MANUAL_ADJUSTMENT
+  // Stock set aside when checkout starts (see src/lib/stock-reservation.ts);
+  // becomes SALE once paid, or is undone by a RESERVATION_RELEASE.
+  RESERVATION
+  RESERVATION_RELEASE
 }
 
 // Append-only ledger — every change to Product.stock / ProductVariant.stock
@@ -242,11 +246,16 @@ model StockMovement {
   newStock      Int
   userId        String?
   user          User?             @relation(fields: [userId], references: [id])
+  // The order behind a sale/reservation/release, when there is one. Kept
+  // (as null) if a never-paid order is later deleted.
+  orderId       String?
+  order         Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
   note          String?
   createdAt     DateTime          @default(now())
 
   @@index([productId])
   @@index([variantId])
+  @@index([orderId])
   @@index([createdAt])
 }
 
@@ -444,7 +453,15 @@ model Order {
   iyzicoItemTransactions Json?
   paidAt                 DateTime?
   refundedAt             DateTime?
+  // Stock is reserved when checkout starts and held until this time (the
+  // iyzico payment page's own lifetime). Null on orders from before
+  // reservations existed — those never held stock.
+  reservedUntil          DateTime?
+  // Set when a held reservation was given back (payment failed, expired or
+  // the order was cancelled before payment).
+  stockReleasedAt        DateTime?
   items                  OrderItem[]
+  stockMovements         StockMovement[]
   trackingNumber         String?
   internalNote           String?
   campaignId             String?
