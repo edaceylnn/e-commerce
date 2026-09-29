@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { MANUAL_STOCK_MOVEMENT_TYPES } from "@/lib/stockMovements";
+import { syncProductStockFromVariants } from "@/lib/product-stock";
 
 const movementSchema = z.object({
   productId: z.coerce.number().int(),
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
             note,
           },
         });
+        await syncProductStockFromVariants(tx, productId);
       } else {
         const product = await tx.product.findUniqueOrThrow({ where: { id: productId } });
         const newStock = product.stock + quantity;

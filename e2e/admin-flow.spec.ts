@@ -57,6 +57,54 @@ test.describe("admin panel", () => {
     await rm(path.join("public", uploadedUrl), { force: true });
   });
 
+  test("variant stock drives the storefront's availability", async ({ page }) => {
+    const title = `E2E Varyant ${Date.now()}`;
+
+    await page.goto("/admin/products/new");
+    await page.getByPlaceholder("örn. Yüksek Bel Toparlayıcı Spor Tayt").fill(title);
+    await page.getByLabel("Fiyat (₺)").fill("100");
+    await page.getByLabel("Yayın durumu").selectOption("ACTIVE");
+    await page.locator('input[type="file"]').setInputFiles("public/products/green-legging.jpg");
+    const uploaded = page.locator('img[src^="/uploads/products/"]').first();
+    await expect(uploaded).toBeVisible();
+    const uploadedUrl = (await uploaded.getAttribute("src"))!;
+
+    // Picking a color and two sizes lists both combinations.
+    await page.getByRole("button", { name: "Kil", exact: true }).click();
+    await page.getByRole("button", { name: "S", exact: true }).click();
+    await page.getByRole("button", { name: "M", exact: true }).click();
+    await expect(page.getByLabel("Kil S stok")).toBeVisible();
+    await expect(page.getByLabel("Kil M stok")).toBeVisible();
+
+    await page.getByLabel("Tüm varyantlara uygulanacak stok").fill("7");
+    await page.getByRole("button", { name: "Hepsine uygula" }).click();
+    await expect(page.getByLabel("Kil M stok")).toHaveValue("7");
+    await expect(page.getByText("Toplam stok: 14")).toBeVisible();
+
+    await page.getByRole("button", { name: "Ürünü oluştur" }).click();
+    await expect(page).toHaveURL(/\/admin\/products\/\d+\/edit$/);
+    const editUrl = page.url();
+    const productId = editUrl.match(/products\/(\d+)\/edit/)![1];
+    // Blank SKUs were generated from the product id, color and size.
+    await expect(page.getByLabel("Kil M SKU")).toHaveValue(`ED-${productId}-KIL-M`);
+
+    // Only the variant has stock — the product must still be buyable.
+    await page.goto(`/products/${productId}`);
+    await expect(page.getByRole("button", { name: /Sepete ekle/ }).first()).toBeEnabled();
+
+    await page.goto(editUrl);
+    await page.getByLabel("Tüm varyantlara uygulanacak stok").fill("0");
+    await page.getByRole("button", { name: "Hepsine uygula" }).click();
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await expect(page.getByText("Kaydedildi.")).toBeVisible();
+    await page.goto(`/products/${productId}`);
+    await expect(page.getByRole("button", { name: "Tükendi" }).first()).toBeDisabled();
+
+    const res = await page.request.delete(`/api/admin/products/${productId}`);
+    expect(res.ok()).toBe(true);
+    await rm(path.join("public", uploadedUrl), { force: true });
+  });
+
   test("can create, deactivate, and delete a coupon", async ({ page }) => {
     // Unique per run — a fixed code would collide with a leftover row from
     // a previous run (the coupon code column has a unique DB constraint).

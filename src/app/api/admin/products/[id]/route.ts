@@ -3,13 +3,15 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CATEGORY_SLUGS } from "@/lib/categories";
+import { totalVariantStock, variantDuplicatesError, withGeneratedSkus } from "@/lib/product-stock";
 import { sendPushToAll } from "@/lib/push/send";
 
 const variantSchema = z.object({
   id: z.string().optional(),
   colorId: z.string().trim().min(1),
   sizeId: z.string().trim().min(1),
-  sku: z.string().trim().min(1),
+  // Blank = generate one on save (see withGeneratedSkus).
+  sku: z.string().trim().default(""),
   stock: z.coerce.number().int().min(0).default(0),
   priceOverride: z.coerce.number().positive().optional(),
   lowStockThreshold: z.coerce.number().int().min(0).optional(),
@@ -53,7 +55,13 @@ const productSchema = z.object({
   isNew: z.boolean(),
   thumbnail: imageRefSchema,
   images: z.array(imageSchema).min(1),
-  variants: z.array(variantSchema).default([]),
+  variants: z
+    .array(variantSchema)
+    .default([])
+    .superRefine((variants, ctx) => {
+      const error = variantDuplicatesError(variants);
+      if (error) ctx.addIssue({ code: "custom", message: error });
+    }),
   skinTypes: z.array(z.string()).default([]),
   skinConcerns: z.array(z.string()).default([]),
   finish: z.string().trim().optional(),
@@ -112,8 +120,12 @@ export async function PATCH(
     return NextResponse.json({ error: "Ürün bulunamadı." }, { status: 404 });
   }
 
-  const { categorySlug, images, variants, ingredientIds, ...rest } = parsed.data;
+  const { categorySlug, images, variants: submittedVariants, ingredientIds, ...rest } = parsed.data;
   void categorySlug;
+  const variants = await withGeneratedSkus(prisma, productId, submittedVariants);
+  // With variants the product total is derived, never taken from the form;
+  // each variant's own change is already logged below.
+  if (variants.length) rest.stock = totalVariantStock(variants);
 
   // Variants keep their id across an edit (so existing order/wishlist rows
   // stay pointed at a real variant) — rows the form dropped are deleted,
@@ -224,7 +236,7 @@ export async function PATCH(
         }
       }
 
-      if (existing.stock !== rest.stock) {
+      if (variants.length === 0 && existing.stock !== rest.stock) {
         await tx.stockMovement.create({
           data: {
             productId,
@@ -248,14 +260,30 @@ export async function PATCH(
     );
   }
 
-  if (existing.stock === 0 && parsed.data.stock > 0) {
+  if (existing.stock === 0 && rest.stock > 0) {
     sendPushToAll(
       "EDACEY",
       `${parsed.data.title} tekrar stokta!`
     ).catch((err) => console.error("stock push notify error", err));
   }
 
-  return NextResponse.json({ ok: true });
+  // The form stays open after saving, so it needs the saved variants back —
+  // new rows now have ids (and generated SKUs); without them the next save
+  // would delete and recreate those variants.
+  const savedVariants = await prisma.productVariant.findMany({
+    where: { productId },
+    orderBy: { position: "asc" },
+    select: { id: true, colorId: true, sizeId: true, sku: true, stock: true, priceOverride: true, lowStockThreshold: true },
+  });
+
+  return NextResponse.json({
+    ok: true,
+    variants: savedVariants.map((v) => ({
+      ...v,
+      priceOverride: v.priceOverride ? Number(v.priceOverride) : undefined,
+      lowStockThreshold: v.lowStockThreshold ?? undefined,
+    })),
+  });
 }
 
 export async function DELETE(

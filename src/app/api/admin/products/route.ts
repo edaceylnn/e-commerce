@@ -3,12 +3,14 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CATEGORY_SLUGS } from "@/lib/categories";
+import { totalVariantStock, variantDuplicatesError, withGeneratedSkus } from "@/lib/product-stock";
 
 const variantSchema = z.object({
   id: z.string().optional(),
   colorId: z.string().trim().min(1),
   sizeId: z.string().trim().min(1),
-  sku: z.string().trim().min(1),
+  // Blank = generate one on save (see withGeneratedSkus).
+  sku: z.string().trim().default(""),
   stock: z.coerce.number().int().min(0).default(0),
   priceOverride: z.coerce.number().positive().optional(),
   lowStockThreshold: z.coerce.number().int().min(0).optional(),
@@ -52,7 +54,13 @@ const productSchema = z.object({
   isNew: z.boolean().default(false),
   thumbnail: imageRefSchema,
   images: z.array(imageSchema).min(1),
-  variants: z.array(variantSchema).default([]),
+  variants: z
+    .array(variantSchema)
+    .default([])
+    .superRefine((variants, ctx) => {
+      const error = variantDuplicatesError(variants);
+      if (error) ctx.addIssue({ code: "custom", message: error });
+    }),
   skinTypes: z.array(z.string()).default([]),
   skinConcerns: z.array(z.string()).default([]),
   finish: z.string().trim().optional(),
@@ -103,8 +111,11 @@ export async function POST(request: NextRequest) {
   const maxId = await prisma.product.aggregate({ _max: { id: true } });
   const nextId = (maxId._max.id ?? 0) + 1;
 
-  const { categorySlug, images, variants, ingredientIds, ...rest } = parsed.data;
+  const { categorySlug, images, variants: submittedVariants, ingredientIds, ...rest } = parsed.data;
   void categorySlug; // already resolved to `category` above
+  const variants = await withGeneratedSkus(prisma, nextId, submittedVariants);
+  // With variants the product total is derived, never taken from the form.
+  if (variants.length) rest.stock = totalVariantStock(variants);
 
   try {
     const product = await prisma.$transaction(async (tx) => {

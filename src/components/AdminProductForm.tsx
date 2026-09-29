@@ -8,6 +8,7 @@ import { AdminButton } from "@/components/admin/Button";
 import { Card } from "@/components/admin/Card";
 import { ProductAuditPanel } from "@/components/admin/ProductAuditPanel";
 import { ProductDraftsPanel, type PendingDraft } from "@/components/admin/ProductDraftsPanel";
+import { VariantMatrix } from "@/components/admin/VariantMatrix";
 import { PlusIcon } from "@/components/icons/AdminLuxeIcons";
 import { TrashIcon } from "@/components/icons/AdminIcons";
 
@@ -183,23 +184,6 @@ export function AdminProductForm({
     [title, description, categorySlug, price, stock, metaTitle, metaDescription, images, variants]
   );
 
-  function addVariant() {
-    const last = variants[variants.length - 1];
-    setVariants((prev) => [
-      ...prev,
-      // Adding sizes one after another for the same color is the common case.
-      { colorId: last?.colorId ?? colors[0]?.id ?? "", sizeId: sizes[0]?.id ?? "", sku: "", stock: 0 },
-    ]);
-  }
-
-  function updateVariant(index: number, patch: Partial<AdminProductVariantInitial>) {
-    setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, ...patch } : v)));
-  }
-
-  function removeVariant(index: number) {
-    setVariants((prev) => prev.filter((_, i) => i !== index));
-  }
-
   function addImageUrl(url: string) {
     setImages((prev) => [...prev, { url }]);
     // The first photo becomes the cover unless one is already set.
@@ -297,6 +281,7 @@ export function AdminProductForm({
     }
 
     if (productId) {
+      if (data.variants) setVariants(data.variants);
       setSaved(true);
       router.refresh();
     } else {
@@ -378,109 +363,22 @@ export function AdminProductForm({
         </Card>
 
         <Card title="Beden, renk ve stok">
-          {colors.length === 0 || sizes.length === 0 ? (
-            <p className="mb-3 text-xs text-adm-danger">
-              Varyant eklemeden önce en az bir renk ve bir beden tanımlanmış olmalı.
-            </p>
-          ) : null}
-          {variants.length > 0 && (
-            <div className="mb-2 hidden grid-cols-[1fr_90px_1fr_90px_36px] gap-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-adm-text-tertiary sm:grid">
-              <span>Renk</span>
-              <span>Beden</span>
-              <span>SKU</span>
-              <span>Stok</span>
-              <span />
-            </div>
+          <VariantMatrix colors={colors} sizes={sizes} variants={variants} onChange={setVariants} />
+          {variants.length > 0 ? (
+            <p className="mt-3 text-right text-xs text-adm-text-tertiary">Toplam stok: {variantStock}</p>
+          ) : (
+            <label className="mt-4 flex items-center gap-2 text-xs text-adm-text-secondary">
+              Varyantsız ürün stoğu
+              <input
+                type="number"
+                min="0"
+                required
+                value={stock}
+                onChange={(e) => setStock(e.target.value)}
+                className={`${inputClass} w-24 py-1.5`}
+              />
+            </label>
           )}
-          <div className="space-y-2">
-            {variants.map((variant, index) => (
-              <div
-                key={variant.id ?? `new-${index}`}
-                className="grid grid-cols-2 gap-2 sm:grid-cols-[1fr_90px_1fr_90px_36px] sm:items-center"
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-5 w-5 shrink-0 rounded-full border border-adm-border"
-                    style={{ backgroundColor: colors.find((c) => c.id === variant.colorId)?.hex ?? "#e8e3df" }}
-                  />
-                  <select
-                    required
-                    aria-label="Renk"
-                    value={variant.colorId}
-                    onChange={(e) => updateVariant(index, { colorId: e.target.value })}
-                    className={inputClass}
-                  >
-                    {colors.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <select
-                  required
-                  aria-label="Beden"
-                  value={variant.sizeId}
-                  onChange={(e) => updateVariant(index, { sizeId: e.target.value })}
-                  className={inputClass}
-                >
-                  {sizes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  placeholder="SKU"
-                  aria-label="SKU"
-                  required
-                  value={variant.sku}
-                  onChange={(e) => updateVariant(index, { sku: e.target.value })}
-                  className={inputClass}
-                />
-                <input
-                  type="number"
-                  min="0"
-                  aria-label="Stok"
-                  value={variant.stock}
-                  onChange={(e) => updateVariant(index, { stock: Number(e.target.value) })}
-                  className={inputClass}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeVariant(index)}
-                  aria-label="Varyantı sil"
-                  className="inline-flex justify-center rounded-md p-2 text-adm-danger transition hover:bg-adm-danger-soft"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={addVariant}
-              className="flex items-center gap-1 text-sm font-medium text-adm-primary hover:underline"
-            >
-              <PlusIcon className="h-4 w-4" /> Beden / renk ekle
-            </button>
-            {variants.length > 0 ? (
-              <p className="text-xs text-adm-text-tertiary">Toplam stok: {variantStock}</p>
-            ) : (
-              <label className="flex items-center gap-2 text-xs text-adm-text-secondary">
-                Varyantsız stok
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  value={stock}
-                  onChange={(e) => setStock(e.target.value)}
-                  className={`${inputClass} w-24 py-1.5`}
-                />
-              </label>
-            )}
-          </div>
         </Card>
 
         <Card title="Görseller">
