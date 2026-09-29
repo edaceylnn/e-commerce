@@ -41,22 +41,22 @@ type NavGroup = {
   links: NavLink[];
 };
 
-// One group per real-world domain — every product/catalog/stock page lives
-// together, order-side pages (siparişler + iadeler, the two things that
-// happen to an already-placed order) live together, customer-facing pages
-// live together, separate from marketing and system settings. Replaces an
-// earlier "Satış" group that mixed orders, products, customers and stock
-// in one list, which read as one big undifferentiated bucket rather than a
-// menu you could scan.
+// Deliberately small while we validate the product-card flow: the three
+// everyday screens stay on top, and every other page lives in one "Diğer"
+// group that starts collapsed. Nothing is removed — the pages still work
+// and are one click away.
 const GROUPS: NavGroup[] = [
   {
-    label: "Genel",
-    links: [{ href: "/admin", label: "Genel Bakış", Icon: GridIcon }],
+    label: "Mağaza",
+    links: [
+      { href: "/admin", label: "Genel Bakış", Icon: GridIcon },
+      { href: "/admin/products", label: "Ürünler", Icon: PackageIcon },
+      { href: "/admin/orders", label: "Siparişler", Icon: TruckIcon },
+    ],
   },
   {
-    label: "Ürünler",
+    label: "Diğer",
     links: [
-      { href: "/admin/products", label: "Ürünler", Icon: PackageIcon },
       { href: "/admin/stock", label: "Stok", Icon: WarehouseIcon },
       { href: "/admin/stock/movements", label: "Stok Hareketleri", Icon: LedgerIcon },
       { href: "/admin/stock/critical", label: "Kritik Stok", Icon: WarningTriangleIcon },
@@ -67,35 +67,18 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/sizes", label: "Bedenler", Icon: RulerIcon },
       { href: "/admin/size-charts", label: "Beden Tabloları", Icon: SizeChartIcon },
       { href: "/admin/ingredients", label: "İçerikler", Icon: DropletIcon },
-    ],
-  },
-  {
-    label: "Siparişler",
-    links: [
-      { href: "/admin/orders", label: "Siparişler", Icon: TruckIcon },
       { href: "/admin/returns", label: "İadeler", Icon: SyncIcon },
-    ],
-  },
-  {
-    label: "Müşteriler",
-    links: [
       { href: "/admin/users", label: "Müşteriler", Icon: GroupIcon },
       { href: "/admin/reviews", label: "Yorumlar", Icon: ChatBubbleIcon },
-    ],
-  },
-  {
-    label: "Pazarlama",
-    links: [{ href: "/admin/campaigns", label: "Kampanyalar", Icon: TagIcon }],
-  },
-  {
-    label: "Sistem",
-    links: [
+      { href: "/admin/campaigns", label: "Kampanyalar", Icon: TagIcon },
       { href: "/admin/analytics", label: "Raporlar", Icon: BarChartIcon },
       { href: "/admin/notifications", label: "Bildirimler", Icon: BellIcon },
       { href: "/admin/settings", label: "Ayarlar", Icon: GearIcon },
     ],
   },
 ];
+
+const COLLAPSED_BY_DEFAULT = "Diğer";
 
 const TRAILING_LINKS: NavLink[] = [];
 
@@ -109,11 +92,13 @@ export function AdminNav({
   email?: string;
 }) {
   const pathname = usePathname();
-  // Every group starts expanded — the whole IA is visible at a glance
-  // instead of hiding behind a click, per the reference design's sidebar
-  // (every section shown open). Still collapsible per group via
-  // toggleGroup below, for anyone who wants to tuck one away.
-  const [closedGroups, setClosedGroups] = useState<Set<string>>(() => new Set());
+  // "Diğer" starts collapsed unless the current page lives in it, so a
+  // deep link never lands on a page whose menu entry is hidden.
+  const [closedGroups, setClosedGroups] = useState<Set<string>>(() => {
+    const other = GROUPS.find((g) => g.label === COLLAPSED_BY_DEFAULT);
+    const inOther = other?.links.some((l) => isActivePath(pathname, l.href));
+    return new Set(inOther ? [] : [COLLAPSED_BY_DEFAULT]);
+  });
 
   function isActive(href: string) {
     return isActivePath(pathname, href);

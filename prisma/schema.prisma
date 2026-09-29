@@ -350,6 +350,7 @@ model Product {
   variants          ProductVariant[]
   ingredients       ProductIngredient[]
   stockMovements    StockMovement[]
+  contentDrafts     ContentDraft[]
 
   @@index([categoryId])
   @@index([title])
@@ -551,4 +552,44 @@ model Settings {
   vipSpendThreshold        Decimal  @default(5000) @db.Decimal(10, 2)
   defaultLowStockThreshold Int      @default(10)
   updatedAt                DateTime @updatedAt
+}
+
+enum ContentDraftKind {
+  SHORT_DESCRIPTION
+  META_DESCRIPTION
+  META_TITLE
+  IMAGE_ALT
+}
+
+enum ContentDraftStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// One AI-written text suggestion for a product field. Never written to the
+// product on its own — only an admin's approval copies finalText over. Keeps
+// both the raw AI text and what the admin actually approved (plus timing) so
+// we can see which drafts get rewritten and how much time they save.
+model ContentDraft {
+  id            String             @id @default(cuid())
+  productId     Int
+  product       Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  kind          ContentDraftKind
+  // IMAGE_ALT only: which photo the alt text is for. Keyed by URL because
+  // product images are recreated (new ids) on every product save.
+  imageUrl      String?
+  status        ContentDraftStatus @default(PENDING)
+  aiText        String
+  finalText     String?
+  // Product data the draft was generated from, for later review.
+  input         Json
+  model         String
+  latencyMs     Int
+  inputTokens   Int
+  outputTokens  Int
+  createdAt     DateTime           @default(now())
+  decidedAt     DateTime?
+
+  @@index([productId])
 }

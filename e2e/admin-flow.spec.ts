@@ -13,66 +13,41 @@ test.describe("admin panel", () => {
     await expect(page).toHaveURL(/\/admin$/);
   });
 
-  test("dashboard links to every admin section", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Genel Bakış" })).toBeVisible();
-    for (const label of [
-      "Ürün Yönetimi",
-      "Markalar",
-      "Stok Takibi",
-      "Siparişler",
-      "Müşteriler",
-      "Kategoriler",
-      "Koleksiyonlar",
-      "İçerikler",
-      "Kampanyalar",
-      "Analitik",
-      "Yorumlar",
-      "Bildirimler",
-    ]) {
-      await expect(
-        page.locator("aside").getByRole("link", { name: label })
-      ).toBeVisible();
+  test("sidebar shows the everyday screens and tucks the rest away", async ({ page }) => {
+    const aside = page.locator("aside");
+    for (const label of ["Genel Bakış", "Ürünler", "Siparişler"]) {
+      await expect(aside.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
+    await expect(aside.getByRole("link", { name: "Kampanyalar" })).not.toBeVisible();
+    await aside.getByRole("button", { name: "Diğer" }).click();
+    await expect(aside.getByRole("link", { name: "Kampanyalar" })).toBeVisible();
   });
 
-  test("can create and delete a product", async ({ page }) => {
-    const title = `E2E Ürün ${Date.now()}`;
+  test("new product lands on the editor with live completeness warnings", async ({ page }) => {
+    const title = `E2E Spor Tayt ${Date.now()}`;
 
     await page.goto("/admin/products/new");
-    // The editor is split into sections (Ürün Bilgileri/Medya/.../Stok/...) —
-    // only the active one is visible, so the test switches sections the same
-    // way a real admin would before filling each section's fields.
-    await page.getByPlaceholder("Başlık").fill(title);
-    await page.getByPlaceholder("Açıklama").fill("E2E test açıklaması.");
+    await page.getByPlaceholder("örn. Yüksek Bel Toparlayıcı Spor Tayt").fill(title);
+    await page.getByLabel("Fiyat (₺)").fill("49.90");
+    await page.getByPlaceholder("Görsel URL'si veya /products/... yolu").fill("/products/green-legging.jpg");
+    await page.getByRole("button", { name: "Ekle", exact: true }).click();
 
-    await page.getByRole("button", { name: "Fiyatlandırma" }).click();
-    await page.getByPlaceholder("Fiyat (₺)").fill("49.90");
+    const audit = page.locator("aside").filter({ hasText: "Kart kontrolü" });
+    await expect(audit.getByText("Açıklama yok", { exact: true })).toBeVisible();
+    await expect(audit.getByText("Görsel alt metni yok (1/1 görselde)")).toBeVisible();
 
-    await page.getByRole("button", { name: "Stok" }).click();
-    await page.getByPlaceholder("Stok").fill("5");
+    await page.getByRole("button", { name: "Ürünü oluştur" }).click();
+    await expect(page).toHaveURL(/\/admin\/products\/\d+\/edit$/);
+    await expect(page.getByRole("heading", { name: title })).toBeVisible();
 
-    await page.getByRole("button", { name: "Medya" }).click();
-    await page
-      .getByPlaceholder("Kapak görseli URL")
-      .fill(
-        "https://cdn.dummyjson.com/product-images/beauty/red-lipstick/thumbnail.webp"
-      );
-    await page
-      .getByPlaceholder("Görsel URL'leri (her satıra bir tane)")
-      .fill(
-        "https://cdn.dummyjson.com/product-images/beauty/red-lipstick/thumbnail.webp"
-      );
-    await page.getByRole("button", { name: "Oluştur" }).click();
+    // Fixing a field clears its warning immediately, before saving.
+    await page.getByPlaceholder(/Alt metin/).fill("Yeşil spor tayt, önden görünüm");
+    await expect(audit.getByText(/Görsel alt metni yok/)).not.toBeVisible();
+    await expect(audit.getByText("Açıklama yok", { exact: true })).toBeVisible();
 
-    await expect(page).toHaveURL("/admin/products");
-    await expect(page.getByText(title)).toBeVisible();
-
-    page.once("dialog", (dialog) => dialog.accept());
-    await page
-      .locator("tr", { hasText: title })
-      .getByRole("button", { name: "Sil" })
-      .click();
-    await expect(page.getByText(title)).not.toBeVisible();
+    const productId = page.url().match(/products\/(\d+)\/edit/)![1];
+    const res = await page.request.delete(`/api/admin/products/${productId}`);
+    expect(res.ok()).toBe(true);
   });
 
   test("can create, deactivate, and delete a coupon", async ({ page }) => {

@@ -14,7 +14,7 @@ export default async function AdminEditProductPage({
     notFound();
   }
 
-  const [product, brands, ingredients, colors, sizes, sizeCharts] = await Promise.all([
+  const [product, colors, sizes, pendingDrafts] = await Promise.all([
     prisma.product.findUnique({
       where: { id: productId },
       include: {
@@ -25,11 +25,13 @@ export default async function AdminEditProductPage({
         ingredients: true,
       },
     }),
-    prisma.brand.findMany({ orderBy: { name: "asc" } }),
-    prisma.ingredient.findMany({ orderBy: { name: "asc" } }),
     prisma.color.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.size.findMany({ orderBy: { position: "asc" } }),
-    prisma.sizeChart.findMany({ orderBy: { name: "asc" } }),
+    prisma.contentDraft.findMany({
+      where: { productId, status: "PENDING" },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, kind: true, aiText: true, imageUrl: true },
+    }),
   ]);
   if (!product) {
     notFound();
@@ -37,14 +39,15 @@ export default async function AdminEditProductPage({
 
   return (
     <div>
-      <PageHeader title="Ürünü Düzenle" />
+      <PageHeader
+        breadcrumb={[{ label: "Ürünler", href: "/admin/products" }]}
+        title={product.title}
+      />
       <AdminProductForm
         productId={product.id}
-        brands={brands.map((b) => ({ id: b.id, name: b.name }))}
-        ingredients={ingredients.map((i) => ({ id: i.id, name: i.name }))}
         colors={colors.map((c) => ({ id: c.id, name: c.name, hex: c.hex }))}
         sizes={sizes.map((s) => ({ id: s.id, label: s.label }))}
-        sizeCharts={sizeCharts.map((c) => ({ id: c.id, name: c.name }))}
+        pendingDrafts={pendingDrafts}
         initial={{
           title: product.title,
           description: product.description,
