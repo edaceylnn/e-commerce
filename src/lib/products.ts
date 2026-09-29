@@ -120,15 +120,6 @@ export async function getCategoryBySlug(slug: string) {
   });
 }
 
-export async function getProductsByCategoryId(categoryId: string): Promise<Product[]> {
-  const rows = await prisma.product.findMany({
-    where: { categoryId, ...STOREFRONT_WHERE },
-    include: productInclude,
-    orderBy: { id: "asc" },
-  });
-  return rows.map(toProduct);
-}
-
 export async function getProductsByCategory(
   category: CategorySlug
 ): Promise<Product[]> {
@@ -139,13 +130,6 @@ export async function getProductsByCategory(
     orderBy: { id: "asc" },
   });
   return rows.map(toProduct);
-}
-
-export async function getAllFeaturedProducts(): Promise<Product[]> {
-  const results = await Promise.all(
-    PRODUCT_CATEGORIES.map((c) => getProductsByCategory(c.slug))
-  );
-  return results.flat();
 }
 
 export async function getProductById(id: number): Promise<Product> {
@@ -211,22 +195,6 @@ export async function getAllActiveProductIds(): Promise<number[]> {
     select: { id: true },
   });
   return rows.map((r) => r.id);
-}
-
-export async function searchProducts(query: string): Promise<Product[]> {
-  const rows = await prisma.product.findMany({
-    where: {
-      ...STOREFRONT_WHERE,
-      OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { description: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    include: productInclude,
-    take: 20,
-    orderBy: { id: "asc" },
-  });
-  return rows.map(toProduct);
 }
 
 export type SizeChartView = {

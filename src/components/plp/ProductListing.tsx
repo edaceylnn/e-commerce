@@ -22,7 +22,6 @@ export type Editorial = {
   imagePosition?: string;
 };
 
-const PAGE_SIZE = 16;
 
 // Category page body — design handoff screen 2: sticky
 // toolbar (tabs · count · view 3/4 · sort · filter), the inline active-filter
@@ -37,6 +36,9 @@ export function ProductListing({
   ctx,
   sortKey,
   totalCount,
+  resultTotal,
+  loadMoreHref,
+  pageSize,
   editorials,
 }: {
   products: Product[];
@@ -49,6 +51,11 @@ export function ProductListing({
   sortKey: SortKey;
   /** Unfiltered product count (for the drawer's type options). */
   totalCount: number;
+  /** All matches after filters — `products` is only the pages shown so far. */
+  resultTotal: number;
+  /** Link to the next page ("?sayfa=N+1"), or null when everything is shown. */
+  loadMoreHref: string | null;
+  pageSize: number;
   /** Banner after the 8th product, 2-col block after the 19th. */
   editorials: { wide?: Editorial; block?: Editorial };
 }) {
@@ -56,19 +63,11 @@ export function ProductListing({
   const [dense, setDense] = useState(true);
   const [sortOpen, setSortOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [shown, setShown] = useState(PAGE_SIZE);
-  // Any filter/sort change resets pagination (adjust-state-on-prop-change).
-  const listKey = products.map((p) => p.id).join(",");
-  const [lastListKey, setLastListKey] = useState(listKey);
-  if (listKey !== lastListKey) {
-    setLastListKey(listKey);
-    setShown(PAGE_SIZE);
-  }
 
   const filterCount = activeFilterCount(filters);
   const filterLabel = `Filtre${filterCount > 0 ? ` (${filterCount})` : ""}`;
   const sortLabel = SORT_OPTIONS.find((o) => o.value === sortKey)?.label ?? "Önerilen";
-  const countLabel = `${products.length} ürün`;
+  const countLabel = `${resultTotal} ürün`;
 
   function pickSort(value: string) {
     setSortOpen(false);
@@ -111,10 +110,10 @@ export function ProductListing({
     </button>
   ));
 
-  // Grid cells: products with editorial breaks spliced in.
-  const visible = products.slice(0, shown);
+  // Grid cells: products with editorial breaks spliced in. The server
+  // already sends only the pages being shown.
   const cells: ReactNode[] = [];
-  visible.forEach((p, i) => {
+  products.forEach((p, i) => {
     cells.push(<ProductCard key={p.id} product={p} />);
     if (i === 7 && editorials.wide) cells.push(<WideEditorial key="ed-wide" {...editorials.wide} />);
     if (i === 18 && editorials.block) cells.push(<BlockEditorial key="ed-block" {...editorials.block} />);
@@ -252,16 +251,16 @@ export function ProductListing({
             </div>
             <div className="flex flex-col items-center gap-5 pt-24">
               <span className="text-nav uppercase tracking-label text-text-3">
-                {Math.min(shown, products.length)} / {products.length} ürün gösteriliyor
+                {products.length} / {resultTotal} ürün gösteriliyor
               </span>
-              {shown < products.length && (
-                <button
-                  type="button"
-                  onClick={() => setShown((s) => s + PAGE_SIZE)}
-                  className="h-12 border border-ink px-11 text-nav uppercase tracking-cta transition-colors hover:bg-ink hover:text-background"
+              {loadMoreHref && (
+                <Link
+                  href={loadMoreHref}
+                  scroll={false}
+                  className="flex h-12 items-center border border-ink px-11 text-nav uppercase tracking-cta transition-colors hover:bg-ink hover:text-background"
                 >
-                  {Math.min(PAGE_SIZE, products.length - shown)} ürün daha yükle
-                </button>
+                  {Math.min(pageSize, resultTotal - products.length)} ürün daha göster
+                </Link>
               )}
             </div>
           </>
@@ -274,7 +273,7 @@ export function ProductListing({
         facets={facets}
         filters={filters}
         ctx={ctx}
-        resultCount={products.length}
+        resultCount={resultTotal}
         totalCount={totalCount}
       />
     </>

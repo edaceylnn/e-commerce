@@ -14,7 +14,6 @@ import {
   getProductById,
   getProductsByCategory,
   isNewProduct,
-  searchProducts,
   selectNewArrivals,
   NEW_ARRIVAL_COUNT,
   type Product,
@@ -88,25 +87,6 @@ describe("products", () => {
     findFirst.mockResolvedValue(null);
 
     await expect(getProductById(999)).rejects.toThrow("Product not found: 999");
-  });
-
-  it("searches by title/description, not by category, and stays active-only", async () => {
-    findMany.mockResolvedValue([row]);
-
-    const results = await searchProducts("takım");
-
-    expect(findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          status: "ACTIVE",
-          OR: [
-            { title: { contains: "takım", mode: "insensitive" } },
-            { description: { contains: "takım", mode: "insensitive" } },
-          ],
-        },
-      })
-    );
-    expect(results).toHaveLength(1);
   });
 
   it("isNewProduct reads the product's own isNew flag", () => {

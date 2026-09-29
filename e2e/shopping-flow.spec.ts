@@ -55,3 +55,9 @@ test("legacy /urun/:id links are redirected via proxy", async ({ page }) => {
   await expect(page).toHaveURL(/\/products\/1$/);
   expect(response?.status()).toBeLessThan(400);
 });
+
+test("search ignores Turkish characters and case", async ({ page }) => {
+  await page.goto("/products?q=sort%20takimi");
+  await expect(page.getByRole("heading", { level: 1, name: /sort takimi/ })).toBeVisible();
+  await expect(page.locator("a[href^='/products/']", { hasText: "Yumuşak Şort Takımı" }).first()).toBeVisible();
+});

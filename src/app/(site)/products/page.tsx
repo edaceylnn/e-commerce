@@ -1,18 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  PRODUCT_CATEGORIES,
-  getAllFeaturedProducts,
-  getProductsByCategoryId,
-  getCategoryBySlug,
-  selectNewArrivals,
-} from "@/lib/products";
+import { PRODUCT_CATEGORIES, getCategoryBySlug } from "@/lib/products";
+import { activeCountsByCategory, LISTING_PAGE_SIZE, MAX_LISTING_PAGES, searchCatalog } from "@/lib/catalog";
+import { prisma } from "@/lib/db";
 import { formatPrice } from "@/lib/format";
 import {
   parseFilters,
-  applyFilters,
-  sortProducts,
-  computeFacets,
   typeLabel,
   listingHref,
   EMPTY_FILTERS,
@@ -64,6 +57,7 @@ type SearchParams = {
   maxPrice?: string;
   rating?: string;
   inStock?: string;
+  sayfa?: string;
 };
 
 export default async function ProductsPage({
@@ -75,31 +69,36 @@ export default async function ProductsPage({
   const { category: categorySlug, q, filter, sort: sortParam } = sp;
 
   const category = categorySlug ? await getCategoryBySlug(categorySlug) : null;
-  const allProducts = await getAllFeaturedProducts();
-
-  let baseProducts = category ? await getProductsByCategoryId(category.id) : allProducts;
-
-  if (q) {
-    const needle = q.toLocaleLowerCase("tr-TR");
-    baseProducts = baseProducts.filter(
-      (p) =>
-        p.title.toLocaleLowerCase("tr-TR").includes(needle) ||
-        p.description.toLocaleLowerCase("tr-TR").includes(needle)
-    );
-  }
-  if (!q && filter === "new") {
-    // Same set the homepage "Yeni Gelenler" rail shows.
-    const newIds = new Set(selectNewArrivals(allProducts).map((p) => p.id));
-    baseProducts = baseProducts.filter((p) => newIds.has(p.id));
-  }
-  if (sortParam === "discount") baseProducts = baseProducts.filter((p) => p.discountPercentage > 0);
-
-  // Facets reflect the unfiltered list — options never disappear as filters
-  // narrow the grid.
-  const facets = computeFacets(baseProducts);
   const filters = parseFilters(sp);
   const sortKey: SortKey = (sortParam as SortKey) || "onerilen";
-  const products = sortProducts(applyFilters(baseProducts, filters), sortKey);
+  // "Daha fazla göster" is a plain link to ?sayfa=N+1, so it survives the
+  // back button and can be shared; the page then shows the first N pages.
+  const pages = Math.min(Math.max(1, Number(sp.sayfa) || 1), MAX_LISTING_PAGES);
+
+  // Filtering, facet counts, sorting and paging all run in the database
+  // (see src/lib/catalog.ts); only the shown products are loaded.
+  const [catalog, countsByCategory, categoryIds] = await Promise.all([
+    searchCatalog({
+      scope: {
+        categoryId: category?.id,
+        q,
+        onlyDiscounted: sortParam === "discount",
+        // Same set the homepage "Yeni Gelenler" rail shows.
+        newArrivals: !q && filter === "new",
+      },
+      filters,
+      sort: sortKey,
+      pages,
+    }),
+    activeCountsByCategory(),
+    prisma.category.findMany({
+      where: { slug: { in: PRODUCT_CATEGORIES.map((c) => c.slug) } },
+      select: { id: true, slug: true },
+    }),
+  ]);
+  const { products, facets } = catalog;
+  const categoryCount = (slug: string) => countsByCategory.get(categoryIds.find((c) => c.slug === slug)?.id ?? "") ?? 0;
+  const allCount = [...countsByCategory.values()].reduce((a, b) => a + b, 0);
 
   const ctx: ListingContext = { category: categorySlug, q, filter, sort: sortParam };
   const clearHref = listingHref(ctx, {
@@ -117,7 +116,7 @@ export default async function ProductsPage({
   const description = category
     ? category.description || CATEGORY_DESCRIPTIONS[category.slug] || CATEGORY_DESCRIPTIONS[category.parent?.slug ?? ""]
     : q
-      ? `${products.length} ürün bulundu.`
+      ? `${catalog.total} ürün bulundu.`
       : PAGE_DESCRIPTIONS[filter ?? sortParam ?? "all"] ?? PAGE_DESCRIPTIONS.all;
   const headImage =
     CATEGORY_IMAGES[category?.slug ?? ""] ?? CATEGORY_IMAGES[category?.parent?.slug ?? ""] ?? DEFAULT_IMAGE;
@@ -127,7 +126,7 @@ export default async function ProductsPage({
   const tabs: ListingTab[] =
     category && category.children.length > 0
       ? [
-          { href: `/products?category=${category.slug}`, label: "Tümü", count: baseProducts.length, active: true },
+          { href: `/products?category=${category.slug}`, label: "Tümü", count: catalog.scopeTotal, active: true },
           ...category.children.map((c) => ({
             href: `/products?category=${c.slug}`,
             label: c.label,
@@ -137,11 +136,11 @@ export default async function ProductsPage({
       : q || filter || sortParam === "discount"
         ? []
         : [
-            { href: "/products", label: "Tümü", count: allProducts.length, active: !category },
+            { href: "/products", label: "Tümü", count: allCount, active: !category },
             ...PRODUCT_CATEGORIES.map((c) => ({
               href: `/products?category=${c.slug}`,
               label: c.label,
-              count: allProducts.filter((p) => p.category === c.slug).length,
+              count: categoryCount(c.slug),
               active: category?.slug === c.slug || category?.parent?.slug === c.slug,
             })),
           ];
@@ -187,6 +186,12 @@ export default async function ProductsPage({
       imagePosition: CATEGORY_IMAGES[other.slug].position,
     },
   };
+
+  const currentHref = listingHref(ctx, filters);
+  const loadMoreHref =
+    products.length < catalog.total && pages < MAX_LISTING_PAGES
+      ? `${currentHref}${currentHref.includes("?") ? "&" : "?"}sayfa=${pages + 1}`
+      : null;
 
   return (
     <div className="page-x pt-5">
@@ -235,7 +240,10 @@ export default async function ProductsPage({
         filters={filters}
         ctx={ctx}
         sortKey={sortKey}
-        totalCount={baseProducts.length}
+        totalCount={catalog.scopeTotal}
+        resultTotal={catalog.total}
+        loadMoreHref={loadMoreHref}
+        pageSize={LISTING_PAGE_SIZE}
         editorials={editorials}
       />
     </div>

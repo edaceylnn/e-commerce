@@ -367,6 +367,10 @@ model Product {
 
   @@index([categoryId])
   @@index([title])
+  // Storefront listings always filter on ACTIVE within a category.
+  @@index([status, categoryId])
+  // Search also uses a trigram index on search_text(title, description),
+  // created in the catalog_search migration (Prisma can't express it).
 }
 
 model ProductImage {
