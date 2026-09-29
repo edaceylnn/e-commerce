@@ -124,7 +124,7 @@ export function VariantMatrix({
   return (
     <div className="space-y-4">
       <div>
-        <p className="mb-2 text-xs text-adm-text-secondary">Renkler</p>
+        <p className="mb-2 text-[13px] font-medium text-adm-text">Renkler</p>
         <div className="flex flex-wrap gap-2">
           {colors.map((c) => (
             <Chip key={c.id} selected={colorIds.includes(c.id)} onClick={() => toggleColor(c.id)}>
@@ -135,7 +135,7 @@ export function VariantMatrix({
         </div>
       </div>
       <div>
-        <p className="mb-2 text-xs text-adm-text-secondary">Bedenler</p>
+        <p className="mb-2 text-[13px] font-medium text-adm-text">Bedenler</p>
         <div className="flex flex-wrap gap-2">
           {sizes.map((s) => (
             <Chip key={s.id} selected={sizeIds.includes(s.id)} onClick={() => toggleSize(s.id)}>

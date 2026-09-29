@@ -21,14 +21,15 @@ type TabsSize = "sm" | "md";
 // disabled state consistently everywhere.
 const SIZE_CLASS: Record<TabsSize, { shell: string; tab: string }> = {
   sm: { shell: "p-0.5", tab: "px-2.5 py-1 text-[12.5px]" },
-  md: { shell: "p-1", tab: "px-3.5 py-1.5 text-[13px]" },
+  // Same overall height as the search/select controls under it (~42px).
+  md: { shell: "p-1", tab: "px-4 py-2 text-sm" },
 };
 
 export function PageTabs({
   tabs,
   actions,
   bare = false,
-  size = "sm",
+  size = "md",
 }: {
   tabs: PageTab[];
   actions?: ReactNode;
@@ -36,9 +37,8 @@ export function PageTabs({
   // Products page's unified table card) — false keeps the standalone
   // bottom-border/margin every other PageTabs caller (Orders, ...) relies on.
   bare?: boolean;
-  // Admin list screens default to the compact "sm" segment size — same
-  // radius/spacing family as Button/Input/Select, just one notch tighter
-  // since a filter row usually sits above a dense table.
+  // Admin list screens use "md", matching the height of the filter controls
+  // below; "sm" is for tighter spots.
   size?: TabsSize;
 }) {
   const { shell, tab: tabClass } = SIZE_CLASS[size];

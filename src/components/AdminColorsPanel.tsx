@@ -86,10 +86,10 @@ export function AdminColorsPanel({ colors }: { colors: ColorRow[] }) {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-adm-headline text-xl text-adm-on-surface">Renkler</h2>
+        <h2 className="text-base font-semibold text-adm-text">Renkler</h2>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 bg-adm-primary px-4 py-2.5 text-sm font-medium text-adm-on-primary transition hover:bg-adm-primary-deep"
+          className="flex items-center gap-2 bg-adm-primary px-4 py-2.5 text-sm font-semibold text-adm-on-primary transition hover:bg-adm-primary-deep rounded-xl"
         >
           <PlusIcon className="h-5 w-5" />
           Yeni Renk Ekle
@@ -98,29 +98,29 @@ export function AdminColorsPanel({ colors }: { colors: ColorRow[] }) {
 
       <div className="space-y-3">
         {colors.length === 0 && (
-          <p className="border border-adm-border bg-adm-surface-container-low p-4 text-sm text-adm-outline">
+          <p className="border border-adm-border bg-adm-surface-secondary p-4 text-sm text-adm-text-tertiary rounded-xl">
             Henüz renk eklenmedi.
           </p>
         )}
         {colors.map((color) => (
           <div
             key={color.id}
-            className="flex items-center justify-between border border-adm-border bg-adm-surface-container-lowest p-4 transition-colors hover:border-adm-text-tertiary"
+            className="flex items-center justify-between border border-adm-border bg-adm-surface-card p-4 transition-colors hover:border-adm-text-tertiary rounded-xl"
           >
             <div className="flex items-center gap-4">
               <span
-                className="h-8 w-8 shrink-0 border border-adm-border"
+                className="h-8 w-8 shrink-0 border border-adm-border rounded-xl"
                 style={{ backgroundColor: color.hex }}
               />
               <div>
-                <h3 className="font-adm-headline text-base text-adm-on-surface">{color.name}</h3>
-                <p className="mt-0.5 text-xs uppercase tracking-wide text-adm-on-surface-variant">
+                <h3 className="text-sm font-semibold text-adm-text">{color.name}</h3>
+                <p className="mt-0.5 text-xs uppercase tracking-wide text-adm-text-secondary">
                   {color.hex}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-adm-on-surface-variant">
+              <span className="text-sm text-adm-text-secondary">
                 {color.variantCount} Varyant
               </span>
               <button onClick={() => handleToggleActive(color)}>
@@ -131,13 +131,13 @@ export function AdminColorsPanel({ colors }: { colors: ColorRow[] }) {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => openEdit(color)}
-                  className="rounded p-1 text-adm-outline hover:bg-adm-surface-container"
+                  className="rounded p-1 text-adm-text-tertiary hover:bg-adm-surface-secondary"
                 >
                   <PencilIcon className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(color.id)}
-                  className="rounded p-1 text-adm-error hover:bg-adm-surface-container"
+                  className="rounded p-1 text-adm-error hover:bg-adm-surface-secondary"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </button>
@@ -149,44 +149,44 @@ export function AdminColorsPanel({ colors }: { colors: ColorRow[] }) {
 
       {modal.mode !== "closed" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg border border-adm-border bg-adm-surface p-6">
+          <div className="w-full max-w-lg rounded-2xl border border-adm-border bg-adm-surface-card p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-adm-headline text-xl text-adm-on-surface">
+              <h3 className="text-base font-semibold text-adm-text">
                 {modal.mode === "edit" ? "Rengi Düzenle" : "Yeni Renk Ekle"}
               </h3>
               <button
                 onClick={() => setModal({ mode: "closed" })}
-                className="rounded-full p-2 text-adm-on-surface-variant transition hover:bg-adm-surface-container-high"
+                className="rounded-full p-2 text-adm-text-secondary transition hover:bg-adm-surface-secondary"
               >
                 ✕
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm text-adm-on-surface-variant">Renk Adı</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-adm-text">Renk Adı</label>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
                   placeholder="Örn: Kum Bej"
-                  className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                  className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm text-adm-on-surface-variant">Renk Kodu</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-adm-text">Renk Kodu</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
                     value={hex}
                     onChange={(e) => setHex(e.target.value)}
-                    className="h-11 w-14 shrink-0 cursor-pointer border border-adm-border bg-adm-surface-container-low"
+                    className="h-11 w-14 shrink-0 cursor-pointer border border-adm-border bg-adm-surface-secondary rounded-xl"
                   />
                   <input
                     value={hex}
                     onChange={(e) => setHex(e.target.value)}
                     required
                     placeholder="#RRGGBB"
-                    className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                    className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                   />
                 </div>
               </div>
@@ -195,14 +195,14 @@ export function AdminColorsPanel({ colors }: { colors: ColorRow[] }) {
                 <button
                   type="button"
                   onClick={() => setModal({ mode: "closed" })}
-                  className="border border-adm-border bg-adm-surface-container-high px-5 py-3 text-sm font-medium text-adm-on-surface"
+                  className="border border-adm-border bg-adm-surface-secondary px-5 py-2.5 text-sm font-semibold text-adm-text rounded-xl"
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-adm-primary px-5 py-3 text-sm font-medium text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50"
+                  className="bg-adm-primary px-5 py-2.5 text-sm font-semibold text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50 rounded-xl"
                 >
                   {submitting ? "Kaydediliyor…" : "Kaydet"}
                 </button>

@@ -53,7 +53,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   return (
     <div className={containerClassName}>
       {label && (
-        <label htmlFor={inputId} className="mb-1.5 flex items-center gap-1 text-[13px] font-semibold text-adm-text-secondary">
+        <label htmlFor={inputId} className="mb-1.5 flex items-center gap-1 text-[13px] font-medium text-adm-text">
           {label}
           {optional && <span className="font-normal text-adm-text-tertiary">(opsiyonel)</span>}
         </label>

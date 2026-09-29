@@ -23,6 +23,11 @@ test.describe("admin panel", () => {
     await expect(aside.getByRole("link", { name: "Kampanyalar" })).not.toBeVisible();
     await aside.getByRole("button", { name: "Diğer" }).click();
     await expect(aside.getByRole("link", { name: "Kampanyalar" })).toBeVisible();
+
+    // A sub-page highlights only itself, not its parent entry too.
+    await page.goto("/admin/stock/movements");
+    await expect(aside.locator('[aria-current="page"]')).toHaveCount(1);
+    await expect(aside.locator('[aria-current="page"]')).toHaveText("Stok Hareketleri");
   });
 
   test("new product lands on the editor with live completeness warnings", async ({ page }) => {
@@ -51,9 +56,20 @@ test.describe("admin panel", () => {
     await expect(audit.getByText(/Görsel alt metni yok/)).not.toBeVisible();
     await expect(audit.getByText("Açıklama yok", { exact: true })).toBeVisible();
 
-    const productId = page.url().match(/products\/(\d+)\/edit/)![1];
-    const res = await page.request.delete(`/api/admin/products/${productId}`);
-    expect(res.ok()).toBe(true);
+    const editUrl = page.url();
+
+    // From the list: the name opens the editor, the trash icon deletes
+    // (after a confirmation).
+    await page.goto("/admin/products");
+    // Newest first: the product just created heads the list.
+    await expect(page.locator("tbody tr").first().getByRole("link", { name: title, exact: true })).toBeVisible();
+    await page.getByRole("link", { name: title, exact: true }).click();
+    await expect(page).toHaveURL(editUrl);
+
+    await page.goto("/admin/products");
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: `${title} ürününü sil` }).click();
+    await expect(page.getByRole("link", { name: title, exact: true })).not.toBeVisible();
     await rm(path.join("public", uploadedUrl), { force: true });
   });
 
@@ -105,14 +121,45 @@ test.describe("admin panel", () => {
     await rm(path.join("public", uploadedUrl), { force: true });
   });
 
+  test("order page saves the internal note without touching the status", async ({ page }) => {
+    await page.goto("/admin/orders");
+    await page.locator('a[href^="/admin/orders/"]').first().click();
+    await expect(page.getByText("Durum ve kargo", { exact: true })).toBeVisible();
+
+    const status = page.getByLabel("Sipariş durumu");
+    const statusBefore = await status.inputValue();
+    const note = page.getByLabel("İç not");
+    const noteBefore = await note.inputValue();
+    const noteCard = page.locator("div.rounded-2xl", { has: page.getByText("İç not", { exact: true }) });
+
+    // Wait for the PATCH itself: the button is also disabled while saving.
+    const saveNote = async () => {
+      const saved = page.waitForResponse(
+        (r) => r.url().includes("/api/admin/orders/") && r.request().method() === "PATCH"
+      );
+      await noteCard.getByRole("button", { name: "Kaydet" }).click();
+      expect((await saved).ok()).toBe(true);
+    };
+
+    await note.fill(`E2E not ${Date.now()}`);
+    await saveNote();
+    await page.reload();
+    await expect(page.getByLabel("İç not")).toHaveValue(/^E2E not \d+$/);
+    await expect(page.getByLabel("Sipariş durumu")).toHaveValue(statusBefore);
+
+    // Leave the order as we found it.
+    await page.getByLabel("İç not").fill(noteBefore);
+    await saveNote();
+  });
+
   test("can create, deactivate, and delete a coupon", async ({ page }) => {
     // Unique per run — a fixed code would collide with a leftover row from
     // a previous run (the coupon code column has a unique DB constraint).
     const code = `E2ETEST${Date.now()}`;
 
     await page.goto("/admin/campaigns");
-    await page.getByPlaceholder("Kod (örn. HOSGELDIN10)").fill(code);
-    await page.getByPlaceholder("Değer (%)").fill("15");
+    await page.getByLabel("Kupon kodu").fill(code);
+    await page.getByLabel("İndirim oranı (%)").fill("15");
     await page.getByRole("button", { name: "Kupon Oluştur" }).click();
 
     const row = page.locator("tr", { hasText: code });

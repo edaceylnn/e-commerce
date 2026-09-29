@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ComponentType } from "react";
 
 export type StatCardAccent = "primary" | "success" | "warning" | "danger";
 export type StatCardTrend = { direction: "up" | "down" | "flat"; label: string };
@@ -52,14 +51,13 @@ function MiniSparkline({
   );
 }
 
-// KPI card — white surface, 1px border, no colored glow. A trend arrow
-// carries semantic meaning (up = success, down = danger); the icon chip
-// stays neutral so the accent color isn't spent on decoration.
+// Linked KPI card — same look as KpiCard (rounded, plain label, no icon
+// chip), plus a hover state since the whole card is a link. A trend arrow
+// carries semantic meaning (up = success, down = danger).
 export function StatCard({
   label,
   value,
   href,
-  icon: Icon,
   note,
   trend,
   accent = "primary",
@@ -68,7 +66,6 @@ export function StatCard({
   label: string;
   value: string | number;
   href: string;
-  icon?: ComponentType<{ className?: string }>;
   note?: string;
   trend?: StatCardTrend;
   accent?: StatCardAccent;
@@ -77,22 +74,13 @@ export function StatCard({
   return (
     <Link
       href={href}
-      className="group flex flex-col justify-between border border-adm-border bg-adm-surface-card p-5 transition-colors hover:border-adm-text-tertiary"
+      className="group flex flex-col rounded-xl border border-adm-border bg-adm-surface-card p-4 transition-colors hover:border-adm-text-tertiary"
     >
-      <div className="mb-4 flex items-center justify-between">
-        <span className="text-[12px] font-medium uppercase tracking-[0.08em] text-adm-text-secondary">
-          {label}
-        </span>
-        {Icon && (
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-adm-surface-secondary text-adm-text-secondary">
-            <Icon className="h-[17px] w-[17px]" />
-          </span>
-        )}
-      </div>
+      <p className="mb-2 text-xs font-semibold text-adm-text-secondary">{label}</p>
 
       <div className="flex items-end justify-between gap-4">
         <div>
-          <div className="font-adm-headline text-[30px] font-semibold leading-none tracking-tight text-adm-text">
+          <div className="text-[28px] font-bold leading-none tracking-tight text-adm-text">
             {value}
           </div>
           {(trend || note) && (

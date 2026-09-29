@@ -71,7 +71,6 @@ export default async function AdminReturnsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Satış"
         title="İadeler"
         description="Tamamlanmış iadelerin listesi ve dağılımı."
       />

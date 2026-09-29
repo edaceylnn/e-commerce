@@ -73,7 +73,7 @@ export function AdminNewStockMovementButton({ products }: { products: ProductOpt
       <button
         onClick={openModal}
         disabled={products.length === 0}
-        className="flex items-center gap-2 bg-adm-primary px-4 py-2.5 text-sm font-medium text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50"
+        className="flex items-center gap-2 bg-adm-primary px-4 py-2.5 text-sm font-semibold text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50 rounded-xl"
       >
         <PlusIcon className="h-5 w-5" />
         Manuel Stok Hareketi
@@ -81,23 +81,23 @@ export function AdminNewStockMovementButton({ products }: { products: ProductOpt
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg border border-adm-border bg-adm-surface p-6">
+          <div className="w-full max-w-lg rounded-2xl border border-adm-border bg-adm-surface-card p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-adm-headline text-xl text-adm-on-surface">Manuel Stok Hareketi</h3>
+              <h3 className="text-base font-semibold text-adm-text">Manuel Stok Hareketi</h3>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-full p-2 text-adm-on-surface-variant transition hover:bg-adm-surface-container-high"
+                className="rounded-full p-2 text-adm-text-secondary transition hover:bg-adm-surface-secondary"
               >
                 ✕
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm text-adm-on-surface-variant">Ürün</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-adm-text">Ürün</label>
                 <select
                   value={productId}
                   onChange={(e) => handleProductChange(Number(e.target.value))}
-                  className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                  className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                 >
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -108,11 +108,11 @@ export function AdminNewStockMovementButton({ products }: { products: ProductOpt
               </div>
               {variantOptions.length > 0 && (
                 <div>
-                  <label className="mb-1 block text-sm text-adm-on-surface-variant">Varyant</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-adm-text">Varyant</label>
                   <select
                     value={variantId}
                     onChange={(e) => setVariantId(e.target.value)}
-                    className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                    className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                   >
                     {variantOptions.map((v) => (
                       <option key={v.id} value={v.id}>
@@ -124,11 +124,11 @@ export function AdminNewStockMovementButton({ products }: { products: ProductOpt
               )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-sm text-adm-on-surface-variant">İşlem Tipi</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-adm-text">İşlem Tipi</label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as typeof type)}
-                    className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                    className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                   >
                     {MANUAL_STOCK_MOVEMENT_TYPES.map((t) => (
                       <option key={t} value={t}>
@@ -138,7 +138,7 @@ export function AdminNewStockMovementButton({ products }: { products: ProductOpt
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-adm-on-surface-variant">
+                  <label className="mb-1.5 block text-[13px] font-medium text-adm-text">
                     Miktar (+/−)
                   </label>
                   <input
@@ -147,19 +147,19 @@ export function AdminNewStockMovementButton({ products }: { products: ProductOpt
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                     placeholder="Örn: 50 veya -2"
-                    className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                    className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                   />
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-sm text-adm-on-surface-variant">Açıklama</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-adm-text">Açıklama</label>
                 <textarea
                   required
                   rows={2}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Örn: Tedarikçiden mal kabul"
-                  className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                  className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                 />
               </div>
               {error && <p className="text-xs text-adm-error">{error}</p>}
@@ -167,14 +167,14 @@ export function AdminNewStockMovementButton({ products }: { products: ProductOpt
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="border border-adm-border bg-adm-surface-container-high px-5 py-3 text-sm font-medium text-adm-on-surface"
+                  className="border border-adm-border bg-adm-surface-secondary px-5 py-2.5 text-sm font-semibold text-adm-text rounded-xl"
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-adm-primary px-5 py-3 text-sm font-medium text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50"
+                  className="bg-adm-primary px-5 py-2.5 text-sm font-semibold text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50 rounded-xl"
                 >
                   {submitting ? "Kaydediliyor…" : "Kaydet"}
                 </button>

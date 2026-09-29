@@ -5,8 +5,6 @@ import { StatCard } from "@/components/admin/StatCard";
 import { AdminTable, AdminTableEmpty } from "@/components/admin/AdminTable";
 import { AdminThresholdEditor } from "@/components/AdminThresholdEditor";
 import { effectiveLowStockThreshold, isCriticalStock } from "@/lib/stock";
-import { WarningTriangleIcon } from "@/components/icons/AdminLuxeIcons";
-import { PackageIcon } from "@/components/icons/AccountIcons";
 
 type Row = {
   key: string;
@@ -95,19 +93,18 @@ export default async function AdminCriticalStockPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Envanter"
         title="Kritik Stok"
         description="Kritik eşiğin altına düşen ürün ve varyantlar — stok tükenmeden müdahale edin."
       />
 
       <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <StatCard label="Kritik Kalem" value={rows.length} href="/admin/stock/critical" icon={WarningTriangleIcon} accent="warning" />
-        <StatCard label="Etkilenen Ürün" value={affectedProducts} href="/admin/products?view=low-stock" icon={PackageIcon} />
+        <StatCard label="Kritik Kalem" value={rows.length} href="/admin/stock/critical" accent="warning" />
+        <StatCard label="Etkilenen Ürün" value={affectedProducts} href="/admin/products?stock=critical" />
       </div>
 
       <AdminTable>
         <thead>
-          <tr className="border-b border-adm-outline-variant/30 text-xs font-medium uppercase tracking-wider text-adm-outline">
+          <tr className="border-b border-adm-border/30 text-xs font-medium uppercase tracking-wider text-adm-text-tertiary">
             <th className="px-4 py-3">Ürün</th>
             <th className="px-4 py-3">Varyant</th>
             <th className="px-4 py-3">Mevcut Stok</th>
@@ -116,11 +113,11 @@ export default async function AdminCriticalStockPage() {
             <th className="px-4 py-3 text-right">İşlem</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-adm-outline-variant/15">
+        <tbody className="divide-y divide-adm-border/15">
           {rows.map((r) => (
-            <tr key={r.key} className="transition-colors hover:bg-adm-surface-container">
-              <td className="px-4 py-3 text-sm font-medium text-adm-on-surface">{r.productTitle}</td>
-              <td className="px-4 py-3 text-sm text-adm-on-surface-variant">{r.variantLabel ?? "—"}</td>
+            <tr key={r.key} className="transition-colors hover:bg-adm-surface-secondary">
+              <td className="px-4 py-3 text-sm font-medium text-adm-text">{r.productTitle}</td>
+              <td className="px-4 py-3 text-sm text-adm-text-secondary">{r.variantLabel ?? "—"}</td>
               <td className="px-4 py-3 text-sm font-medium text-adm-danger">{r.stock}</td>
               <td className="px-4 py-3">
                 <AdminThresholdEditor
@@ -130,11 +127,11 @@ export default async function AdminCriticalStockPage() {
                   nullable={r.thresholdNullable}
                 />
               </td>
-              <td className="px-4 py-3 text-sm text-adm-on-surface-variant">+{r.suggestedQty} adet</td>
+              <td className="px-4 py-3 text-sm text-adm-text-secondary">+{r.suggestedQty} adet</td>
               <td className="px-4 py-3 text-right">
                 <Link
                   href={`/admin/products/${r.productId}/edit`}
-                  className="border border-adm-border bg-adm-surface-container-highest px-3 py-1.5 text-sm font-medium text-adm-on-surface transition hover:bg-adm-surface-container"
+                  className="border border-adm-border bg-adm-surface-secondary px-3 py-1.5 text-sm font-medium text-adm-text transition hover:bg-adm-surface-secondary rounded-xl"
                 >
                   Ürünü Düzenle
                 </Link>

@@ -46,12 +46,12 @@ export function AdminSettingsForm({
 
   return (
     <form onSubmit={handleSubmit} className="max-w-md space-y-6">
-      <div className="border border-adm-border bg-adm-surface-container-low p-5">
-        <h2 className="mb-1 font-adm-headline text-lg text-adm-on-surface">Müşteri</h2>
-        <p className="mb-4 text-sm text-adm-on-surface-variant">
+      <div className="rounded-2xl border border-adm-border bg-adm-surface-card p-6">
+        <h2 className="mb-1 text-[15px] font-semibold text-adm-text">Müşteri</h2>
+        <p className="mb-4 text-sm text-adm-text-secondary">
           Bir müşteri, ödenmiş toplam harcaması bu tutara ulaştığında VIP sayılır.
         </p>
-        <label className="mb-1 block text-sm text-adm-on-surface-variant">
+        <label className="mb-1.5 block text-[13px] font-medium text-adm-text">
           VIP Eşiği (₺)
         </label>
         <input
@@ -61,17 +61,17 @@ export function AdminSettingsForm({
           required
           value={vipSpendThreshold}
           onChange={(e) => setVipSpendThreshold(e.target.value)}
-          className="w-full border border-adm-border bg-adm-surface-container-lowest p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+          className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
         />
       </div>
 
-      <div className="border border-adm-border bg-adm-surface-container-low p-5">
-        <h2 className="mb-1 font-adm-headline text-lg text-adm-on-surface">Stok</h2>
-        <p className="mb-4 text-sm text-adm-on-surface-variant">
+      <div className="rounded-2xl border border-adm-border bg-adm-surface-card p-6">
+        <h2 className="mb-1 text-[15px] font-semibold text-adm-text">Stok</h2>
+        <p className="mb-4 text-sm text-adm-text-secondary">
           Yeni bir ürün oluşturulurken kritik stok eşiği alanına önceden doldurulacak
           varsayılan değer. Mevcut ürünlerin kendi eşiklerini değiştirmez.
         </p>
-        <label className="mb-1 block text-sm text-adm-on-surface-variant">
+        <label className="mb-1.5 block text-[13px] font-medium text-adm-text">
           Varsayılan Kritik Stok Eşiği
         </label>
         <input
@@ -81,7 +81,7 @@ export function AdminSettingsForm({
           required
           value={defaultLowStockThreshold}
           onChange={(e) => setDefaultLowStockThreshold(e.target.value)}
-          className="w-full border border-adm-border bg-adm-surface-container-lowest p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+          className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
         />
       </div>
 
@@ -91,7 +91,7 @@ export function AdminSettingsForm({
         <button
           type="submit"
           disabled={submitting}
-          className="bg-adm-primary px-5 py-2.5 text-sm font-medium text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50"
+          className="bg-adm-primary px-5 py-2.5 text-sm font-semibold text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50 rounded-xl"
         >
           {submitting ? "Kaydediliyor…" : "Kaydet"}
         </button>

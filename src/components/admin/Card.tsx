@@ -13,11 +13,14 @@ const PADDING = {
 // instead for the compact list-of-cards pattern (order detail, dashboard).
 export function Card({
   title,
+  description,
   children,
   className = "",
   padding = "md",
 }: {
   title?: string;
+  // One short line under the title (e.g. the period a chart covers).
+  description?: string;
   children: ReactNode;
   className?: string;
   padding?: keyof typeof PADDING;
@@ -27,9 +30,10 @@ export function Card({
       className={`rounded-2xl border border-adm-border bg-adm-surface-card ${PADDING[padding]} ${className}`}
     >
       {title && (
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-tertiary">
-          {title}
-        </p>
+        <div className="mb-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-secondary">{title}</p>
+          {description && <p className="mt-1 text-xs text-adm-text-tertiary">{description}</p>}
+        </div>
       )}
       {children}
     </div>

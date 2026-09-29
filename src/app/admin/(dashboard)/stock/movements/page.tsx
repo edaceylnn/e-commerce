@@ -70,7 +70,6 @@ export default async function AdminStockMovementsPage({
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <PageHeader
-          eyebrow="Envanter"
           title="Stok Hareketleri"
           description="Her stok değişikliğinin nedenini ve izini tutan hareket defteri."
         />
@@ -116,7 +115,7 @@ export default async function AdminStockMovementsPage({
 
       <AdminTable>
         <thead>
-          <tr className="border-b border-adm-outline-variant/30 text-xs font-medium uppercase tracking-wider text-adm-outline">
+          <tr className="border-b border-adm-border/30 text-xs font-medium uppercase tracking-wider text-adm-text-tertiary">
             <th className="px-4 py-3">Tarih/Saat</th>
             <th className="px-4 py-3">Ürün</th>
             <th className="px-4 py-3">Varyant / SKU</th>
@@ -127,14 +126,14 @@ export default async function AdminStockMovementsPage({
             <th className="px-4 py-3">Açıklama</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-adm-outline-variant/15">
+        <tbody className="divide-y divide-adm-border/15">
           {movements.map((m) => (
-            <tr key={m.id} className="transition-colors hover:bg-adm-surface-container">
-              <td className="px-4 py-3 text-sm text-adm-on-surface-variant">
+            <tr key={m.id} className="transition-colors hover:bg-adm-surface-secondary">
+              <td className="px-4 py-3 text-sm text-adm-text-secondary">
                 {m.createdAt.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}
               </td>
-              <td className="px-4 py-3 text-sm font-medium text-adm-on-surface">{m.product.title}</td>
-              <td className="px-4 py-3 text-sm text-adm-on-surface-variant">
+              <td className="px-4 py-3 text-sm font-medium text-adm-text">{m.product.title}</td>
+              <td className="px-4 py-3 text-sm text-adm-text-secondary">
                 {m.variant ? `${m.variant.size.label} / ${m.variant.color.name} — ${m.variant.sku}` : "—"}
               </td>
               <td className="px-4 py-3">
@@ -142,14 +141,14 @@ export default async function AdminStockMovementsPage({
                   {STOCK_MOVEMENT_TYPE_LABELS[m.type]}
                 </StatusBadge>
               </td>
-              <td className="px-4 py-3 text-sm font-medium text-adm-on-surface">
+              <td className="px-4 py-3 text-sm font-medium text-adm-text">
                 {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
               </td>
-              <td className="px-4 py-3 text-sm text-adm-on-surface-variant">
+              <td className="px-4 py-3 text-sm text-adm-text-secondary">
                 {m.previousStock} → {m.newStock}
               </td>
-              <td className="px-4 py-3 text-sm text-adm-on-surface-variant">{m.user?.name ?? "Sistem"}</td>
-              <td className="px-4 py-3 text-sm text-adm-on-surface-variant">{m.note ?? "—"}</td>
+              <td className="px-4 py-3 text-sm text-adm-text-secondary">{m.user?.name ?? "Sistem"}</td>
+              <td className="px-4 py-3 text-sm text-adm-text-secondary">{m.note ?? "—"}</td>
             </tr>
           ))}
           {movements.length === 0 && <AdminTableEmpty colSpan={8}>Kayıtlı stok hareketi yok.</AdminTableEmpty>}

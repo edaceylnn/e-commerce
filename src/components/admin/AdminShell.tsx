@@ -1,11 +1,11 @@
 "use client";
 
-import { FormEvent, ReactNode, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AdminNav } from "@/components/AdminNav";
 import { MenuIcon, CloseIcon } from "@/components/icons/AdminIcons";
-import { BellIcon, LogOutIcon, UserIcon } from "@/components/icons/AccountIcons";
+import { LogOutIcon, UserIcon } from "@/components/icons/AccountIcons";
 
 // Premium editorial admin shell ("Yönetim Paneli") — dark warm-neutral
 // sidebar (never pure black), warm-ivory content area, a bordered search
@@ -26,7 +26,21 @@ export function AdminShell({
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  // The ⌘K hint in the search field is a real shortcut (Ctrl+K off Mac).
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -88,6 +102,8 @@ export function AdminShell({
               </svg>
             </span>
             <input
+              ref={searchRef}
+              aria-label="Panel genelinde ara"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Panel genelinde ara…"
@@ -99,13 +115,6 @@ export function AdminShell({
           </form>
 
           <div className="flex items-center gap-2">
-            <button
-              aria-label="Bildirimler"
-              className="relative p-2 text-adm-text-secondary transition hover:bg-adm-surface-secondary"
-            >
-              <BellIcon className="h-5 w-5" />
-            </button>
-
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((v) => !v)}

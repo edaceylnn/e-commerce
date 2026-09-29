@@ -81,7 +81,6 @@ export default async function AdminStockPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Envanter"
         title="Stok"
         meta={`1 depo · ${totalVariants.toLocaleString("tr-TR")} varyant izleniyor`}
       />

@@ -7,12 +7,6 @@ import { StatCard } from "@/components/admin/StatCard";
 import { RevenueTrendChart, type RevenueTrendPoint } from "@/components/admin/RevenueTrendChart";
 import { isVipCustomer } from "@/lib/customer-tiers";
 import { getSettings } from "@/lib/settings";
-import {
-  PaymentsIcon,
-  MedalIcon,
-  GroupIcon,
-  WarningTriangleIcon,
-} from "@/components/icons/AdminLuxeIcons";
 import { HeartIcon } from "@/components/icons/HeartIcon";
 
 type CategoryPerfRow = {
@@ -234,12 +228,12 @@ function RankedBar({
   return (
     <div>
       <div className="mb-1 flex items-center justify-between text-sm">
-        <span className="font-medium text-adm-on-surface">{label}</span>
-        <span className="text-adm-on-surface-variant">
+        <span className="font-medium text-adm-text">{label}</span>
+        <span className="text-adm-text-secondary">
           {units.toString()} adet · {formatPrice(revenue)}
         </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-adm-surface-container-highest">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-adm-surface-secondary">
         <div
           className="h-full rounded-full bg-adm-primary"
           style={{ width: `${widthPct}%` }}
@@ -262,8 +256,7 @@ export default async function AdminAnalyticsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Veri & Performans"
-        title="Analitik"
+        title="Raporlar"
         description="Gerçek sipariş, kampanya ve favori verilerinden hesaplanır."
       />
 
@@ -272,27 +265,23 @@ export default async function AdminAnalyticsPage() {
           label="VIP Müşteriler"
           value={data.vipCount}
           href="/admin/users?segment=vip"
-          icon={MedalIcon}
           note={`₺${vipSpendThreshold.toLocaleString("tr-TR")}+ harcama`}
         />
         <StatCard
           label="Ort. Müşteri Harcaması"
           value={formatPrice(data.avgSpend)}
           href="/admin/users"
-          icon={PaymentsIcon}
         />
         <StatCard
           label="Tekrar Alım Oranı"
           value={`%${data.repeatRate.toFixed(0)}`}
           href="/admin/users"
-          icon={GroupIcon}
           note={`${data.customersWithOrders} sipariş veren müşteriden`}
         />
         <StatCard
           label="İptal Oranı"
           value={`%${data.cancellationRate.toFixed(0)}`}
           href="/admin/orders"
-          icon={WarningTriangleIcon}
           note={`${data.cancelledOrders} / ${data.totalOrders} sipariş`}
           accent={data.cancellationRate > 10 ? "danger" : "primary"}
         />
@@ -300,22 +289,22 @@ export default async function AdminAnalyticsPage() {
 
       <Card padding="lg" className="mb-8">
         <div className="mb-4">
-          <h2 className="font-adm-headline text-xl text-adm-on-surface">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-secondary">
             30 Günlük Ciro Trendi
           </h2>
-          <p className="text-sm text-adm-outline">Ödemesi tamamlanan siparişler baz alınır.</p>
+          <p className="mt-1 text-xs text-adm-text-tertiary">Ödemesi tamamlanan siparişler baz alınır.</p>
         </div>
         <RevenueTrendChart data={data.dailyRevenue} />
       </Card>
 
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card padding="lg">
-          <h2 className="mb-4 font-adm-headline text-xl text-adm-on-surface">
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-secondary">
             Kategori Performansı
           </h2>
           <div className="space-y-4">
             {data.categoryPerf.length === 0 && (
-              <p className="text-sm text-adm-outline">Henüz satış verisi yok.</p>
+              <p className="mt-1 text-xs text-adm-text-tertiary">Henüz satış verisi yok.</p>
             )}
             {data.categoryPerf.map((c) => (
               <RankedBar
@@ -330,12 +319,12 @@ export default async function AdminAnalyticsPage() {
         </Card>
 
         <Card padding="lg">
-          <h2 className="mb-4 font-adm-headline text-xl text-adm-on-surface">
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-secondary">
             Marka Performansı
           </h2>
           <div className="space-y-4">
             {data.brandPerf.length === 0 && (
-              <p className="text-sm text-adm-outline">Henüz satış verisi yok.</p>
+              <p className="mt-1 text-xs text-adm-text-tertiary">Henüz satış verisi yok.</p>
             )}
             {data.brandPerf.map((b) => (
               <RankedBar
@@ -352,26 +341,26 @@ export default async function AdminAnalyticsPage() {
 
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card padding="lg">
-          <h2 className="mb-4 font-adm-headline text-xl text-adm-on-surface">
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-secondary">
             Kupon Performansı
           </h2>
           {data.couponPerformance.length === 0 ? (
-            <p className="text-sm text-adm-outline">Henüz kullanılan kupon yok.</p>
+            <p className="mt-1 text-xs text-adm-text-tertiary">Henüz kullanılan kupon yok.</p>
           ) : (
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-xs uppercase tracking-wide text-adm-outline">
+                <tr className="text-xs uppercase tracking-wide text-adm-text-tertiary">
                   <th className="pb-2">Kod</th>
                   <th className="pb-2">Sipariş</th>
                   <th className="pb-2 text-right">Verilen İndirim</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-adm-outline-variant/10">
+              <tbody className="divide-y divide-adm-border/10">
                 {data.couponPerformance.map((c) => (
                   <tr key={c.label}>
-                    <td className="py-2 font-semibold text-adm-on-surface">{c.label}</td>
-                    <td className="py-2 text-adm-on-surface-variant">{c.orders}</td>
-                    <td className="py-2 text-right text-adm-on-surface-variant">
+                    <td className="py-2 font-semibold text-adm-text">{c.label}</td>
+                    <td className="py-2 text-adm-text-secondary">{c.orders}</td>
+                    <td className="py-2 text-right text-adm-text-secondary">
                       {formatPrice(c.discountGiven)}
                     </td>
                   </tr>
@@ -382,26 +371,26 @@ export default async function AdminAnalyticsPage() {
         </Card>
 
         <Card padding="lg">
-          <h2 className="mb-4 font-adm-headline text-xl text-adm-on-surface">
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-secondary">
             Kampanya Performansı
           </h2>
           {data.campaignPerformance.length === 0 ? (
-            <p className="text-sm text-adm-outline">Henüz kullanılan kampanya yok.</p>
+            <p className="mt-1 text-xs text-adm-text-tertiary">Henüz kullanılan kampanya yok.</p>
           ) : (
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-xs uppercase tracking-wide text-adm-outline">
+                <tr className="text-xs uppercase tracking-wide text-adm-text-tertiary">
                   <th className="pb-2">Kampanya</th>
                   <th className="pb-2">Sipariş</th>
                   <th className="pb-2 text-right">Verilen İndirim</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-adm-outline-variant/10">
+              <tbody className="divide-y divide-adm-border/10">
                 {data.campaignPerformance.map((c) => (
                   <tr key={c.label}>
-                    <td className="py-2 font-semibold text-adm-on-surface">{c.label}</td>
-                    <td className="py-2 text-adm-on-surface-variant">{c.orders}</td>
-                    <td className="py-2 text-right text-adm-on-surface-variant">
+                    <td className="py-2 font-semibold text-adm-text">{c.label}</td>
+                    <td className="py-2 text-adm-text-secondary">{c.orders}</td>
+                    <td className="py-2 text-right text-adm-text-secondary">
                       {formatPrice(c.discountGiven)}
                     </td>
                   </tr>
@@ -413,27 +402,27 @@ export default async function AdminAnalyticsPage() {
       </div>
 
       <Card padding="lg" className="mb-8">
-        <h2 className="mb-4 font-adm-headline text-xl text-adm-on-surface">
+        <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-secondary">
           En Çok Favorilenen Ürünler
         </h2>
         {data.topWishlisted.length === 0 ? (
-          <p className="text-sm text-adm-outline">Henüz favori eklenmemiş.</p>
+          <p className="mt-1 text-xs text-adm-text-tertiary">Henüz favori eklenmemiş.</p>
         ) : (
           <div className="space-y-3">
             {data.topWishlisted.map((p) => (
               <div
                 key={p.id}
-                className="flex items-center justify-between gap-3 border border-adm-border bg-adm-surface-container-lowest p-3"
+                className="flex items-center justify-between gap-3 border border-adm-border bg-adm-surface-card p-3 rounded-xl"
               >
                 <div className="flex items-center gap-3">
-                  <div className="relative h-10 w-10 shrink-0 overflow-hidden bg-adm-surface-container">
+                  <div className="relative h-10 w-10 shrink-0 overflow-hidden bg-adm-surface-secondary">
                     {p.thumbnail && (
                       <Image src={p.thumbnail} alt="" fill sizes="40px" className="object-cover" />
                     )}
                   </div>
-                  <span className="text-sm font-medium text-adm-on-surface">{p.title}</span>
+                  <span className="text-sm font-medium text-adm-text">{p.title}</span>
                 </div>
-                <span className="flex items-center gap-1 text-sm text-adm-on-surface-variant">
+                <span className="flex items-center gap-1 text-sm text-adm-text-secondary">
                   <HeartIcon filled className="h-4 w-4" /> {p.count}
                 </span>
               </div>
@@ -444,34 +433,34 @@ export default async function AdminAnalyticsPage() {
 
       <Card padding="lg" className="mb-8">
         <div className="mb-4">
-          <h2 className="font-adm-headline text-xl text-adm-on-surface">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-secondary">
             Beden Bazlı İade Oranı
           </h2>
-          <p className="text-sm text-adm-outline">
+          <p className="mt-1 text-xs text-adm-text-tertiary">
             Tekstile özel KPI — hangi bedenlerin orantısız yüksek iade aldığını gösterir
             (beden tablosu/kalıp sorunlarına işaret edebilir).
           </p>
         </div>
         {data.sizeReturnRates.length === 0 ? (
-          <p className="text-sm text-adm-outline">Henüz satış verisi yok.</p>
+          <p className="mt-1 text-xs text-adm-text-tertiary">Henüz satış verisi yok.</p>
         ) : (
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="text-xs uppercase tracking-wide text-adm-outline">
+              <tr className="text-xs uppercase tracking-wide text-adm-text-tertiary">
                 <th className="pb-2">Beden</th>
                 <th className="pb-2 text-right">Satılan</th>
                 <th className="pb-2 text-right">İade Edilen</th>
                 <th className="pb-2 text-right">İade Oranı</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-adm-outline-variant/10">
+            <tbody className="divide-y divide-adm-border/10">
               {data.sizeReturnRates.map((r) => (
                 <tr key={r.label}>
-                  <td className="py-2 font-semibold text-adm-on-surface">{r.label}</td>
-                  <td className="py-2 text-right text-adm-on-surface-variant">{r.unitsSold}</td>
-                  <td className="py-2 text-right text-adm-on-surface-variant">{r.unitsReturned}</td>
+                  <td className="py-2 font-semibold text-adm-text">{r.label}</td>
+                  <td className="py-2 text-right text-adm-text-secondary">{r.unitsSold}</td>
+                  <td className="py-2 text-right text-adm-text-secondary">{r.unitsReturned}</td>
                   <td
-                    className={`py-2 text-right font-medium ${r.rate > 15 ? "text-adm-danger" : "text-adm-on-surface"}`}
+                    className={`py-2 text-right font-medium ${r.rate > 15 ? "text-adm-danger" : "text-adm-text"}`}
                   >
                     %{r.rate.toFixed(1)}
                   </td>
@@ -482,7 +471,7 @@ export default async function AdminAnalyticsPage() {
         )}
       </Card>
 
-      <p className="text-xs text-adm-outline">
+      <p className="text-xs text-adm-text-tertiary">
         Not: Sepeti terk etme oranı, dönüşüm oranı ve en çok görüntülenen ürünler
         gibi metrikler bu panelde yer almıyor — projede sayfa görüntülenme/etkileşim
         takibi altyapısı bulunmadığından bu veriler uydurulmamıştır. &quot;İptal

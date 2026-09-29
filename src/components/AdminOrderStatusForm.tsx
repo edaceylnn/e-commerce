@@ -5,13 +5,23 @@ import { useRouter } from "next/navigation";
 import { AdminButton } from "@/components/admin/Button";
 import { ORDER_STATUS_LABELS, nextAllowedStatuses } from "@/lib/order-status";
 
+const fieldClass =
+  "w-full rounded-lg border border-adm-border bg-adm-surface-card px-3 py-2 text-sm text-adm-text outline-none focus:border-adm-primary";
+
+// Two independent cards on the order page share this form: "status" (status
+// + tracking number, the first thing an admin does with an order) and
+// "note" (internal note). Each sends only its own fields — the PATCH route
+// leaves keys it didn't receive untouched, and the note card re-sends the
+// current status, which is always an allowed no-op.
 export function AdminOrderStatusForm({
+  section,
   orderId,
   currentStatus,
   currentTrackingNumber,
   currentInternalNote,
   currentUpdatedAt,
 }: {
+  section: "status" | "note";
   orderId: string;
   currentStatus: string;
   currentTrackingNumber: string | null;
@@ -29,17 +39,21 @@ export function AdminOrderStatusForm({
   const [error, setError] = useState<string | null>(null);
 
   const dirty =
-    status !== currentStatus ||
-    trackingNumber !== (currentTrackingNumber ?? "") ||
-    internalNote !== (currentInternalNote ?? "");
+    section === "status"
+      ? status !== currentStatus || trackingNumber !== (currentTrackingNumber ?? "")
+      : internalNote !== (currentInternalNote ?? "");
 
   async function handleSave() {
     setSubmitting(true);
     setError(null);
+    const body =
+      section === "status"
+        ? { status, trackingNumber, expectedUpdatedAt: currentUpdatedAt }
+        : { status: currentStatus, internalNote, expectedUpdatedAt: currentUpdatedAt };
     const res = await fetch(`/api/admin/orders/${orderId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, trackingNumber, internalNote, expectedUpdatedAt: currentUpdatedAt }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
     setSubmitting(false);
@@ -51,37 +65,53 @@ export function AdminOrderStatusForm({
     router.refresh();
   }
 
+  const noNextStep = selectableStatuses.length === 1;
+
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-adm-border bg-adm-surface-card px-3 py-2 text-sm text-adm-text outline-none focus:border-adm-primary"
-        >
-          {selectableStatuses.map((s) => (
-            <option key={s} value={s}>
-              {ORDER_STATUS_LABELS[s]}
-            </option>
-          ))}
-        </select>
-        <input
-          placeholder="Kargo takip no (opsiyonel)"
-          value={trackingNumber}
-          onChange={(e) => setTrackingNumber(e.target.value)}
-          className="flex-1 min-w-[180px] rounded-lg border border-adm-border bg-adm-surface-card px-3 py-2 text-sm text-adm-text outline-none focus:border-adm-primary"
+      {section === "status" ? (
+        <>
+          <label className="block">
+            <span className="mb-1.5 block text-[13px] font-medium text-adm-text">Sipariş durumu</span>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              disabled={noNextStep}
+              className={`${fieldClass} disabled:opacity-60`}
+            >
+              {selectableStatuses.map((s) => (
+                <option key={s} value={s}>
+                  {ORDER_STATUS_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
+          {noNextStep && (
+            <p className="text-xs text-adm-text-tertiary">Bu durumdan elle geçilebilecek başka bir durum yok.</p>
+          )}
+          <label className="block">
+            <span className="mb-1.5 block text-[13px] font-medium text-adm-text">Kargo takip no</span>
+            <input
+              placeholder="Opsiyonel"
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+              className={fieldClass}
+            />
+          </label>
+        </>
+      ) : (
+        <textarea
+          aria-label="İç not"
+          placeholder="Yalnızca admin görür"
+          rows={3}
+          value={internalNote}
+          onChange={(e) => setInternalNote(e.target.value)}
+          className={fieldClass}
         />
-      </div>
-      <textarea
-        placeholder="İç not (sadece admin görür, opsiyonel)"
-        rows={2}
-        value={internalNote}
-        onChange={(e) => setInternalNote(e.target.value)}
-        className="w-full rounded-lg border border-adm-border bg-adm-surface-card px-3 py-2 text-sm text-adm-text outline-none focus:border-adm-primary"
-      />
+      )}
       <div className="flex items-center gap-3">
-        <AdminButton onClick={handleSave} disabled={submitting || !dirty}>
-          {submitting ? "Kaydediliyor…" : "Kaydet"}
+        <AdminButton size="sm" onClick={handleSave} loading={submitting} disabled={!dirty}>
+          Kaydet
         </AdminButton>
         {error && <p className="text-xs text-adm-danger">{error}</p>}
       </div>

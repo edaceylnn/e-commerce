@@ -275,21 +275,19 @@ export default async function AdminHomePage({
           category split alongside it — same asymmetric two-column hero as
           the design deck's Genel Bakış screen. */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr]">
-        <Card>
-          <div className="mb-1 flex items-start justify-between">
-            <div>
-              <p className="text-[15px] font-semibold text-adm-text">Ciro</p>
-              <p className="text-xs text-adm-text-tertiary">{data.chartSubtitle}</p>
-            </div>
-          </div>
-          <RevenueBarChart data={data.revenueChartData} compareData={data.compareChartData} />
+        <Card title="Ciro" description={data.chartSubtitle}>
+          {[...data.revenueChartData, ...data.compareChartData].every((point) => point.value === 0) ? (
+            // An all-zero chart reads as "broken"; say what it means instead.
+            <p className="flex h-56 items-center justify-center rounded-xl bg-adm-surface-secondary text-sm text-adm-text-tertiary">
+              Bu dönemde ve bir önceki dönemde ödenmiş sipariş yok.
+            </p>
+          ) : (
+            <RevenueBarChart data={data.revenueChartData} compareData={data.compareChartData} />
+          )}
         </Card>
 
         <div className="flex flex-col gap-6">
-          <Card>
-            <p className="mb-3 border-b border-adm-border pb-3 text-[15px] font-semibold text-adm-text">
-              En çok satanlar
-            </p>
+          <Card title="En çok satanlar">
             {data.topProducts.length === 0 ? (
               <p className="text-sm text-adm-text-tertiary">Henüz satış verisi yok.</p>
             ) : (
@@ -312,8 +310,7 @@ export default async function AdminHomePage({
             )}
           </Card>
 
-          <Card>
-            <p className="mb-4 text-[15px] font-semibold text-adm-text">Kategori dağılımı</p>
+          <Card title="Kategori dağılımı">
             {data.categoryPerf.length === 0 ? (
               <p className="text-sm text-adm-text-tertiary">Henüz satış verisi yok.</p>
             ) : (
@@ -389,51 +386,53 @@ export default async function AdminHomePage({
             Tümünü Gör →
           </Link>
         </div>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-adm-border text-[11px] font-medium uppercase tracking-wider text-adm-text-tertiary">
-              <th className="py-2.5 pr-4">Sipariş</th>
-              <th className="py-2.5 pr-4">Müşteri</th>
-              <th className="py-2.5 pr-4">Ürün</th>
-              <th className="py-2.5 pr-4">Tutar</th>
-              <th className="py-2.5 pr-4">Durum</th>
-              <th className="py-2.5 pr-4 text-right">Tarih</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-adm-border">
-            {data.recentOrders.map((order) => (
-              <tr key={order.id} className="transition-colors hover:bg-adm-surface-secondary/50">
-                <td className="py-4 pr-4 font-semibold text-adm-primary">
-                  <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
-                </td>
-                <td className="py-4 pr-4 text-adm-text">{order.user.name}</td>
-                <td className="py-4 pr-4">
-                  <div className="flex -space-x-2">
-                    {order.items.slice(0, 3).map((item) => (
-                      <div key={item.id} className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border-2 border-adm-bg bg-adm-surface-secondary">
-                        <Image src={item.thumbnail} alt="" fill sizes="32px" className="object-cover" />
-                      </div>
-                    ))}
-                  </div>
-                </td>
-                <td className="py-4 pr-4 font-semibold text-adm-text">{formatPrice(Number(order.total))}</td>
-                <td className="py-4 pr-4">
-                  <OrderStatusBadge status={order.status} />
-                </td>
-                <td className="py-4 pr-4 text-right text-xs text-adm-text-tertiary">
-                  {order.createdAt.toLocaleDateString("tr-TR")}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-adm-border text-[11px] font-medium uppercase tracking-wider text-adm-text-tertiary">
+                <th className="py-2.5 pr-4">Sipariş</th>
+                <th className="py-2.5 pr-4">Müşteri</th>
+                <th className="py-2.5 pr-4">Ürün</th>
+                <th className="py-2.5 pr-4">Tutar</th>
+                <th className="py-2.5 pr-4">Durum</th>
+                <th className="py-2.5 pr-4 text-right">Tarih</th>
               </tr>
-            ))}
-            {data.recentOrders.length === 0 && (
-              <tr>
-                <td colSpan={6} className="py-10 text-center text-sm text-adm-text-tertiary">
-                  Henüz sipariş yok.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-adm-border">
+              {data.recentOrders.map((order) => (
+                <tr key={order.id} className="transition-colors hover:bg-adm-surface-secondary/50">
+                  <td className="py-4 pr-4 font-semibold text-adm-primary">
+                    <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
+                  </td>
+                  <td className="py-4 pr-4 text-adm-text">{order.user.name}</td>
+                  <td className="py-4 pr-4">
+                    <div className="flex -space-x-2">
+                      {order.items.slice(0, 3).map((item) => (
+                        <div key={item.id} className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border-2 border-adm-bg bg-adm-surface-secondary">
+                          <Image src={item.thumbnail} alt="" fill sizes="32px" className="object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="py-4 pr-4 font-semibold text-adm-text">{formatPrice(Number(order.total))}</td>
+                  <td className="py-4 pr-4">
+                    <OrderStatusBadge status={order.status} />
+                  </td>
+                  <td className="py-4 pr-4 text-right text-xs text-adm-text-tertiary">
+                    {order.createdAt.toLocaleDateString("tr-TR")}
+                  </td>
+                </tr>
+              ))}
+              {data.recentOrders.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-sm text-adm-text-tertiary">
+                    Henüz sipariş yok.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </Card>
       </div>
 

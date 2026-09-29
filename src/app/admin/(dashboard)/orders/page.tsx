@@ -128,6 +128,7 @@ export default async function AdminOrdersPage({
   }
 
   const hasToolbarFilters = Boolean(q || paymentFilter || dateFrom || dateTo || minTotal || maxTotal);
+  const hasRangeFilters = Boolean(dateFrom || dateTo || minTotal || maxTotal);
   const clearFiltersHref = statusFilter ? `/admin/orders?status=${statusFilter}` : "/admin/orders";
   const statusCountMap = new Map(statusCounts.map((s) => [s.status, s._count._all]));
 
@@ -143,9 +144,8 @@ export default async function AdminOrdersPage({
   return (
     <div>
       <PageHeader
-        eyebrow="Satış"
         title="Siparişler"
-        meta={new Date().toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+        meta={`${totalCount.toLocaleString("tr-TR")} sipariş · ${pendingPaymentCount} ödeme bekliyor · ${preparingCount} hazırlanıyor`}
         actions={
           <AdminButtonLink variant="secondary" href={`/api/admin/orders/export?${exportParams.toString()}`}>
             <DownloadIcon className="h-4 w-4" />
@@ -202,22 +202,6 @@ export default async function AdminOrdersPage({
           <option value="paid">Ödendi</option>
           <option value="unpaid">Ödeme bekliyor</option>
         </FilterSelect>
-        <Input type="date" name="dateFrom" defaultValue={dateFrom ?? ""} aria-label="Başlangıç tarihi" />
-        <Input type="date" name="dateTo" defaultValue={dateTo ?? ""} aria-label="Bitiş tarihi" />
-        <Input
-          type="number"
-          name="minTotal"
-          defaultValue={minTotal ?? ""}
-          placeholder="Min tutar"
-          containerClassName="w-28"
-        />
-        <Input
-          type="number"
-          name="maxTotal"
-          defaultValue={maxTotal ?? ""}
-          placeholder="Max tutar"
-          containerClassName="w-28"
-        />
         <AdminButton type="submit" size="sm">
           Filtrele
         </AdminButton>
@@ -230,6 +214,41 @@ export default async function AdminOrdersPage({
           </Link>
         )}
         </FilterToolbar>
+        {/* Less-used ranges live in a disclosure so the main row fits on one
+            line; it opens by itself whenever one of them is in use. */}
+        <details className="group w-full" open={hasRangeFilters}>
+          <summary className="cursor-pointer select-none text-sm font-medium text-adm-text-secondary transition hover:text-adm-text">
+            Diğer filtreler{hasRangeFilters ? " (aktif)" : ""}
+          </summary>
+          <div className="mt-3 flex flex-wrap items-end gap-4">
+            <fieldset className="flex items-center gap-2">
+              <legend className="mb-1.5 text-xs text-adm-text-secondary">Tarih aralığı</legend>
+              <Input type="date" name="dateFrom" defaultValue={dateFrom ?? ""} aria-label="Başlangıç tarihi" />
+              <span className="text-adm-text-tertiary">–</span>
+              <Input type="date" name="dateTo" defaultValue={dateTo ?? ""} aria-label="Bitiş tarihi" />
+            </fieldset>
+            <fieldset className="flex items-center gap-2">
+              <legend className="mb-1.5 text-xs text-adm-text-secondary">Tutar (₺)</legend>
+              <Input
+                type="number"
+                name="minTotal"
+                defaultValue={minTotal ?? ""}
+                placeholder="En az"
+                aria-label="En az tutar"
+                containerClassName="w-28"
+              />
+              <span className="text-adm-text-tertiary">–</span>
+              <Input
+                type="number"
+                name="maxTotal"
+                defaultValue={maxTotal ?? ""}
+                placeholder="En çok"
+                aria-label="En çok tutar"
+                containerClassName="w-28"
+              />
+            </fieldset>
+          </div>
+        </details>
       </form>
 
       <AdminOrdersTable

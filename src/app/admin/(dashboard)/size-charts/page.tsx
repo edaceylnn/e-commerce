@@ -2,8 +2,6 @@ import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
 import { AdminSizeChartsPanel } from "@/components/AdminSizeChartsPanel";
-import { SizeChartIcon } from "@/components/icons/AdminIcons";
-import { PackageIcon } from "@/components/icons/AccountIcons";
 
 export default async function AdminSizeChartsPage() {
   const [sizeCharts, sizeGroups] = await Promise.all([
@@ -19,20 +17,18 @@ export default async function AdminSizeChartsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Katalog Mimarisi"
         title="Beden Tabloları"
         description="Müşteriye doğru beden seçimi için ölçü rehberleri oluşturun."
       />
 
       <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <StatCard label="Beden Tablosu" value={sizeCharts.length} href="/admin/size-charts" icon={SizeChartIcon} />
+        <StatCard label="Beden Tablosu" value={sizeCharts.length} href="/admin/size-charts" />
         <StatCard
           label="Bağlı Ürün"
           value={totalProducts}
           href="/admin/products"
-          icon={PackageIcon}
         />
-        <StatCard label="Beden Grubu" value={sizeGroups.length} href="/admin/sizes" icon={SizeChartIcon} />
+        <StatCard label="Beden Grubu" value={sizeGroups.length} href="/admin/sizes" />
       </div>
 
       <AdminSizeChartsPanel

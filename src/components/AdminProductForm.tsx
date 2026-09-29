@@ -121,7 +121,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 flex items-baseline justify-between text-xs text-adm-text-secondary">
+      <span className="mb-1.5 flex items-baseline justify-between text-[13px] font-medium text-adm-text">
         <span>{label}</span>
         {hint && <span className="text-adm-text-tertiary">{hint}</span>}
       </span>
@@ -367,7 +367,7 @@ export function AdminProductForm({
           {variants.length > 0 ? (
             <p className="mt-3 text-right text-xs text-adm-text-tertiary">Toplam stok: {variantStock}</p>
           ) : (
-            <label className="mt-4 flex items-center gap-2 text-xs text-adm-text-secondary">
+            <label className="mt-4 flex items-center gap-2 text-[13px] font-medium text-adm-text">
               Varyantsız ürün stoğu
               <input
                 type="number"

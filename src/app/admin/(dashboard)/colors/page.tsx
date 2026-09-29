@@ -2,8 +2,6 @@ import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
 import { AdminColorsPanel } from "@/components/AdminColorsPanel";
-import { PaletteIcon } from "@/components/icons/AdminIcons";
-import { PackageIcon } from "@/components/icons/AccountIcons";
 
 export default async function AdminColorsPage() {
   const colors = await prisma.color.findMany({
@@ -17,15 +15,14 @@ export default async function AdminColorsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Katalog Mimarisi"
-        title="Renk Yönetimi"
+        title="Renkler"
         description="Ürün varyantlarında kullanılan renk paletini yönetin."
       />
 
       <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <StatCard label="Toplam Renk" value={colors.length} href="/admin/colors" icon={PaletteIcon} />
-        <StatCard label="Aktif Renk" value={activeCount} href="/admin/colors" icon={PaletteIcon} />
-        <StatCard label="Bağlı Varyant" value={totalVariants} href="/admin/products" icon={PackageIcon} />
+        <StatCard label="Toplam Renk" value={colors.length} href="/admin/colors" />
+        <StatCard label="Aktif Renk" value={activeCount} href="/admin/colors" />
+        <StatCard label="Bağlı Varyant" value={totalVariants} href="/admin/products" />
       </div>
 
       <AdminColorsPanel

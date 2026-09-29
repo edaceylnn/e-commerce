@@ -121,7 +121,6 @@ export default async function AdminUsersPage({
   return (
     <div>
       <PageHeader
-        eyebrow="Müşteri İlişkileri"
         title="Müşteriler"
         meta={`${customerRows.length.toLocaleString("tr-TR")} kayıtlı müşteri · %${repeatRate.toFixed(0)} tekrar eden alıcı`}
       />

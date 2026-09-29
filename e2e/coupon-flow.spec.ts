@@ -16,8 +16,8 @@ test("coupon: admin-created code applies a discount at checkout review", async (
   await expect(page.getByRole("heading", { name: /Tekrar hoş geldin,/ })).toBeVisible();
 
   await page.goto("/admin/campaigns");
-  await page.getByPlaceholder("Kod (örn. HOSGELDIN10)").fill(couponCode);
-  await page.getByPlaceholder("Değer (%)").fill("10");
+  await page.getByLabel("Kupon kodu").fill(couponCode);
+  await page.getByLabel("İndirim oranı (%)").fill("10");
   await page.getByRole("button", { name: "Kupon Oluştur" }).click();
   await expect(page.getByText(couponCode)).toBeVisible();
 

@@ -72,24 +72,29 @@ export function AdminIngredientsPanel({
   return (
     <div className="space-y-8">
       <Card padding="md">
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-adm-text-tertiary">
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-adm-text-secondary">
           <DropletIcon className="h-4 w-4" />
           Yeni Aktif İçerik
         </div>
         <form onSubmit={handleCreate} className="grid gap-3 sm:grid-cols-2">
-          <input
-            placeholder="İçerik adı (örn. Niacinamide)"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={inputClass}
-          />
-          <input
-            placeholder="Kısa açıklama (opsiyonel)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className={inputClass}
-          />
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
+            İçerik adı
+            <input
+              placeholder="örn. Niacinamide"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
+            Kısa açıklama (opsiyonel)
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className={inputClass}
+            />
+          </label>
           {error && <p className="text-xs text-adm-danger sm:col-span-2">{error}</p>}
           <AdminButton
             type="submit"
@@ -103,7 +108,7 @@ export function AdminIngredientsPanel({
 
       <AdminTable>
         <thead>
-          <tr className="border-b border-adm-border bg-adm-surface-secondary text-[11px] font-semibold uppercase tracking-widest text-adm-text-tertiary">
+          <tr className="border-b border-adm-border bg-adm-surface-secondary text-[11px] font-semibold uppercase tracking-widest text-adm-text-secondary">
             <th className="py-3 pl-4 pr-4" />
             <th className="py-3 pr-4">İçerik</th>
             <th className="py-3 pr-4">Kullanan Ürün Sayısı</th>

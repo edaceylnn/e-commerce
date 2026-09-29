@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { formatPrice } from "@/lib/format";
@@ -46,13 +47,11 @@ function combinedStatus(product: Row): { variant: StatusBadgeVariant; label: str
   return { variant: "success", label: "Aktif" };
 }
 
-// The stock bar's own color scale is independent of the DURUM badge's
-// semantic colors — the bar just answers "how full", so a healthy quantity
-// reads dark/neutral rather than green, per the reference design.
-function stockBarTone(product: Row): { width: number; color: string } {
-  if (product.stock === 0) return { width: 0, color: "bg-adm-danger" };
-  if (product.isLowStock) return { width: 30, color: "bg-adm-warning" };
-  return { width: 100, color: "bg-adm-text" };
+// Only a stock worth acting on is colored; a healthy count stays plain.
+function stockTone(product: Row) {
+  if (product.stock === 0) return "text-adm-danger";
+  if (product.isLowStock) return "text-adm-warning";
+  return "text-adm-text";
 }
 
 export function AdminProductsTable({
@@ -136,7 +135,6 @@ export function AdminProductsTable({
         <TableBody>
           {rows.map((product) => {
             const status = combinedStatus(product);
-            const bar = stockBarTone(product);
             const subtext = product.sku ?? product.brand ?? "Markasız";
             const isSelected = selected.has(product.id);
             return (
@@ -156,7 +154,12 @@ export function AdminProductsTable({
                       <Image src={product.thumbnail} alt="" fill sizes="44px" className="object-cover" />
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-[13px] font-semibold text-adm-text">{product.title}</p>
+                      <Link
+                        href={`/admin/products/${product.id}/edit`}
+                        className="block truncate text-[13px] font-semibold text-adm-text underline-offset-2 hover:underline"
+                      >
+                        {product.title}
+                      </Link>
                       <p className="truncate text-xs text-adm-text-tertiary">{subtext}</p>
                     </div>
                   </div>
@@ -167,17 +170,7 @@ export function AdminProductsTable({
                   {product.unitsSold > 0 ? product.unitsSold : "—"}
                 </TableCell>
                 <TableCell>
-                  {/* Left slot is the real stock count; a right-aligned
-                      "N depo" slot would go in this same flex row if the
-                      catalog ever grows a multi-warehouse model — there's
-                      only ever one implicit stock pool today, so nothing is
-                      rendered there rather than showing a fake constant. */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[13px] font-semibold text-adm-text">{product.stock} adet</span>
-                  </div>
-                  <div className="mt-1 h-1 w-16 overflow-hidden rounded-full bg-adm-surface-secondary">
-                    <div className={`h-full rounded-full ${bar.color}`} style={{ width: `${bar.width}%` }} />
-                  </div>
+                  <span className={`text-[13px] font-semibold ${stockTone(product)}`}>{product.stock} adet</span>
                 </TableCell>
                 <TableCell>
                   <StatusBadge variant={status.variant} size="sm">
@@ -185,7 +178,11 @@ export function AdminProductsTable({
                   </StatusBadge>
                 </TableCell>
                 <TableCell align="right" className="whitespace-nowrap">
-                  <AdminProductRowActions productId={product.id} onDelete={handleDelete} />
+                  <AdminProductRowActions
+                    productId={product.id}
+                    productTitle={product.title}
+                    onDelete={handleDelete}
+                  />
                 </TableCell>
               </TableRow>
             );

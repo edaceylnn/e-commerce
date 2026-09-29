@@ -26,7 +26,7 @@ export default async function AdminSizeChartDetailPage({
   return (
     <div>
       <PageHeader
-        eyebrow={sizeChart.sizeGroup.name}
+        breadcrumb={[{ label: "Beden Tabloları", href: "/admin/size-charts" }]}
         title={sizeChart.name}
         description="Her beden için ölçüleri girin — storefront'ta müşteri bu tabloyu görür."
       />

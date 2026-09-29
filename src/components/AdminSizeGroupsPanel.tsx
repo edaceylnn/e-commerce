@@ -146,10 +146,10 @@ export function AdminSizeGroupsPanel({ groups }: { groups: SizeGroupRow[] }) {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-adm-headline text-xl text-adm-on-surface">Beden Grupları</h2>
+        <h2 className="text-base font-semibold text-adm-text">Beden Grupları</h2>
         <button
           onClick={openCreateGroup}
-          className="flex items-center gap-2 bg-adm-primary px-4 py-2.5 text-sm font-medium text-adm-on-primary transition hover:bg-adm-primary-deep"
+          className="flex items-center gap-2 bg-adm-primary px-4 py-2.5 text-sm font-semibold text-adm-on-primary transition hover:bg-adm-primary-deep rounded-xl"
         >
           <PlusIcon className="h-5 w-5" />
           Yeni Beden Grubu Ekle
@@ -158,7 +158,7 @@ export function AdminSizeGroupsPanel({ groups }: { groups: SizeGroupRow[] }) {
 
       <div className="space-y-4">
         {groups.length === 0 && (
-          <p className="border border-adm-border bg-adm-surface-container-low p-4 text-sm text-adm-outline">
+          <p className="border border-adm-border bg-adm-surface-secondary p-4 text-sm text-adm-text-tertiary rounded-xl">
             Henüz beden grubu eklenmedi.
           </p>
         )}
@@ -167,15 +167,15 @@ export function AdminSizeGroupsPanel({ groups }: { groups: SizeGroupRow[] }) {
           return (
             <div
               key={group.id}
-              className="overflow-hidden border border-adm-border bg-adm-surface-container-low transition-colors hover:border-adm-text-tertiary"
+              className="overflow-hidden border border-adm-border bg-adm-surface-secondary transition-colors hover:border-adm-text-tertiary rounded-xl"
             >
               <div
-                className="flex cursor-pointer items-center justify-between bg-adm-surface-container-lowest p-4"
+                className="flex cursor-pointer items-center justify-between bg-adm-surface-card p-4"
                 onClick={() => toggle(group.id)}
               >
                 <div className="flex items-center gap-3">
-                  <h3 className="font-adm-headline text-lg text-adm-on-surface">{group.name}</h3>
-                  <span className="rounded-full bg-adm-primary-container/35 px-2 py-0.5 text-xs font-medium text-adm-on-primary-container">
+                  <h3 className="text-[15px] font-semibold text-adm-text">{group.name}</h3>
+                  <span className="rounded-full bg-adm-primary-soft/35 px-2 py-0.5 text-xs font-medium text-adm-primary-deep">
                     {group.sizes.length} Beden
                   </span>
                 </div>
@@ -186,7 +186,7 @@ export function AdminSizeGroupsPanel({ groups }: { groups: SizeGroupRow[] }) {
                       openEditGroup(group.id, group.name);
                     }}
                     title="Düzenle"
-                    className="p-2 text-adm-on-surface-variant transition hover:bg-adm-surface-container hover:text-adm-on-surface"
+                    className="p-2 text-adm-text-secondary transition hover:bg-adm-surface-secondary hover:text-adm-text"
                   >
                     <PencilIcon className="h-[18px] w-[18px]" />
                   </button>
@@ -196,7 +196,7 @@ export function AdminSizeGroupsPanel({ groups }: { groups: SizeGroupRow[] }) {
                       openCreateSize(group.id, group.name);
                     }}
                     title="Beden Ekle"
-                    className="p-2 text-adm-on-surface-variant transition hover:bg-adm-surface-container hover:text-adm-on-surface"
+                    className="p-2 text-adm-text-secondary transition hover:bg-adm-surface-secondary hover:text-adm-text"
                   >
                     <PlusIcon className="h-[18px] w-[18px]" />
                   </button>
@@ -206,44 +206,44 @@ export function AdminSizeGroupsPanel({ groups }: { groups: SizeGroupRow[] }) {
                       handleDeleteGroup(group.id);
                     }}
                     title="Grubu Sil"
-                    className="p-2 text-adm-error transition hover:bg-adm-surface-container"
+                    className="p-2 text-adm-error transition hover:bg-adm-surface-secondary"
                   >
                     <TrashIcon className="h-[18px] w-[18px]" />
                   </button>
                   <ChevronDownIcon
-                    className={`h-5 w-5 text-adm-on-surface-variant transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                    className={`h-5 w-5 text-adm-text-secondary transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
                   />
                 </div>
               </div>
 
               {isOpen && (
-                <div className="space-y-3 border-t border-adm-outline-variant/10 bg-adm-surface-container-low p-4">
+                <div className="space-y-3 border-t border-adm-border/10 bg-adm-surface-secondary p-4">
                   {group.sizes.length === 0 && (
-                    <p className="px-3 text-sm text-adm-outline">Beden yok.</p>
+                    <p className="px-3 text-sm text-adm-text-tertiary">Beden yok.</p>
                   )}
                   {group.sizes.map((size) => (
                     <div
                       key={size.id}
-                      className="flex items-center justify-between border border-adm-border bg-adm-surface-container-lowest p-3 transition-colors hover:bg-adm-surface"
+                      className="flex items-center justify-between border border-adm-border bg-adm-surface-card p-3 transition-colors hover:bg-adm-bg rounded-xl"
                     >
                       <div className="flex items-center gap-3">
-                        <SubArrowIcon className="h-4 w-4 text-adm-outline" />
-                        <span className="text-sm font-medium text-adm-on-surface">{size.label}</span>
+                        <SubArrowIcon className="h-4 w-4 text-adm-text-tertiary" />
+                        <span className="text-sm font-medium text-adm-text">{size.label}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="text-sm text-adm-on-surface-variant">
+                        <span className="text-sm text-adm-text-secondary">
                           {size.variantCount} Varyant
                         </span>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => openEditSize(size.id, size.label)}
-                            className="rounded p-1 text-adm-outline hover:bg-adm-surface-container"
+                            className="rounded p-1 text-adm-text-tertiary hover:bg-adm-surface-secondary"
                           >
                             <PencilIcon className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteSize(size.id)}
-                            className="rounded p-1 text-adm-error hover:bg-adm-surface-container"
+                            className="rounded p-1 text-adm-error hover:bg-adm-surface-secondary"
                           >
                             <TrashIcon className="h-4 w-4" />
                           </button>
@@ -260,19 +260,19 @@ export function AdminSizeGroupsPanel({ groups }: { groups: SizeGroupRow[] }) {
 
       {modal.mode !== "closed" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg border border-adm-border bg-adm-surface p-6">
+          <div className="w-full max-w-lg rounded-2xl border border-adm-border bg-adm-surface-card p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-adm-headline text-xl text-adm-on-surface">{modalTitle}</h3>
+              <h3 className="text-base font-semibold text-adm-text">{modalTitle}</h3>
               <button
                 onClick={() => setModal({ mode: "closed" })}
-                className="rounded-full p-2 text-adm-on-surface-variant transition hover:bg-adm-surface-container-high"
+                className="rounded-full p-2 text-adm-text-secondary transition hover:bg-adm-surface-secondary"
               >
                 ✕
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm text-adm-on-surface-variant">{fieldLabel}</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-adm-text">{fieldLabel}</label>
                 <input
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
@@ -280,7 +280,7 @@ export function AdminSizeGroupsPanel({ groups }: { groups: SizeGroupRow[] }) {
                   placeholder={
                     modal.mode === "create-size" || modal.mode === "edit-size" ? "Örn: XL" : "Örn: Standart"
                   }
-                  className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                  className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                 />
               </div>
               {error && <p className="text-xs text-adm-error">{error}</p>}
@@ -288,14 +288,14 @@ export function AdminSizeGroupsPanel({ groups }: { groups: SizeGroupRow[] }) {
                 <button
                   type="button"
                   onClick={() => setModal({ mode: "closed" })}
-                  className="border border-adm-border bg-adm-surface-container-high px-5 py-3 text-sm font-medium text-adm-on-surface"
+                  className="border border-adm-border bg-adm-surface-secondary px-5 py-2.5 text-sm font-semibold text-adm-text rounded-xl"
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-adm-primary px-5 py-3 text-sm font-medium text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50"
+                  className="bg-adm-primary px-5 py-2.5 text-sm font-semibold text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50 rounded-xl"
                 >
                   {submitting ? "Kaydediliyor…" : "Kaydet"}
                 </button>

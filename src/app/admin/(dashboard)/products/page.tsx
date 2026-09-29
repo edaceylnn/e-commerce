@@ -1,37 +1,34 @@
 import { prisma } from "@/lib/db";
 import { AdminProductsTable } from "@/components/AdminProductsTable";
 import { PageHeader } from "@/components/admin/PageHeader";
-import { PageTabs } from "@/components/admin/PageTabs";
 import { AdminButtonLink } from "@/components/admin/Button";
 import { DownloadIcon, PlusIcon } from "@/components/icons/AdminLuxeIcons";
 import { PRODUCT_CATEGORIES } from "@/lib/categories";
 import { AdminProductFilters } from "@/components/AdminProductFilters";
-import { AdminProductFilterPills } from "@/components/AdminProductFilterPills";
 import { effectiveLowStockThreshold, isCriticalStock } from "@/lib/stock";
 import type { Prisma } from "@/generated/prisma/client";
-
-const VIEWS = [
-  { key: "all", label: "Tümü" },
-  { key: "active", label: "Yayında" },
-  { key: "draft", label: "Taslak" },
-  { key: "low-stock", label: "Kritik Stok" },
-  { key: "out-of-stock", label: "Tükendi" },
-  { key: "best-sellers", label: "Çok Satanlar" },
-] as const;
-
-type ViewKey = (typeof VIEWS)[number]["key"];
-
-function isViewKey(value: string | undefined): value is ViewKey {
-  return !!value && VIEWS.some((v) => v.key === value);
-}
+import {
+  ADMIN_PRODUCT_ORDER,
+  adminProductFilterParams,
+  applyStockFilter,
+  parseAdminProductFilters,
+  productStatusFor,
+} from "@/lib/admin-product-filters";
 
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; brand?: string; stock?: string; view?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    category?: string;
+    brand?: string;
+    status?: string;
+    stock?: string;
+    view?: string;
+  }>;
 }) {
-  const { q, category, brand, stock, view: rawView } = await searchParams;
-  const view: ViewKey = isViewKey(rawView) ? rawView : "all";
+  const filters = parseAdminProductFilters(await searchParams);
+  const { q, category, brand } = filters;
 
   const baseWhere: Prisma.ProductWhereInput = {};
   if (q) {
@@ -47,13 +44,12 @@ export default async function AdminProductsPage({
     baseWhere.brand = { slug: brand };
   }
 
-  const [products, brands, salesRows] = await Promise.all([
+  const [products, salesRows] = await Promise.all([
     prisma.product.findMany({
       where: baseWhere,
       include: { category: true, brand: true, variants: true },
-      orderBy: { id: "asc" },
+      orderBy: ADMIN_PRODUCT_ORDER,
     }),
-    prisma.brand.findMany({ orderBy: { name: "asc" }, select: { slug: true, name: true } }),
     prisma.$queryRaw<{ productId: number; units_sold: bigint }[]>`
       SELECT oi."productId", SUM(oi.quantity)::bigint as units_sold
       FROM "OrderItem" oi
@@ -95,56 +91,24 @@ export default async function AdminProductsPage({
     };
   });
 
-  const tabCounts = {
-    all: allRows.length,
-    active: allRows.filter((r) => r.status === "ACTIVE").length,
-    draft: allRows.filter((r) => r.status === "DRAFT").length,
-    "low-stock": allRows.filter((r) => r.isLowStock).length,
-    "out-of-stock": allRows.filter((r) => r.stock === 0).length,
-    "best-sellers": allRows.filter((r) => r.unitsSold > 0).length,
-  } satisfies Record<ViewKey, number>;
+  // Summary counts cover the search/category scope, before status and
+  // stock filters narrow the list.
+  const draftCount = allRows.filter((r) => r.status === "DRAFT").length;
+  const lowStockCount = allRows.filter((r) => r.isLowStock).length;
 
-  let rows = allRows;
-  if (view === "active") rows = rows.filter((r) => r.status === "ACTIVE");
-  if (view === "draft") rows = rows.filter((r) => r.status === "DRAFT");
-  if (view === "out-of-stock") rows = rows.filter((r) => r.stock === 0);
-  if (view === "best-sellers") {
-    rows = rows.filter((r) => r.unitsSold > 0).sort((a, b) => b.unitsSold - a.unitsSold);
-  }
-  if (view === "low-stock") {
-    rows = rows.filter((r) => r.isLowStock);
-  }
-  if (stock === "critical") rows = rows.filter((r) => r.isLowStock);
-  if (stock === "in-stock") rows = rows.filter((r) => r.stock > 0);
-  if (stock === "out-of-stock") rows = rows.filter((r) => r.stock === 0);
-
-  function listHref(nextView: ViewKey) {
-    const params = new URLSearchParams();
-    if (nextView !== "all") params.set("view", nextView);
-    if (q) params.set("q", q);
-    if (category) params.set("category", category);
-    if (brand) params.set("brand", brand);
-    if (stock) params.set("stock", stock);
-    const qs = params.toString();
-    return qs ? `/admin/products?${qs}` : "/admin/products";
-  }
+  const status = productStatusFor(filters.status);
+  const rows = applyStockFilter(status ? allRows.filter((r) => r.status === status) : allRows, filters);
 
   return (
     <div>
       <PageHeader
         title="Ürünler"
-        meta={`${allRows.length} ürün · ${tabCounts["low-stock"]} kritik stok`}
+        meta={`${allRows.length} ürün · ${draftCount} taslak · ${lowStockCount} kritik stok`}
         actions={
           <div className="flex items-center gap-3">
             <AdminButtonLink
               variant="secondary"
-              href={`/api/admin/products/export?${new URLSearchParams({
-                ...(q ? { q } : {}),
-                ...(category ? { category } : {}),
-                ...(brand ? { brand } : {}),
-                ...(stock ? { stock } : {}),
-                ...(view !== "all" ? { view } : {}),
-              }).toString()}`}
+              href={`/api/admin/products/export?${adminProductFilterParams(filters)}`}
             >
               <DownloadIcon className="h-4 w-4" />
               Dışa Aktar
@@ -158,35 +122,7 @@ export default async function AdminProductsPage({
       />
 
       <div className="rounded-2xl border border-adm-border bg-adm-surface-card p-4">
-        <PageTabs
-          bare
-          tabs={VIEWS.map((v) => ({
-            href: listHref(v.key),
-            label: v.label,
-            count: tabCounts[v.key],
-            active: view === v.key,
-          }))}
-          actions={
-            <AdminProductFilterPills
-              categories={PRODUCT_CATEGORIES}
-              category={category ?? ""}
-              q={q ?? ""}
-              brand={brand ?? ""}
-              stock={stock ?? ""}
-              view={view}
-            />
-          }
-        />
-
-        <AdminProductFilters
-          brands={brands}
-          totalCount={rows.length}
-          query={q ?? ""}
-          category={category ?? ""}
-          brand={brand ?? ""}
-          stock={stock ?? ""}
-          view={view}
-        />
+        <AdminProductFilters categories={PRODUCT_CATEGORIES} totalCount={rows.length} filters={filters} />
         <AdminProductsTable products={rows} embedded />
       </div>
     </div>

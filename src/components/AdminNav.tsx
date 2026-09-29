@@ -100,8 +100,14 @@ export function AdminNav({
     return new Set(inOther ? [] : [COLLAPSED_BY_DEFAULT]);
   });
 
+  // Only the most specific match is active: on /admin/stock/movements,
+  // "Stok Hareketleri" — not also its parent "Stok".
+  const activeHref = GROUPS.flatMap((g) => g.links.map((l) => l.href))
+    .filter((href) => isActivePath(pathname, href))
+    .sort((a, b) => b.length - a.length)[0];
+
   function isActive(href: string) {
-    return isActivePath(pathname, href);
+    return href === activeHref;
   }
 
   function toggleGroup(label: string) {
@@ -119,6 +125,7 @@ export function AdminNav({
       <Link
         href={href}
         onClick={onNavigate}
+        aria-current={active ? "page" : undefined}
         className={`flex items-center gap-2.5 rounded-[9px] py-[7px] pl-3 pr-3 text-[13px] transition-colors ${
           active
             ? "bg-adm-sidebar-active-bg font-semibold text-adm-sidebar-active-text"
@@ -135,7 +142,7 @@ export function AdminNav({
     <div className="flex h-full flex-col">
       <div className="mb-6 flex items-center gap-2.5 px-2">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] bg-white text-sm font-bold text-adm-sidebar-bg">
-          H
+          E
         </span>
         <span className="text-[14px] font-bold tracking-tight text-white">EDACEY</span>
       </div>
@@ -192,5 +199,6 @@ export function AdminNav({
 }
 
 function isActivePath(pathname: string | null, href: string) {
-  return href === "/admin" ? pathname === "/admin" : pathname?.startsWith(href);
+  if (!pathname) return false;
+  return href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(`${href}/`);
 }

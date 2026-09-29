@@ -58,18 +58,21 @@ export function AdminBrandsPanel({ brands }: { brands: Brand[] }) {
   return (
     <div className="space-y-8">
       <Card padding="md">
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-adm-text-tertiary">
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-adm-text-secondary">
           <BadgeIcon className="h-4 w-4" />
           Yeni Marka
         </div>
         <form onSubmit={handleCreate} className="flex flex-wrap gap-3">
-          <input
-            placeholder="Marka adı (örn. L'Oréal Paris)"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={`${inputClass} flex-1 min-w-[220px]`}
-          />
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text min-w-[220px] flex-1">
+            Marka adı
+            <input
+              placeholder="örn. EDACEY"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+            />
+          </label>
           {error && <p className="w-full text-xs text-adm-danger">{error}</p>}
           <AdminButton type="submit" disabled={submitting} className="w-fit">
             {submitting ? "Oluşturuluyor…" : "Marka Ekle"}
@@ -79,7 +82,7 @@ export function AdminBrandsPanel({ brands }: { brands: Brand[] }) {
 
       <AdminTable>
         <thead>
-          <tr className="border-b border-adm-border bg-adm-surface-secondary text-[11px] font-semibold uppercase tracking-widest text-adm-text-tertiary">
+          <tr className="border-b border-adm-border bg-adm-surface-secondary text-[11px] font-semibold uppercase tracking-widest text-adm-text-secondary">
             <th className="py-3 pl-4 pr-4">Marka</th>
             <th className="py-3 pr-4">Ürün Sayısı</th>
             <th className="py-3 pr-4" />

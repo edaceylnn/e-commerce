@@ -16,7 +16,7 @@ export function ProductAuditPanel({ result }: { result: AuditResult }) {
   return (
     <Card padding="sm">
       <div className="flex items-baseline justify-between">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-tertiary">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-secondary">
           Kart kontrolü
         </p>
         <p className={`text-2xl font-bold ${scoreTone(result.score)}`}>

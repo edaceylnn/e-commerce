@@ -160,7 +160,7 @@ export function AdminCampaignsPanel({
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-tertiary">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-secondary">
           Öne Çıkan Kampanyalar
         </p>
         <AdminButton size="sm" onClick={() => setShowForm((v) => !v)}>
@@ -179,63 +179,78 @@ export function AdminCampaignsPanel({
 
       {showForm && (
       <Card padding="md">
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-adm-text-tertiary">
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-adm-text-secondary">
           <SparklesIcon className="h-4 w-4" />
           Yeni Kampanya
         </div>
         <form onSubmit={handleCreate} className="grid gap-3 sm:grid-cols-2">
-          <input
-            placeholder="Kampanya adı (örn. Yaz İndirimi)"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={`${inputClass} sm:col-span-2`}
-          />
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className={inputClass}
-          >
-            <option value="">Tüm kategoriler</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={brandId}
-            onChange={(e) => setBrandId(e.target.value)}
-            className={inputClass}
-          >
-            <option value="">Tüm markalar</option>
-            {brands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-          <input
-            placeholder="İndirim (%)"
-            type="number"
-            step="0.01"
-            min="0"
-            max="100"
-            required
-            value={discountPercentage}
-            onChange={(e) => setDiscountPercentage(e.target.value)}
-            className={inputClass}
-          />
-          <input
-            placeholder="Min. sepet tutarı (opsiyonel)"
-            type="number"
-            step="0.01"
-            min="0"
-            value={minSpend}
-            onChange={(e) => setMinSpend(e.target.value)}
-            className={inputClass}
-          />
-          <label className="flex flex-col gap-1 text-xs text-adm-text-tertiary">
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text sm:col-span-2">
+            Kampanya adı
+            <input
+              placeholder="örn. Yaz İndirimi"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
+            Kategori
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Tüm kategoriler</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
+            Marka
+            <select
+              value={brandId}
+              onChange={(e) => setBrandId(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Tüm markalar</option>
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
+            İndirim oranı (%)
+            <input
+              placeholder="örn. 15"
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              required
+              value={discountPercentage}
+              onChange={(e) => setDiscountPercentage(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
+            En az sepet tutarı (₺, opsiyonel)
+            <input
+              placeholder="Alt sınır yok"
+              type="number"
+              step="0.01"
+              min="0"
+              value={minSpend}
+              onChange={(e) => setMinSpend(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
             Başlangıç
             <input
               type="date"
@@ -245,7 +260,7 @@ export function AdminCampaignsPanel({
               className={inputClass}
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-adm-text-tertiary">
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
             Bitiş
             <input
               type="date"
@@ -267,12 +282,12 @@ export function AdminCampaignsPanel({
       </Card>
       )}
 
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-tertiary">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-secondary">
         Tüm Kampanyalar
       </p>
       <AdminTable>
         <thead>
-          <tr className="border-b border-adm-border bg-adm-surface-secondary text-[11px] font-semibold uppercase tracking-widest text-adm-text-tertiary">
+          <tr className="border-b border-adm-border bg-adm-surface-secondary text-[11px] font-semibold uppercase tracking-widest text-adm-text-secondary">
             <th className="py-3 pl-4 pr-4">Kampanya</th>
             <th className="py-3 pr-4">Kapsam</th>
             <th className="py-3 pr-4">İndirim</th>

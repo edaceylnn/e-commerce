@@ -3,15 +3,16 @@ import Link from "next/link";
 
 export function PageHeader({
   breadcrumb,
-  eyebrow,
   title,
+  badge,
   description,
   meta,
   actions,
 }: {
   breadcrumb?: { label: string; href: string }[];
-  eyebrow?: string;
   title: string;
+  // Shown right after the title (e.g. an order's status).
+  badge?: ReactNode;
   description?: string;
   meta?: string;
   actions?: ReactNode;
@@ -31,21 +32,19 @@ export function PageHeader({
             ))}
           </nav>
         )}
-        {eyebrow && (
-          <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.1em] text-adm-primary">
-            {eyebrow}
-          </span>
-        )}
-        <h1 className="font-adm-headline text-[28px] font-semibold leading-tight tracking-tight text-adm-text">
-          {title}
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-adm-headline text-[28px] font-semibold leading-tight tracking-tight text-adm-text">
+            {title}
+          </h1>
+          {badge}
+        </div>
         {description && (
           <p className="mt-1 max-w-lg text-sm text-adm-text-secondary">
             {description}
           </p>
         )}
         {meta && (
-          <p className="mt-1 text-sm font-medium text-adm-text-secondary">
+          <p className="mt-1 text-sm text-adm-text-secondary">
             {meta}
           </p>
         )}

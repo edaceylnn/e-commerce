@@ -95,50 +95,65 @@ export function AdminCouponsPanel({ coupons }: { coupons: Coupon[] }) {
   return (
     <div className="space-y-8">
       <Card padding="md">
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-adm-text-tertiary">
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-adm-text-secondary">
           <TagIcon className="h-4 w-4" />
           Yeni Kupon
         </div>
         <form onSubmit={handleCreate} className="grid gap-3 sm:grid-cols-2">
-          <input
-            placeholder="Kod (örn. HOSGELDIN10)"
-            required
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            className={`${inputClass} sm:col-span-2`}
-          />
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as "PERCENTAGE" | "FIXED")}
-            className={inputClass}
-          >
-            <option value="PERCENTAGE">Yüzde (%)</option>
-            <option value="FIXED">Sabit tutar (₺)</option>
-          </select>
-          <input
-            placeholder={type === "PERCENTAGE" ? "Değer (%)" : "Değer (₺)"}
-            type="number"
-            step="0.01"
-            min="0"
-            required
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className={inputClass}
-          />
-          <input
-            type="date"
-            value={expiresAt}
-            onChange={(e) => setExpiresAt(e.target.value)}
-            className={inputClass}
-          />
-          <input
-            placeholder="Kullanım limiti (opsiyonel)"
-            type="number"
-            min="1"
-            value={usageLimit}
-            onChange={(e) => setUsageLimit(e.target.value)}
-            className={inputClass}
-          />
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text sm:col-span-2">
+            Kupon kodu
+            <input
+              placeholder="örn. HOSGELDIN10"
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
+            İndirim türü
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as "PERCENTAGE" | "FIXED")}
+              className={inputClass}
+            >
+              <option value="PERCENTAGE">Yüzde (%)</option>
+              <option value="FIXED">Sabit tutar (₺)</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
+            {type === "PERCENTAGE" ? "İndirim oranı (%)" : "İndirim tutarı (₺)"}
+            <input
+              placeholder={type === "PERCENTAGE" ? "örn. 10" : "örn. 100"}
+              type="number"
+              step="0.01"
+              min="0"
+              required
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
+            Son kullanma tarihi (opsiyonel)
+            <input
+              type="date"
+              value={expiresAt}
+              onChange={(e) => setExpiresAt(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
+            Kullanım limiti (opsiyonel)
+            <input
+              placeholder="Sınırsız"
+              type="number"
+              min="1"
+              value={usageLimit}
+              onChange={(e) => setUsageLimit(e.target.value)}
+              className={inputClass}
+            />
+          </label>
           {error && <p className="text-xs text-adm-danger sm:col-span-2">{error}</p>}
           <AdminButton
             type="submit"
@@ -152,7 +167,7 @@ export function AdminCouponsPanel({ coupons }: { coupons: Coupon[] }) {
 
       <AdminTable>
         <thead>
-          <tr className="border-b border-adm-border bg-adm-surface-secondary text-[11px] font-semibold uppercase tracking-widest text-adm-text-tertiary">
+          <tr className="border-b border-adm-border bg-adm-surface-secondary text-[11px] font-semibold uppercase tracking-widest text-adm-text-secondary">
             <th className="py-3 pl-4 pr-4">Kod</th>
             <th className="py-3 pr-4">Değer</th>
             <th className="py-3 pr-4">Kullanım</th>

@@ -8,7 +8,6 @@ export default async function AdminSettingsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Yapılandırma"
         title="Ayarlar"
         description="Panel genelinde kullanılan iş kurallarını buradan yönetin."
       />

@@ -1,58 +1,42 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { PencilIcon, TrashIcon } from "@/components/icons/AdminIcons";
 
+const iconButton =
+  "inline-flex h-8 w-8 items-center justify-center rounded-md text-adm-text-tertiary transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-adm-primary/30";
+
+// Both actions sit visibly in the row rather than behind a "⋯" menu — there
+// are only two, and delete still asks for confirmation (see
+// AdminProductsTable's handleDelete).
 export function AdminProductRowActions({
   productId,
+  productTitle,
   onDelete,
 }: {
   productId: number;
+  productTitle: string;
   onDelete: (id: number) => void;
 }) {
-  const [open, setOpen] = useState(false);
-
-  function handleDelete() {
-    setOpen(false);
-    onDelete(productId);
-  }
-
   return (
-    <div className="relative inline-block text-left">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        aria-label="İşlemler"
-        className="rounded-md p-1.5 text-adm-text-tertiary transition hover:bg-adm-surface-secondary hover:text-adm-text"
+    <div className="inline-flex items-center gap-1">
+      <Link
+        href={`/admin/products/${productId}/edit`}
+        aria-label={`${productTitle} ürününü düzenle`}
+        title="Düzenle"
+        className={`${iconButton} hover:bg-adm-surface-secondary hover:text-adm-text`}
       >
-        <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="currentColor">
-          <circle cx="5" cy="12" r="1.8" />
-          <circle cx="12" cy="12" r="1.8" />
-          <circle cx="19" cy="12" r="1.8" />
-        </svg>
+        <PencilIcon className="h-4 w-4" />
+      </Link>
+      <button
+        type="button"
+        onClick={() => onDelete(productId)}
+        aria-label={`${productTitle} ürününü sil`}
+        title="Sil"
+        className={`${iconButton} hover:bg-adm-danger-soft hover:text-adm-danger`}
+      >
+        <TrashIcon className="h-4 w-4" />
       </button>
-      {open && (
-        <>
-          <button
-            aria-label="Kapat"
-            className="fixed inset-0 z-40 cursor-default"
-            onClick={() => setOpen(false)}
-          />
-          <div className="absolute right-0 z-50 mt-1 w-44 border border-adm-border bg-adm-surface-card py-1">
-            <Link
-              href={`/admin/products/${productId}/edit`}
-              className="block px-3.5 py-2 text-sm text-adm-text transition hover:bg-adm-surface-secondary"
-            >
-              Düzenle
-            </Link>
-            <button
-              onClick={handleDelete}
-              className="block w-full px-3.5 py-2 text-left text-sm text-adm-danger transition hover:bg-adm-danger-soft"
-            >
-              Sil
-            </button>
-          </div>
-        </>
-      )}
     </div>
   );
 }

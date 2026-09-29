@@ -116,9 +116,9 @@ export function AdminCollectionsPanel({ collections }: { collections: Collection
   }
 
   return (
-    <div className="border border-adm-border bg-adm-surface-container-low p-5">
+    <div className="rounded-2xl border border-adm-border bg-adm-surface-card p-6">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-adm-headline text-lg text-adm-on-surface">Özel Koleksiyonlar</h3>
+        <h3 className="text-[15px] font-semibold text-adm-text">Özel Koleksiyonlar</h3>
         <button
           onClick={openCreate}
           className="flex items-center gap-1 text-sm font-medium text-adm-primary hover:underline"
@@ -126,38 +126,39 @@ export function AdminCollectionsPanel({ collections }: { collections: Collection
           <PlusIcon className="h-4 w-4" /> Ekle
         </button>
       </div>
-      <p className="mb-4 text-sm text-adm-on-surface-variant">
+      <p className="mb-4 text-sm text-adm-text-secondary">
         Mağaza vitrininde öne çıkan özel temalı ürün grupları.
       </p>
       <div className="space-y-3">
         {collections.length === 0 && (
-          <p className="text-sm text-adm-outline">Henüz koleksiyon yok.</p>
+          <p className="text-sm text-adm-text-tertiary">Henüz koleksiyon yok.</p>
         )}
         {collections.map((col) => {
           const isExpired = col.endAt ? new Date(col.endAt) < new Date() : false;
           return (
             <div
               key={col.id}
-              className={`border border-adm-border bg-adm-surface-container-lowest p-3 ${
-                col.active ? "border-l-4 border-adm-primary" : "border-l-4 border-adm-outline-variant"
-              }`}
+              className="rounded-xl border border-adm-border bg-adm-surface-card p-4"
             >
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-medium text-adm-on-surface">{col.label}</h4>
+                    <h4 className="text-sm font-semibold text-adm-text">{col.label}</h4>
+                    <StatusBadge variant={col.active ? "success" : "neutral"} size="sm">
+                      {col.active ? "Aktif" : "Pasif"}
+                    </StatusBadge>
                     {isExpired && <StatusBadge variant="warning">Süresi Doldu</StatusBadge>}
                   </div>
                   {col.description && (
-                    <p className="text-xs text-adm-on-surface-variant">{col.description}</p>
+                    <p className="text-xs text-adm-text-secondary">{col.description}</p>
                   )}
                   {(col.startAt || col.endAt) && (
-                    <p className="mt-0.5 text-xs text-adm-on-surface-variant">
+                    <p className="mt-0.5 text-xs text-adm-text-secondary">
                       {col.startAt ? toDateInputValue(col.startAt) : "—"} → {col.endAt ? toDateInputValue(col.endAt) : "—"}
                     </p>
                   )}
                 </div>
-                <span className="shrink-0 rounded-full bg-adm-primary-container/30 px-2.5 py-1 text-xs font-semibold text-adm-on-primary-container">
+                <span className="shrink-0 rounded-full bg-adm-primary-soft/30 px-2.5 py-1 text-xs font-semibold text-adm-primary-deep">
                   {col.productCount} Ürün
                 </span>
               </div>
@@ -179,72 +180,72 @@ export function AdminCollectionsPanel({ collections }: { collections: Collection
 
       {modal.mode !== "closed" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md border border-adm-border bg-adm-surface p-6">
+          <div className="w-full max-w-md border border-adm-border bg-adm-bg p-6 rounded-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-adm-headline text-xl text-adm-on-surface">
+              <h3 className="text-base font-semibold text-adm-text">
                 {modal.mode === "edit" ? "Koleksiyonu Düzenle" : "Yeni Koleksiyon"}
               </h3>
-              <button onClick={() => setModal({ mode: "closed" })} className="rounded-full p-2 text-adm-on-surface-variant hover:bg-adm-surface-container-high">
+              <button onClick={() => setModal({ mode: "closed" })} className="rounded-full p-2 text-adm-text-secondary hover:bg-adm-surface-secondary">
                 ✕
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm text-adm-on-surface-variant">Koleksiyon Adı</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-adm-text">Koleksiyon Adı</label>
                 <input
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   required
                   placeholder="Örn: Altın Işıltısı Serisi"
-                  className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                  className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm text-adm-on-surface-variant">Kısa Açıklama</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-adm-text">Kısa Açıklama</label>
                 <input
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Örn: 24K altın katkılı lüks formüller"
-                  className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                  className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-sm text-adm-on-surface-variant">Başlangıç (opsiyonel)</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-adm-text">Başlangıç (opsiyonel)</label>
                   <input
                     type="date"
                     value={startAt}
                     onChange={(e) => setStartAt(e.target.value)}
-                    className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                    className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm text-adm-on-surface-variant">Bitiş (opsiyonel)</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-adm-text">Bitiş (opsiyonel)</label>
                   <input
                     type="date"
                     value={endAt}
                     onChange={(e) => setEndAt(e.target.value)}
-                    className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                    className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                   />
                 </div>
               </div>
               {modal.mode === "create" && (
                 <div>
-                  <label className="mb-1 block text-sm text-adm-on-surface-variant">Ürün ID&apos;leri (virgülle ayır, opsiyonel)</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-adm-text">Ürün ID&apos;leri (virgülle ayır, opsiyonel)</label>
                   <input
                     value={productIds}
                     onChange={(e) => setProductIds(e.target.value)}
                     placeholder="Örn: 1, 6, 118"
-                    className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                    className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                   />
                 </div>
               )}
               {error && <p className="text-xs text-adm-error">{error}</p>}
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setModal({ mode: "closed" })} className="border border-adm-border bg-adm-surface-container-high px-5 py-3 text-sm font-medium text-adm-on-surface">
+                <button type="button" onClick={() => setModal({ mode: "closed" })} className="border border-adm-border bg-adm-surface-secondary px-5 py-2.5 text-sm font-semibold text-adm-text rounded-xl">
                   İptal
                 </button>
-                <button type="submit" disabled={submitting} className="bg-adm-primary px-5 py-3 text-sm font-medium text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50">
+                <button type="submit" disabled={submitting} className="bg-adm-primary px-5 py-2.5 text-sm font-semibold text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50 rounded-xl">
                   {submitting ? "Kaydediliyor…" : "Kaydet"}
                 </button>
               </div>

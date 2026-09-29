@@ -157,10 +157,10 @@ export function AdminCategoriesTree({
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-adm-headline text-xl text-adm-on-surface">Kategoriler</h2>
+        <h2 className="text-base font-semibold text-adm-text">Kategoriler</h2>
         <button
           onClick={openCreateTop}
-          className="flex items-center gap-2 bg-adm-primary px-4 py-2.5 text-sm font-medium text-adm-on-primary transition hover:bg-adm-primary-deep"
+          className="flex items-center gap-2 bg-adm-primary px-4 py-2.5 text-sm font-semibold text-adm-on-primary transition hover:bg-adm-primary-deep rounded-xl"
         >
           <PlusIcon className="h-5 w-5" />
           Yeni Kategori Ekle
@@ -171,30 +171,32 @@ export function AdminCategoriesTree({
         {categories.map((cat, catIndex) => {
           const isOpen = expanded.has(cat.id);
           return (
-            <div key={cat.id} className="overflow-hidden border border-adm-border bg-adm-surface-container-low transition-colors hover:border-adm-text-tertiary">
+            <div key={cat.id} className="overflow-hidden border border-adm-border bg-adm-surface-secondary transition-colors hover:border-adm-text-tertiary rounded-xl">
               <div
-                className="flex cursor-pointer items-center justify-between bg-adm-surface-container-lowest p-4"
+                className="flex cursor-pointer flex-wrap items-center justify-between gap-3 bg-adm-surface-card p-4"
                 onClick={() => toggle(cat.id)}
               >
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 shrink-0 overflow-hidden bg-adm-surface-container">
+                <div className="flex min-w-0 items-center gap-4">
+                  <div className="h-12 w-12 shrink-0 overflow-hidden bg-adm-surface-secondary">
                     {cat.imageUrl && (
                       <Image src={cat.imageUrl} alt="" width={48} height={48} className="h-full w-full object-cover" />
                     )}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-adm-headline text-lg text-adm-on-surface">{cat.label}</h3>
-                      <span className="rounded-full bg-adm-primary-container/35 px-2 py-0.5 text-xs font-medium text-adm-on-primary-container">
+                      <h3 className="text-[15px] font-semibold text-adm-text">{cat.label}</h3>
+                      <span className="rounded-full bg-adm-primary-soft/35 px-2 py-0.5 text-xs font-medium text-adm-primary-deep">
                         {cat.productCount} Ürün
                       </span>
                     </div>
                     {cat.description && (
-                      <p className="mt-0.5 text-sm text-adm-on-surface-variant">{cat.description}</p>
+                      <p className="mt-0.5 text-sm text-adm-text-secondary">{cat.description}</p>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                {/* Wraps under the name on narrow screens instead of being
+                    pushed off the edge. */}
+                <div className="ml-auto flex items-center gap-1">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -202,7 +204,7 @@ export function AdminCategoriesTree({
                     }}
                     disabled={catIndex === 0}
                     title="Yukarı taşı"
-                    className="p-2 text-adm-on-surface-variant transition hover:bg-adm-surface-container hover:text-adm-on-surface disabled:opacity-30"
+                    className="p-2 text-adm-text-secondary transition hover:bg-adm-surface-secondary hover:text-adm-text disabled:opacity-30"
                   >
                     ↑
                   </button>
@@ -213,7 +215,7 @@ export function AdminCategoriesTree({
                     }}
                     disabled={catIndex === categories.length - 1}
                     title="Aşağı taşı"
-                    className="p-2 text-adm-on-surface-variant transition hover:bg-adm-surface-container hover:text-adm-on-surface disabled:opacity-30"
+                    className="p-2 text-adm-text-secondary transition hover:bg-adm-surface-secondary hover:text-adm-text disabled:opacity-30"
                   >
                     ↓
                   </button>
@@ -223,7 +225,7 @@ export function AdminCategoriesTree({
                       openEdit(cat.id, cat.label, cat.description ?? "", cat.metaTitle ?? "", cat.metaDescription ?? "");
                     }}
                     title="Düzenle"
-                    className="p-2 text-adm-on-surface-variant transition hover:bg-adm-surface-container hover:text-adm-on-surface"
+                    className="p-2 text-adm-text-secondary transition hover:bg-adm-surface-secondary hover:text-adm-text"
                   >
                     <PencilIcon className="h-[18px] w-[18px]" />
                   </button>
@@ -233,7 +235,7 @@ export function AdminCategoriesTree({
                       openCreateSub(cat.id, cat.label);
                     }}
                     title="Alt Kategori Ekle"
-                    className="p-2 text-adm-on-surface-variant transition hover:bg-adm-surface-container hover:text-adm-on-surface"
+                    className="p-2 text-adm-text-secondary transition hover:bg-adm-surface-secondary hover:text-adm-text"
                   >
                     <PlusIcon className="h-[18px] w-[18px]" />
                   </button>
@@ -243,57 +245,57 @@ export function AdminCategoriesTree({
                       handleDelete(cat.id, cat.children.length);
                     }}
                     title="Sil"
-                    className="p-2 text-adm-error transition hover:bg-adm-surface-container"
+                    className="p-2 text-adm-error transition hover:bg-adm-surface-secondary"
                   >
                     <TrashIcon className="h-[18px] w-[18px]" />
                   </button>
                   <ChevronDownIcon
-                    className={`h-5 w-5 text-adm-on-surface-variant transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                    className={`h-5 w-5 text-adm-text-secondary transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
                   />
                 </div>
               </div>
 
               {isOpen && (
-                <div className="space-y-3 border-t border-adm-outline-variant/10 bg-adm-surface-container-low p-4">
+                <div className="space-y-3 border-t border-adm-border/10 bg-adm-surface-secondary p-4">
                   {cat.children.length === 0 && (
-                    <p className="px-3 text-sm text-adm-outline">Alt kategori yok.</p>
+                    <p className="px-3 text-sm text-adm-text-tertiary">Alt kategori yok.</p>
                   )}
                   {cat.children.map((sub, subIndex) => (
                     <div
                       key={sub.id}
-                      className="flex items-center justify-between border border-adm-border bg-adm-surface-container-lowest p-3 transition-colors hover:bg-adm-surface"
+                      className="flex items-center justify-between border border-adm-border bg-adm-surface-card p-3 transition-colors hover:bg-adm-bg rounded-xl"
                     >
                       <div className="flex items-center gap-3">
-                        <SubArrowIcon className="h-4 w-4 text-adm-outline" />
-                        <span className="text-sm font-medium text-adm-on-surface">{sub.label}</span>
+                        <SubArrowIcon className="h-4 w-4 text-adm-text-tertiary" />
+                        <span className="text-sm font-medium text-adm-text">{sub.label}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="text-sm text-adm-on-surface-variant">{sub.productCount} Ürün</span>
+                        <span className="text-sm text-adm-text-secondary">{sub.productCount} Ürün</span>
                         <StatusBadge variant="success">Aktif</StatusBadge>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => moveCategory(cat.children, subIndex, -1)}
                             disabled={subIndex === 0}
-                            className="rounded p-1 text-adm-outline hover:bg-adm-surface-container disabled:opacity-30"
+                            className="rounded p-1 text-adm-text-tertiary hover:bg-adm-surface-secondary disabled:opacity-30"
                           >
                             ↑
                           </button>
                           <button
                             onClick={() => moveCategory(cat.children, subIndex, 1)}
                             disabled={subIndex === cat.children.length - 1}
-                            className="rounded p-1 text-adm-outline hover:bg-adm-surface-container disabled:opacity-30"
+                            className="rounded p-1 text-adm-text-tertiary hover:bg-adm-surface-secondary disabled:opacity-30"
                           >
                             ↓
                           </button>
                           <button
                             onClick={() => openEdit(sub.id, sub.label, "")}
-                            className="rounded p-1 text-adm-outline hover:bg-adm-surface-container"
+                            className="rounded p-1 text-adm-text-tertiary hover:bg-adm-surface-secondary"
                           >
                             <PencilIcon className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(sub.id)}
-                            className="rounded p-1 text-adm-error hover:bg-adm-surface-container"
+                            className="rounded p-1 text-adm-error hover:bg-adm-surface-secondary"
                           >
                             <TrashIcon className="h-4 w-4" />
                           </button>
@@ -310,9 +312,9 @@ export function AdminCategoriesTree({
 
       {modal.mode !== "closed" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg border border-adm-border bg-adm-surface p-6">
+          <div className="w-full max-w-lg rounded-2xl border border-adm-border bg-adm-surface-card p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-adm-headline text-xl text-adm-on-surface">
+              <h3 className="text-base font-semibold text-adm-text">
                 {modal.mode === "edit"
                   ? "Kategoriyi Düzenle"
                   : modal.mode === "create-sub"
@@ -321,49 +323,49 @@ export function AdminCategoriesTree({
               </h3>
               <button
                 onClick={() => setModal({ mode: "closed" })}
-                className="rounded-full p-2 text-adm-on-surface-variant transition hover:bg-adm-surface-container-high"
+                className="rounded-full p-2 text-adm-text-secondary transition hover:bg-adm-surface-secondary"
               >
                 ✕
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm text-adm-on-surface-variant">Kategori Adı</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-adm-text">Kategori Adı</label>
                 <input
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   required
                   placeholder="Örn: Saç Bakım & Şekillendirme"
-                  className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                  className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm text-adm-on-surface-variant">Kısa Açıklama</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-adm-text">Kısa Açıklama</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
                   placeholder="Kategori açıklaması girin..."
-                  className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                  className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm text-adm-on-surface-variant">SEO Başlığı (opsiyonel)</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-adm-text">SEO Başlığı (opsiyonel)</label>
                 <input
                   value={metaTitle}
                   onChange={(e) => setMetaTitle(e.target.value)}
                   placeholder="Arama motorlarında görünecek başlık"
-                  className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                  className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm text-adm-on-surface-variant">SEO Açıklaması (opsiyonel)</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-adm-text">SEO Açıklaması (opsiyonel)</label>
                 <textarea
                   value={metaDescription}
                   onChange={(e) => setMetaDescription(e.target.value)}
                   rows={2}
                   placeholder="Arama sonuçlarında görünecek açıklama"
-                  className="w-full border border-adm-border bg-adm-surface-container-low p-3 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                  className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                 />
               </div>
               {error && <p className="text-xs text-adm-error">{error}</p>}
@@ -371,14 +373,14 @@ export function AdminCategoriesTree({
                 <button
                   type="button"
                   onClick={() => setModal({ mode: "closed" })}
-                  className="border border-adm-border bg-adm-surface-container-high px-5 py-3 text-sm font-medium text-adm-on-surface"
+                  className="border border-adm-border bg-adm-surface-secondary px-5 py-2.5 text-sm font-semibold text-adm-text rounded-xl"
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-adm-primary px-5 py-3 text-sm font-medium text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50"
+                  className="bg-adm-primary px-5 py-2.5 text-sm font-semibold text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50 rounded-xl"
                 >
                   {submitting ? "Kaydediliyor…" : "Kaydet"}
                 </button>

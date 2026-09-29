@@ -197,7 +197,7 @@ export function ProductDraftsPanel({
 
   return (
     <Card padding="sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-tertiary">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-adm-text-secondary">
         AI taslakları
       </p>
       <p className="mt-1 text-xs text-adm-text-tertiary">

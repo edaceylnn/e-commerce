@@ -44,13 +44,12 @@ export function AdminLoginForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="relative space-y-4 overflow-hidden border border-adm-border bg-adm-surface-container-low p-6"
+      className="space-y-4 rounded-2xl border border-adm-border bg-adm-surface-card p-6"
     >
-      <span className="absolute inset-x-0 top-0 h-[3px] bg-adm-primary" />
       <div className="space-y-1.5">
         <label
           htmlFor="admin-email"
-          className="block text-xs font-medium text-adm-on-surface-variant"
+          className="block text-[13px] font-medium text-adm-text"
         >
           E-posta
         </label>
@@ -60,13 +59,13 @@ export function AdminLoginForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full border border-adm-border bg-adm-surface-container-lowest px-3 py-2.5 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+          className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
         />
       </div>
       <div className="space-y-1.5">
         <label
           htmlFor="admin-password"
-          className="block text-xs font-medium text-adm-on-surface-variant"
+          className="block text-[13px] font-medium text-adm-text"
         >
           Parola
         </label>
@@ -76,14 +75,14 @@ export function AdminLoginForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full border border-adm-border bg-adm-surface-container-lowest px-3 py-2.5 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+          className="w-full border border-adm-border bg-adm-surface-card px-3 py-2.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
         />
       </div>
-      {error && <p className="text-xs text-adm-error">{error}</p>}
+      {error && <p className="text-xs text-adm-danger">{error}</p>}
       <button
         type="submit"
         disabled={submitting}
-        className="w-full bg-adm-primary py-2.5 text-sm font-medium text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50"
+        className="w-full rounded-xl bg-adm-primary py-2.5 text-sm font-semibold text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50"
       >
         {submitting ? "Giriş yapılıyor…" : "Giriş Yap"}
       </button>

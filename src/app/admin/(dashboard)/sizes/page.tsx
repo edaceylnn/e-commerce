@@ -2,8 +2,6 @@ import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
 import { AdminSizeGroupsPanel } from "@/components/AdminSizeGroupsPanel";
-import { RulerIcon } from "@/components/icons/AdminIcons";
-import { PackageIcon } from "@/components/icons/AccountIcons";
 
 export default async function AdminSizesPage() {
   const groups = await prisma.sizeGroup.findMany({
@@ -25,15 +23,14 @@ export default async function AdminSizesPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Katalog Mimarisi"
-        title="Beden Yönetimi"
+        title="Bedenler"
         description="Ürün varyantlarında kullanılan beden gruplarını ve bedenleri yönetin."
       />
 
       <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <StatCard label="Beden Grubu" value={groups.length} href="/admin/sizes" icon={RulerIcon} />
-        <StatCard label="Toplam Beden" value={totalSizes} href="/admin/sizes" icon={RulerIcon} />
-        <StatCard label="Bağlı Varyant" value={totalVariants} href="/admin/products" icon={PackageIcon} />
+        <StatCard label="Beden Grubu" value={groups.length} href="/admin/sizes" />
+        <StatCard label="Toplam Beden" value={totalSizes} href="/admin/sizes" />
+        <StatCard label="Bağlı Varyant" value={totalVariants} href="/admin/products" />
       </div>
 
       <AdminSizeGroupsPanel

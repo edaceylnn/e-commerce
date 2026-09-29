@@ -42,7 +42,7 @@ export function AdminThresholdEditor({
     return (
       <button
         onClick={() => setEditing(true)}
-        className="text-sm text-adm-on-surface underline decoration-dotted underline-offset-2 hover:text-adm-primary"
+        className="text-sm text-adm-text underline decoration-dotted underline-offset-2 hover:text-adm-primary"
       >
         {effectiveValue}
       </button>
@@ -58,7 +58,7 @@ export function AdminThresholdEditor({
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder={nullable ? "Varsayılan" : undefined}
-        className="w-20 border border-adm-border bg-adm-surface-container-low p-1.5 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+        className="w-20 border border-adm-border bg-adm-surface-card p-1.5 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
       />
       <button
         onClick={handleSave}
@@ -69,7 +69,7 @@ export function AdminThresholdEditor({
       </button>
       <button
         onClick={() => setEditing(false)}
-        className="text-xs text-adm-on-surface-variant hover:underline"
+        className="text-xs text-adm-text-secondary hover:underline"
       >
         Vazgeç
       </button>

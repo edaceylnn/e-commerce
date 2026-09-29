@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { formatPrice } from "@/lib/format";
@@ -7,9 +6,10 @@ import { AdminOrderStatusForm } from "@/components/AdminOrderStatusForm";
 import { AdminOrderHeaderActions } from "@/components/AdminOrderHeaderActions";
 import { AdminOrderEventTimeline } from "@/components/AdminOrderEventTimeline";
 import { AdminOrderItemsPanel } from "@/components/AdminOrderItemsPanel";
-import { isOrderRefundable } from "@/lib/order-status";
+import { isOrderRefundable, paymentStatusLabel } from "@/lib/order-status";
 import { getInitials } from "@/lib/format";
 import { Card } from "@/components/admin/Card";
+import { PageHeader } from "@/components/admin/PageHeader";
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
@@ -77,33 +77,28 @@ export default async function AdminOrderDetailPage({
 
   return (
     <div>
-      <nav className="mb-1.5 flex items-center gap-1.5 text-sm text-adm-text-secondary">
-        <Link href="/admin/orders" className="transition hover:text-adm-text">
-          Siparişler
-        </Link>
-        <span className="text-adm-text-tertiary">/</span>
-        <span>#{order.orderNumber}</span>
-      </nav>
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-4 border-b border-adm-border pb-6">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-adm-headline text-[32px] font-bold tracking-tight text-adm-text">
-              #{order.orderNumber}
-            </h1>
-            <OrderStatusBadge status={order.status} />
-          </div>
-          <p className="mt-1.5 text-sm text-adm-text-secondary">
-            {order.createdAt.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} ·{" "}
-            {order.user.name}
-          </p>
-        </div>
-        <AdminOrderHeaderActions
-          orderId={order.id}
-          status={order.status}
-          paidAt={order.paidAt}
-          refundedAt={order.refundedAt}
-        />
-      </div>
+      <PageHeader
+        breadcrumb={[{ label: "Siparişler", href: "/admin/orders" }]}
+        title={`#${order.orderNumber}`}
+        badge={<OrderStatusBadge status={order.status} />}
+        // Payment is only worth a word once money moved — an unpaid order's
+        // badge already says "Ödeme Bekleniyor".
+        meta={[
+          order.createdAt.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" }),
+          order.user.name,
+          order.paidAt ? paymentStatusLabel(order.paidAt, order.status) : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+        actions={
+          <AdminOrderHeaderActions
+            orderId={order.id}
+            status={order.status}
+            paidAt={order.paidAt}
+            refundedAt={order.refundedAt}
+          />
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr]">
         <div className="space-y-6">
@@ -149,8 +144,12 @@ export default async function AdminOrderDetailPage({
             />
           </Card>
 
-          <Card title="Kargo & İç Not">
+        </div>
+
+        <div className="space-y-6">
+          <Card title="Durum ve kargo">
             <AdminOrderStatusForm
+              section="status"
               orderId={order.id}
               currentStatus={order.status}
               currentTrackingNumber={order.trackingNumber}
@@ -158,9 +157,7 @@ export default async function AdminOrderDetailPage({
               currentUpdatedAt={order.updatedAt.toISOString()}
             />
           </Card>
-        </div>
 
-        <div className="space-y-6">
           <Card title="Müşteri">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-adm-primary text-sm font-bold text-adm-on-primary">
@@ -185,6 +182,17 @@ export default async function AdminOrderDetailPage({
               <AddressBlock address={order.billingAddress} />
             </Card>
           )}
+
+          <Card title="İç not">
+            <AdminOrderStatusForm
+              section="note"
+              orderId={order.id}
+              currentStatus={order.status}
+              currentTrackingNumber={order.trackingNumber}
+              currentInternalNote={order.internalNote}
+              currentUpdatedAt={order.updatedAt.toISOString()}
+            />
+          </Card>
         </div>
       </div>
     </div>

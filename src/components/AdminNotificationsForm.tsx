@@ -35,21 +35,25 @@ export function AdminNotificationsForm() {
   return (
     <Card padding="lg" className="max-w-md">
       <form onSubmit={handleSubmit} className="space-y-3">
-        <input
-          placeholder="Başlık"
-          required
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-lg border border-adm-border bg-adm-surface-card px-3 py-2 text-sm text-adm-text outline-none focus:border-adm-primary"
-        />
-        <textarea
-          placeholder="Mesaj"
-          required
-          rows={3}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="w-full rounded-lg border border-adm-border bg-adm-surface-card px-3 py-2 text-sm text-adm-text outline-none focus:border-adm-primary"
-        />
+        <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
+          Başlık
+          <input
+            required
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full rounded-lg border border-adm-border bg-adm-surface-card px-3 py-2 text-sm text-adm-text outline-none focus:border-adm-primary"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-[13px] font-medium text-adm-text">
+          Mesaj
+          <textarea
+            required
+            rows={3}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="w-full rounded-lg border border-adm-border bg-adm-surface-card px-3 py-2 text-sm text-adm-text outline-none focus:border-adm-primary"
+          />
+        </label>
         <AdminButton type="submit" disabled={submitting}>
           {submitting ? "Gönderiliyor…" : "Tüm Abonelere Gönder"}
         </AdminButton>

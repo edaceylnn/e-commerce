@@ -65,10 +65,10 @@ export function AdminSizeChartEditor({
 
   return (
     <div>
-      <div className="overflow-x-auto border border-adm-border bg-adm-surface-container-lowest">
+      <div className="overflow-x-auto border border-adm-border bg-adm-surface-card rounded-xl">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-adm-outline-variant/30 text-xs font-medium uppercase tracking-wider text-adm-outline">
+            <tr className="border-b border-adm-border/30 text-xs font-medium uppercase tracking-wider text-adm-text-tertiary">
               <th className="px-4 py-3 text-left">Beden</th>
               {columns.map((col) => (
                 <th key={col} className="px-4 py-3 text-left">
@@ -77,10 +77,10 @@ export function AdminSizeChartEditor({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-adm-outline-variant/15">
+          <tbody className="divide-y divide-adm-border/15">
             {rows.map((row) => (
               <tr key={row.id}>
-                <td className="px-4 py-3 font-medium text-adm-on-surface">{row.label}</td>
+                <td className="px-4 py-3 font-medium text-adm-text">{row.label}</td>
                 {columns.map((col) => (
                   <td key={col} className="px-4 py-2">
                     <input
@@ -88,7 +88,7 @@ export function AdminSizeChartEditor({
                       min="0"
                       value={row.measurements[col] ?? ""}
                       onChange={(e) => updateCell(row.id, col, e.target.value)}
-                      className="w-24 border border-adm-border bg-adm-surface-container-low p-2 text-sm text-adm-on-surface outline-none focus:border-adm-primary"
+                      className="w-24 border border-adm-border bg-adm-surface-card p-2 text-sm text-adm-text outline-none focus:border-adm-primary rounded-lg"
                     />
                   </td>
                 ))}
@@ -102,7 +102,7 @@ export function AdminSizeChartEditor({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="bg-adm-primary px-5 py-2.5 text-sm font-medium text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50"
+          className="bg-adm-primary px-5 py-2.5 text-sm font-semibold text-adm-on-primary transition hover:bg-adm-primary-deep disabled:opacity-50 rounded-xl"
         >
           {saving ? "Kaydediliyor…" : "Kaydet"}
         </button>

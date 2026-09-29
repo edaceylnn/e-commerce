@@ -21,7 +21,7 @@ export default async function AdminIngredientsPage() {
   return (
     <div>
       <PageHeader
-        title="Aktif İçerikler"
+        title="İçerikler"
         description="Niacinamide, Retinol gibi aktif içerikleri yönetin ve bu içeriği kullanan ürünleri görün."
       />
       <AdminIngredientsPanel ingredients={rows} />
