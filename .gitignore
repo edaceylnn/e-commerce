@@ -55,3 +55,6 @@ next-env.d.ts
 /.windsurf/
 /skills-lock.json
 /docs/
+
+# Admin-uploaded product photos (local storage)
+/public/uploads

@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import { rm } from "fs/promises";
+import path from "path";
 import { adminCredentials } from "./helpers";
 
 // Requires the seed admin account to exist (npx prisma db seed — see README).
@@ -29,8 +31,12 @@ test.describe("admin panel", () => {
     await page.goto("/admin/products/new");
     await page.getByPlaceholder("örn. Yüksek Bel Toparlayıcı Spor Tayt").fill(title);
     await page.getByLabel("Fiyat (₺)").fill("49.90");
-    await page.getByPlaceholder("Görsel URL'si veya /products/... yolu").fill("/products/green-legging.jpg");
-    await page.getByRole("button", { name: "Ekle", exact: true }).click();
+    await page.locator('input[type="file"]').setInputFiles("public/products/green-legging.jpg");
+    const uploaded = page.locator('img[src^="/uploads/products/"]').first();
+    await expect(uploaded).toBeVisible();
+    // The stored file is actually served back, not just referenced.
+    await expect.poll(() => uploaded.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+    const uploadedUrl = (await uploaded.getAttribute("src"))!;
 
     const audit = page.locator("aside").filter({ hasText: "Kart kontrolü" });
     await expect(audit.getByText("Açıklama yok", { exact: true })).toBeVisible();
@@ -48,6 +54,7 @@ test.describe("admin panel", () => {
     const productId = page.url().match(/products\/(\d+)\/edit/)![1];
     const res = await page.request.delete(`/api/admin/products/${productId}`);
     expect(res.ok()).toBe(true);
+    await rm(path.join("public", uploadedUrl), { force: true });
   });
 
   test("can create, deactivate, and delete a coupon", async ({ page }) => {

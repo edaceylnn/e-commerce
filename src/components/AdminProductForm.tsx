@@ -156,7 +156,8 @@ export function AdminProductForm({
   const [stock, setStock] = useState(initial ? String(initial.stock) : "0");
   const [thumbnail, setThumbnail] = useState(initial?.thumbnail ?? "");
   const [images, setImages] = useState<AdminProductImageInitial[]>(initial?.images ?? []);
-  const [newImageUrl, setNewImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [variants, setVariants] = useState<AdminProductVariantInitial[]>(initial?.variants ?? []);
   const [metaTitle, setMetaTitle] = useState(initial?.metaTitle ?? "");
   const [metaDescription, setMetaDescription] = useState(initial?.metaDescription ?? "");
@@ -199,12 +200,29 @@ export function AdminProductForm({
     setVariants((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function addImage() {
-    const url = newImageUrl.trim();
-    if (!url) return;
+  function addImageUrl(url: string) {
     setImages((prev) => [...prev, { url }]);
-    setNewImageUrl("");
-    if (!thumbnail) setThumbnail(url);
+    // The first photo becomes the cover unless one is already set.
+    setThumbnail((prev) => prev || url);
+  }
+
+  async function uploadFiles(files: FileList | null) {
+    if (!files?.length) return;
+    setUploadError(null);
+    setUploading(true);
+    const errors: string[] = [];
+    // One by one, so each photo appears as soon as it's stored and one bad
+    // file doesn't block the rest.
+    for (const file of Array.from(files)) {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/admin/uploads", { method: "POST", body }).catch(() => null);
+      const data = await res?.json().catch(() => null);
+      if (res?.ok && data?.url) addImageUrl(data.url);
+      else errors.push(data?.error ?? `${file.name}: yüklenemedi.`);
+    }
+    setUploading(false);
+    if (errors.length) setUploadError(errors.join(" "));
   }
 
   function updateImage(index: number, patch: Partial<AdminProductImageInitial>) {
@@ -466,23 +484,29 @@ export function AdminProductForm({
         </Card>
 
         <Card title="Görseller">
-          <div className="flex gap-2">
-            <input
-              placeholder="Görsel URL'si veya /products/... yolu"
-              value={newImageUrl}
-              onChange={(e) => setNewImageUrl(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addImage();
-                }
-              }}
-              className={inputClass}
-            />
-            <AdminButton type="button" variant="secondary" onClick={addImage}>
-              Ekle
-            </AdminButton>
+          <div className="flex flex-wrap items-center gap-3">
+            <label
+              className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-adm-border px-4 py-2.5 text-sm font-semibold text-adm-text transition hover:border-adm-text-tertiary hover:bg-adm-surface-secondary ${
+                uploading ? "pointer-events-none opacity-50" : ""
+              }`}
+            >
+              <PlusIcon className="h-4 w-4" />
+              {uploading ? "Yükleniyor…" : "Bilgisayardan yükle"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                className="sr-only"
+                disabled={uploading}
+                onChange={(e) => {
+                  uploadFiles(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <span className="text-xs text-adm-text-tertiary">JPG, PNG, WebP veya GIF · en fazla 5 MB</span>
           </div>
+          {uploadError && <p className="mt-2 text-xs text-adm-danger">{uploadError}</p>}
 
           <div className="mt-3 space-y-2">
             {images.map((img, index) => (
