@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
+import { carrierName } from "@/lib/shipping/carriers";
 import { prisma } from "@/lib/db";
 import { ALL_ORDER_STATUSES, ORDER_STATUS_LABELS } from "@/lib/order-status";
 import type { Prisma } from "@/generated/prisma/client";
@@ -58,7 +59,11 @@ export async function GET(request: NextRequest) {
 
   const orders = await prisma.order.findMany({
     where,
-    include: { user: true, items: true },
+    include: {
+      user: true,
+      items: true,
+      shipments: { orderBy: { createdAt: "desc" }, take: 1, select: { carrier: true, trackingNumber: true } },
+    },
     orderBy: { createdAt: "desc" },
     take: EXPORT_ROW_CAP,
   });
@@ -72,6 +77,7 @@ export async function GET(request: NextRequest) {
     "Toplam",
     "Ödeme Durumu",
     "Sipariş Durumu",
+    "Kargo Firması",
     "Kargo Takip No",
   ];
   const rows = orders.map((o) =>
@@ -84,7 +90,8 @@ export async function GET(request: NextRequest) {
       Number(o.total).toFixed(2),
       o.paidAt ? "Ödendi" : "Ödeme Bekliyor",
       ORDER_STATUS_LABELS[o.status] ?? o.status,
-      o.trackingNumber ?? "",
+      o.shipments[0] ? carrierName(o.shipments[0].carrier) : "",
+      o.shipments[0]?.trackingNumber ?? "",
     ].map(csvCell)
   );
 

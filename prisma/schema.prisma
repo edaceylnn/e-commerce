@@ -462,7 +462,7 @@ model Order {
   stockReleasedAt        DateTime?
   items                  OrderItem[]
   stockMovements         StockMovement[]
-  trackingNumber         String?
+  shipments              Shipment[]
   internalNote           String?
   campaignId             String?
   campaign               Campaign?    @relation(fields: [campaignId], references: [id])
@@ -613,4 +613,52 @@ model ContentDraft {
   decidedAt     DateTime?
 
   @@index([productId])
+}
+
+// Where a shipment is in its journey. PICKED_UP onward moves the order to
+// KARGOLANDI, DELIVERED to TESLIM_EDILDI (see src/lib/shipping/events.ts).
+enum ShipmentStatus {
+  CREATED
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERY_FAILED
+  DELIVERED
+}
+
+// One parcel of an order, with the carrier's tracking number. The tracking
+// number lives only here — the order has no copy of its own.
+model Shipment {
+  id             String          @id @default(cuid())
+  orderId        String
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // Code from src/lib/shipping/carriers.ts ("yurtici", "simulator", …).
+  carrier        String
+  trackingNumber String
+  status         ShipmentStatus  @default(CREATED)
+  deliveredAt    DateTime?
+  events         ShipmentEvent[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([carrier, trackingNumber])
+  @@index([orderId])
+}
+
+// A tracking scan, from a carrier webhook or entered by an admin.
+// externalId is the carrier's own event id: a redelivered webhook hits the
+// unique constraint and is ignored instead of being recorded twice.
+model ShipmentEvent {
+  id          String         @id @default(cuid())
+  shipmentId  String
+  shipment    Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  externalId  String
+  status      ShipmentStatus
+  description String
+  location    String?
+  occurredAt  DateTime
+  createdAt   DateTime       @default(now())
+
+  @@unique([shipmentId, externalId])
+  @@index([shipmentId])
 }

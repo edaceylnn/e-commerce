@@ -91,8 +91,8 @@ export function AccountOverview({
                 <PillLink href={`/account/orders/${latest.orderNumber}`} className="!px-6 !py-3">
                   Siparişi görüntüle
                 </PillLink>
-                {latest.trackingNumber && latest.status !== "IPTAL" && (
-                  <Link href={`/account/orders/${latest.orderNumber}#teslimat`} className={QUIET_LINK}>
+                {latest.shipment && latest.status !== "IPTAL" && (
+                  <Link href={`/account/orders/${latest.orderNumber}#kargo`} className={QUIET_LINK}>
                     Kargo takip
                   </Link>
                 )}

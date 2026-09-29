@@ -1,11 +1,12 @@
 import Image from "next/image";
 import { formatPrice } from "@/lib/format";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
+import type { ShipmentSummary } from "@/lib/shipping/summary";
 
 export type OrderSummaryData = {
   orderNumber: string;
   status: string;
-  trackingNumber: string | null;
+  shipment: ShipmentSummary | null;
   subtotal: number;
   shippingCost: number;
   discountTotal: number;
@@ -44,9 +45,10 @@ export function OrderSummary({ order }: { order: OrderSummaryData }) {
             Sipariş No
           </p>
           <p className="font-light tracking-title text-xl">{order.orderNumber}</p>
-          {order.trackingNumber && (
+          {order.shipment && (
             <p className="mt-1 text-xs text-ink-soft">
-              Kargo Takip No: <span className="font-medium">{order.trackingNumber}</span>
+              {order.shipment.carrierName} takip no:{" "}
+              <span className="font-medium">{order.shipment.trackingNumber}</span>
             </p>
           )}
         </div>

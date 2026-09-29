@@ -3,6 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type { OrderSummaryData } from "@/components/OrderSummary";
 import { refundPayment, type IyzicoItemTransaction } from "@/lib/iyzico";
 import { releaseReservation } from "@/lib/stock-reservation";
+import { SHIPMENTS_INCLUDE, summarizeShipment, type ShipmentSummary } from "@/lib/shipping/summary";
 import {
   isOrderCancelable,
   isOrderRefundable,
@@ -425,14 +426,14 @@ export async function getOrderForUser(
 ): Promise<OrderSummaryData | null> {
   const order = await prisma.order.findUnique({
     where: { orderNumber },
-    include: { items: true, shippingAddress: true, billingAddress: true },
+    include: { items: true, shippingAddress: true, billingAddress: true, shipments: SHIPMENTS_INCLUDE },
   });
   if (!order || order.userId !== userId) return null;
 
   return {
     orderNumber: order.orderNumber,
     status: order.status,
-    trackingNumber: order.trackingNumber,
+    shipment: summarizeShipment(order.shipments),
     subtotal: Number(order.subtotal),
     shippingCost: Number(order.shippingCost),
     discountTotal: Number(order.discountTotal),
@@ -466,7 +467,7 @@ export type OrderListItem = {
   total: number;
   createdAt: Date;
   paidAt: Date | null;
-  trackingNumber: string | null;
+  shipment: ShipmentSummary | null;
   itemCount: number;
   thumbnails: string[];
   reorderItems: ReorderLine[];
@@ -486,6 +487,7 @@ export async function getOrdersForUser(userId: string): Promise<OrderListItem[]>
           quantity: true,
         },
       },
+      shipments: SHIPMENTS_INCLUDE,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -495,7 +497,7 @@ export async function getOrdersForUser(userId: string): Promise<OrderListItem[]>
     total: Number(order.total),
     createdAt: order.createdAt,
     paidAt: order.paidAt,
-    trackingNumber: order.trackingNumber,
+    shipment: summarizeShipment(order.shipments),
     itemCount: order.items.reduce((sum, i) => sum + i.quantity, 0),
     thumbnails: order.items.slice(0, 4).map((i) => i.thumbnail),
     reorderItems: order.items.map((i) => ({
@@ -527,7 +529,7 @@ export type OrderDetail = {
   status: string;
   paidAt: Date | null;
   createdAt: Date;
-  trackingNumber: string | null;
+  shipment: ShipmentSummary | null;
   subtotal: number;
   discountTotal: number;
   shippingCost: number;
@@ -563,6 +565,7 @@ export async function getOrderDetailForUser(
     where: { orderNumber },
     include: {
       items: { include: { variant: { include: { color: true, size: true } } } },
+      shipments: SHIPMENTS_INCLUDE,
       shippingAddress: true,
       billingAddress: true,
     },
@@ -574,7 +577,7 @@ export async function getOrderDetailForUser(
     status: order.status,
     paidAt: order.paidAt,
     createdAt: order.createdAt,
-    trackingNumber: order.trackingNumber,
+    shipment: summarizeShipment(order.shipments),
     subtotal: Number(order.subtotal),
     discountTotal: Number(order.discountTotal),
     shippingCost: Number(order.shippingCost),

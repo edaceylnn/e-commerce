@@ -8,6 +8,7 @@ import { OrderStatusText } from "@/components/account/OrderStatusText";
 import { OrderTimeline } from "@/components/OrderTimeline";
 import { ReorderButton } from "@/components/ReorderButton";
 import { CancelOrderButton } from "@/components/CancelOrderButton";
+import { ShipmentTracking } from "@/components/ShipmentTracking";
 
 // Order detail, top to bottom in the order a shopper reads it: status and
 // date, progress, the items, the amount, then delivery and payment. Sections
@@ -104,6 +105,12 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
         </dl>
       </Section>
 
+      {order.shipment && (
+        <Section title="Kargo takibi" id="kargo">
+          <ShipmentTracking shipment={order.shipment} />
+        </Section>
+      )}
+
       <div className="grid gap-10 sm:grid-cols-2 sm:gap-8">
         <Section title="Teslimat" id="teslimat">
           <p className="text-sm font-medium">{order.shippingAddress.fullName}</p>
@@ -115,7 +122,6 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
           </p>
           <p className="mt-1 text-sm text-ink-soft">{order.shippingAddress.phone}</p>
           <dl className="mt-4 space-y-1.5 text-sm">
-            <Line label="Kargo takip no" value={order.trackingNumber ?? "—"} />
             {showEstimate && (
               <Line label="Tahmini teslimat" value={formatDeliveryWindow(order.createdAt, 3, 6)} strong />
             )}

@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:db": "tsx --test src/lib/stock-reservation.integration.ts",
+    "test:db": "tsx --test src/lib/stock-reservation.integration.ts src/lib/shipping/shipping.integration.ts",
     "test:e2e": "playwright test",
     "cleanup:pending-orders": "tsx scripts/cleanup-pending-orders.ts"
   },

@@ -10,6 +10,7 @@ import { isOrderRefundable, paymentStatusLabel } from "@/lib/order-status";
 import { getInitials } from "@/lib/format";
 import { Card } from "@/components/admin/Card";
 import { PageHeader } from "@/components/admin/PageHeader";
+import { AdminShipmentPanel } from "@/components/AdminShipmentPanel";
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
@@ -56,6 +57,7 @@ export default async function AdminOrderDetailPage({
       coupon: true,
       campaign: true,
       events: { include: { actor: true }, orderBy: { createdAt: "asc" } },
+      shipments: { orderBy: { createdAt: "desc" }, take: 1, include: { events: { orderBy: { occurredAt: "desc" } } } },
     },
   });
   if (!order) {
@@ -147,14 +149,40 @@ export default async function AdminOrderDetailPage({
         </div>
 
         <div className="space-y-6">
-          <Card title="Durum ve kargo">
+          <Card title="Durum">
             <AdminOrderStatusForm
+              // Remount when the order changes elsewhere (e.g. a shipping
+              // webhook delivered it), so the form never holds a stale status.
+              key={order.updatedAt.toISOString()}
               section="status"
               orderId={order.id}
               currentStatus={order.status}
-              currentTrackingNumber={order.trackingNumber}
               currentInternalNote={order.internalNote}
               currentUpdatedAt={order.updatedAt.toISOString()}
+            />
+          </Card>
+
+          <Card title="Kargo">
+            <AdminShipmentPanel
+              orderId={order.id}
+              orderStatus={order.status}
+              shipment={
+                order.shipments[0]
+                  ? {
+                      id: order.shipments[0].id,
+                      carrier: order.shipments[0].carrier,
+                      trackingNumber: order.shipments[0].trackingNumber,
+                      status: order.shipments[0].status,
+                      events: order.shipments[0].events.map((e) => ({
+                        id: e.id,
+                        status: e.status,
+                        description: e.description,
+                        location: e.location,
+                        occurredAt: e.occurredAt.toISOString(),
+                      })),
+                    }
+                  : null
+              }
             />
           </Card>
 
@@ -185,10 +213,12 @@ export default async function AdminOrderDetailPage({
 
           <Card title="İç not">
             <AdminOrderStatusForm
+              // Remount when the order changes elsewhere (e.g. a shipping
+              // webhook delivered it), so the form never holds a stale status.
+              key={order.updatedAt.toISOString()}
               section="note"
               orderId={order.id}
               currentStatus={order.status}
-              currentTrackingNumber={order.trackingNumber}
               currentInternalNote={order.internalNote}
               currentUpdatedAt={order.updatedAt.toISOString()}
             />

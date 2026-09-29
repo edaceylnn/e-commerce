@@ -124,7 +124,7 @@ test.describe("admin panel", () => {
   test("order page saves the internal note without touching the status", async ({ page }) => {
     await page.goto("/admin/orders");
     await page.locator('a[href^="/admin/orders/"]').first().click();
-    await expect(page.getByText("Durum ve kargo", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Sipariş durumu")).toBeVisible();
 
     const status = page.getByLabel("Sipariş durumu");
     const statusBefore = await status.inputValue();

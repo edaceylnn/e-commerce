@@ -8,23 +8,21 @@ import { ORDER_STATUS_LABELS, nextAllowedStatuses } from "@/lib/order-status";
 const fieldClass =
   "w-full rounded-lg border border-adm-border bg-adm-surface-card px-3 py-2 text-sm text-adm-text outline-none focus:border-adm-primary";
 
-// Two independent cards on the order page share this form: "status" (status
-// + tracking number, the first thing an admin does with an order) and
-// "note" (internal note). Each sends only its own fields — the PATCH route
+// Two independent cards on the order page share this form: "status" (manual
+// status override — shipping itself goes through the Kargo card) and "note"
+// (internal note). Each sends only its own fields — the PATCH route
 // leaves keys it didn't receive untouched, and the note card re-sends the
 // current status, which is always an allowed no-op.
 export function AdminOrderStatusForm({
   section,
   orderId,
   currentStatus,
-  currentTrackingNumber,
   currentInternalNote,
   currentUpdatedAt,
 }: {
   section: "status" | "note";
   orderId: string;
   currentStatus: string;
-  currentTrackingNumber: string | null;
   currentInternalNote: string | null;
   currentUpdatedAt: string;
 }) {
@@ -33,14 +31,13 @@ export function AdminOrderStatusForm({
   const selectableStatuses = [currentStatus, ...nextAllowedStatuses(currentStatus)];
   const router = useRouter();
   const [status, setStatus] = useState(currentStatus);
-  const [trackingNumber, setTrackingNumber] = useState(currentTrackingNumber ?? "");
   const [internalNote, setInternalNote] = useState(currentInternalNote ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const dirty =
     section === "status"
-      ? status !== currentStatus || trackingNumber !== (currentTrackingNumber ?? "")
+      ? status !== currentStatus
       : internalNote !== (currentInternalNote ?? "");
 
   async function handleSave() {
@@ -48,7 +45,7 @@ export function AdminOrderStatusForm({
     setError(null);
     const body =
       section === "status"
-        ? { status, trackingNumber, expectedUpdatedAt: currentUpdatedAt }
+        ? { status, expectedUpdatedAt: currentUpdatedAt }
         : { status: currentStatus, internalNote, expectedUpdatedAt: currentUpdatedAt };
     const res = await fetch(`/api/admin/orders/${orderId}`, {
       method: "PATCH",
@@ -89,15 +86,6 @@ export function AdminOrderStatusForm({
           {noNextStep && (
             <p className="text-xs text-adm-text-tertiary">Bu durumdan elle geçilebilecek başka bir durum yok.</p>
           )}
-          <label className="block">
-            <span className="mb-1.5 block text-[13px] font-medium text-adm-text">Kargo takip no</span>
-            <input
-              placeholder="Opsiyonel"
-              value={trackingNumber}
-              onChange={(e) => setTrackingNumber(e.target.value)}
-              className={fieldClass}
-            />
-          </label>
         </>
       ) : (
         <textarea

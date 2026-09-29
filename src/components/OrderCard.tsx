@@ -11,7 +11,7 @@ import { ReorderButton } from "@/components/ReorderButton";
 // primary one; reorder/tracking are quiet secondary links. Cancelling lives
 // on the order detail page, away from routine links.
 export function OrderCard({ order }: { order: OrderListItem }) {
-  const canTrack = !!order.trackingNumber && order.status !== "IPTAL";
+  const canTrack = !!order.shipment && order.status !== "IPTAL";
   const detailHref = `/account/orders/${order.orderNumber}`;
 
   return (
@@ -44,7 +44,7 @@ export function OrderCard({ order }: { order: OrderListItem }) {
           </Link>
           {canTrack && (
             <Link
-              href={`${detailHref}#teslimat`}
+              href={`${detailHref}#kargo`}
               className="text-xs text-ink-soft underline-offset-4 hover:text-ink hover:underline"
             >
               Kargo takip

@@ -8,7 +8,6 @@ import type { Prisma } from "@/generated/prisma/client";
 
 const statusSchema = z.object({
   status: z.enum(ORDER_STATUSES),
-  trackingNumber: z.string().trim().optional(),
   internalNote: z.string().trim().optional(),
   // The order's updatedAt the admin loaded the page with — lets us detect
   // "someone else changed this order since you opened it" instead of
@@ -85,19 +84,14 @@ export async function PATCH(
   }
 
   // A bare { status } call (e.g. a quick "cancel order" action) must not
-  // wipe out an already-saved tracking number/note — only touch these
-  // fields when the caller actually included the key, distinguishing
-  // "not sent" from "sent as an empty string to clear it". Only log/write
-  // when the value actually changed, so re-saving an unrelated field
-  // doesn't spam the timeline.
+  // wipe out an already-saved note — only touch it when the caller actually
+  // included the key, distinguishing "not sent" from "sent as an empty
+  // string to clear it". Only log/write when the value actually changed, so
+  // re-saving an unrelated field doesn't spam the timeline. (Tracking
+  // numbers live on shipments now — see /api/admin/orders/[id]/shipments.)
   const rawBody = body as Record<string, unknown>;
   const extra: Prisma.OrderUpdateInput = {};
-  let trackingChanged = false;
   let noteChanged = false;
-  if ("trackingNumber" in rawBody && (parsed.data.trackingNumber || "") !== (order.trackingNumber ?? "")) {
-    extra.trackingNumber = parsed.data.trackingNumber || null;
-    trackingChanged = true;
-  }
   if ("internalNote" in rawBody && (parsed.data.internalNote || "") !== (order.internalNote ?? "")) {
     extra.internalNote = parsed.data.internalNote || null;
     noteChanged = true;
@@ -105,18 +99,6 @@ export async function PATCH(
   if (Object.keys(extra).length > 0) {
     await prisma.$transaction(async (tx) => {
       await tx.order.update({ where: { id }, data: extra });
-      if (trackingChanged) {
-        await tx.orderEvent.create({
-          data: {
-            orderId: id,
-            type: "TRACKING",
-            message: extra.trackingNumber
-              ? `Kargo takip no eklendi: ${extra.trackingNumber}`
-              : "Kargo takip no kaldırıldı.",
-            actorUserId: session.userId,
-          },
-        });
-      }
       if (noteChanged) {
         await tx.orderEvent.create({
           data: {
