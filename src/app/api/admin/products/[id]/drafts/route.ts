@@ -16,6 +16,7 @@ const inputSchema = z.object({
   title: z.string().trim().default(""),
   categorySlug: z.string().trim().default(""),
   description: z.string().trim().default(""),
+  facts: z.string().trim().default(""),
   price: z.coerce.number().min(0).default(0),
   colorIds: z.array(z.string()).default([]),
   sizeIds: z.array(z.string()).default([]),
@@ -62,7 +63,10 @@ export async function POST(
   const input = {
     title: data.title,
     category: PRODUCT_CATEGORIES.find((c) => c.slug === data.categorySlug)?.label ?? "",
-    description: data.description,
+    // Facts are the source of truth. The description only stands in while
+    // facts are still empty — approving a description then saves the old
+    // one into facts (see content-drafts PATCH), so it isn't lost.
+    facts: data.facts || data.description,
     colors: colors.map((c) => c.name),
     sizes: [...new Set(sizes.map((s) => s.label))],
     price: data.price,

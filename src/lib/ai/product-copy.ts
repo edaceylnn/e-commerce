@@ -17,7 +17,7 @@ export const CLAUDE_MODEL = "claude-opus-5-5";
 export type ProductCopyInput = {
   title: string;
   category: string;
-  description: string;
+  facts: string;
   colors: string[];
   sizes: string[];
   price: number;
@@ -79,7 +79,7 @@ function formatInput(input: ProductCopyInput) {
     `Kategori: ${input.category || "(yok)"}`,
     `Renkler: ${input.colors.length ? input.colors.join(", ") : "(yok)"}`,
     `Bedenler: ${input.sizes.length ? input.sizes.join(", ") : "(yok)"}`,
-    `Mevcut açıklama: ${input.description || "(yok)"}`,
+    `Ürün bilgileri: ${input.facts || "(yok)"}`,
   ].join("\n");
 }
 

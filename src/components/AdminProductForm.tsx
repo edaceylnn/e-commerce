@@ -39,6 +39,7 @@ export type AdminProductImageInitial = {
 export type AdminProductInitial = {
   title: string;
   description: string;
+  facts?: string;
   categorySlug: string;
   price: number;
   discountPercentage: number;
@@ -149,6 +150,7 @@ export function AdminProductForm({
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [facts, setFacts] = useState(initial?.facts ?? "");
   const [categorySlug, setCategorySlug] = useState(initial?.categorySlug ?? PRODUCT_CATEGORIES[0].slug);
   const [price, setPrice] = useState(initial ? String(initial.price) : "");
   const [stock, setStock] = useState(initial ? String(initial.stock) : "0");
@@ -218,7 +220,8 @@ export function AdminProductForm({
     if (removed?.url === thumbnail) setThumbnail(next[0]?.url ?? "");
   }
 
-  function applyApprovedDraft(draft: PendingDraft, text: string) {
+  function applyApprovedDraft(draft: PendingDraft, text: string, preservedFacts?: string) {
+    if (preservedFacts) setFacts(preservedFacts);
     if (draft.kind === "SHORT_DESCRIPTION") setDescription(text);
     else if (draft.kind === "META_TITLE") setMetaTitle(text);
     else if (draft.kind === "META_DESCRIPTION") setMetaDescription(text);
@@ -235,6 +238,7 @@ export function AdminProductForm({
       ...preservedFields(initial, defaultLowStockThreshold),
       title,
       description,
+      facts,
       categorySlug,
       price: Number(price),
       stock: Number(stock),
@@ -334,9 +338,18 @@ export function AdminProductForm({
                 </select>
               </Field>
             </div>
-            <Field label="Açıklama" hint={`${description.length} karakter`}>
+            <Field label="Ürün bilgileri" hint="Müşteriye gösterilmez · AI taslakları bundan yazılır">
               <textarea
-                placeholder="Kumaş, kalıp, kullanım alanı… Bildiğiniz her gerçek bilgi AI taslağını da iyileştirir."
+                placeholder={"Kumaş: %78 polyamid, %22 elastan\nKalıp: yüksek bel, ispanyol paça\nBakım: 30°C'de yıkayın"}
+                rows={4}
+                value={facts}
+                onChange={(e) => setFacts(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Açıklama" hint={`Mağazada görünen metin · ${description.length} karakter`}>
+              <textarea
+                placeholder="Müşterinin ürün sayfasında okuyacağı metin. AI taslağı onaylanınca buraya yazılır."
                 rows={5}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -558,6 +571,7 @@ export function AdminProductForm({
             title,
             categorySlug,
             description,
+            facts,
             price: Number(price) || 0,
             colorIds: [...new Set(variants.map((v) => v.colorId))],
             sizeIds: [...new Set(variants.map((v) => v.sizeId))],

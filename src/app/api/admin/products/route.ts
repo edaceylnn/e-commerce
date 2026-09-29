@@ -33,6 +33,12 @@ const productSchema = z.object({
   title: z.string().trim().min(1),
   // May be empty: the completeness check flags it, and an AI draft can fill it.
   description: z.string().trim().default(""),
+  // Empty clears it — only the admin form writes this field.
+  facts: z
+    .string()
+    .trim()
+    .default("")
+    .transform((v) => v || null),
   categorySlug: z.enum(CATEGORY_SLUGS),
   price: z.coerce.number().positive(),
   discountPercentage: z.coerce.number().min(0).max(100).default(0),

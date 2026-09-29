@@ -51,6 +51,7 @@ export default async function AdminEditProductPage({
         initial={{
           title: product.title,
           description: product.description,
+          facts: product.facts ?? undefined,
           categorySlug: product.category.slug,
           price: Number(product.price),
           discountPercentage: Number(product.discountPercentage),

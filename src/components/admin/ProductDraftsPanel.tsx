@@ -13,6 +13,7 @@ export type DraftSourceFields = {
   title: string;
   categorySlug: string;
   description: string;
+  facts: string;
   price: number;
   colorIds: string[];
   sizeIds: string[];
@@ -130,7 +131,9 @@ export function ProductDraftsPanel({
   productId?: number;
   initialDrafts: PendingDraft[];
   getSource: () => DraftSourceFields;
-  onApproved: (draft: PendingDraft, text: string) => void;
+  // `preservedFacts` is set when approving a description moved the old one
+  // into the product's facts field.
+  onApproved: (draft: PendingDraft, text: string, preservedFacts?: string) => void;
 }) {
   const [drafts, setDrafts] = useState<DraftState[]>(() => toDraftStates(initialDrafts));
   const [missingInfo, setMissingInfo] = useState<string[]>([]);
@@ -185,7 +188,7 @@ export function ProductDraftsPanel({
     }
     setDrafts((prev) => prev.filter((d) => d.id !== draft.id));
     if (action === "approve") {
-      onApproved(draft, draft.text.trim());
+      onApproved(draft, draft.text.trim(), data?.facts);
       setNotice(`${KIND_LABEL[draft.kind]} ürüne kaydedildi.`);
     } else {
       setNotice(null);

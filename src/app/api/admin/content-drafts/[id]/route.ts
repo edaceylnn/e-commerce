@@ -49,6 +49,18 @@ export async function PATCH(
     data: { status: "APPROVED", finalText: text, decidedAt },
   });
   const where = { id: draft.productId };
+
+  // The first approved AI description would overwrite the only copy of the
+  // admin's own text if facts are still empty — keep it as the facts.
+  let preservedFacts: { facts: string } | undefined;
+  if (draft.kind === "SHORT_DESCRIPTION") {
+    const product = await prisma.product.findUnique({ where, select: { description: true, facts: true } });
+    const oldDescription = product?.description.trim();
+    if (product && !product.facts?.trim() && oldDescription && oldDescription !== text) {
+      preservedFacts = { facts: oldDescription };
+    }
+  }
+
   const apply =
     draft.kind === "IMAGE_ALT"
       ? // Matches by URL: a photo only added in the unsaved form isn't in the
@@ -61,12 +73,16 @@ export async function PATCH(
           where,
           data:
             draft.kind === "SHORT_DESCRIPTION"
-              ? { description: text }
+              ? { description: text, ...preservedFacts }
               : draft.kind === "META_TITLE"
                 ? { metaTitle: text }
                 : { metaDescription: text },
         });
   await prisma.$transaction([approve, apply]);
 
-  return NextResponse.json({ ok: true, edited: text !== draft.aiText });
+  return NextResponse.json({
+    ok: true,
+    edited: text !== draft.aiText,
+    facts: preservedFacts?.facts,
+  });
 }

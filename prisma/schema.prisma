@@ -300,6 +300,10 @@ model Product {
   id                 Int                 @id
   title              String
   description        String
+  // Admin-entered raw facts (kumaş, kalıp, bakım…), never shown to
+  // customers. AI drafts are written from these, not from `description`,
+  // so approving an AI description can't erase the facts it was based on.
+  facts              String?
   categoryId         String
   category           Category            @relation(fields: [categoryId], references: [id])
   price              Decimal             @db.Decimal(10, 2)

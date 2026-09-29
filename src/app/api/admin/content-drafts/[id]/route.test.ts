@@ -6,6 +6,7 @@ const draftFindUnique = jest.fn();
 const draftUpdate = jest.fn((args: unknown) => ({ op: "draftUpdate", args }));
 const productUpdate = jest.fn((args: unknown) => ({ op: "productUpdate", args }));
 const imageUpdateMany = jest.fn((args: unknown) => ({ op: "imageUpdateMany", args }));
+const productFindUnique = jest.fn();
 const transaction = jest.fn();
 
 jest.mock("../../../../../lib/auth", () => ({
@@ -18,7 +19,10 @@ jest.mock("../../../../../lib/db", () => ({
       findUnique: (...args: unknown[]) => draftFindUnique(...args),
       update: (args: unknown) => draftUpdate(args),
     },
-    product: { update: (args: unknown) => productUpdate(args) },
+    product: {
+      update: (args: unknown) => productUpdate(args),
+      findUnique: (...args: unknown[]) => productFindUnique(...args),
+    },
     productImage: { updateMany: (args: unknown) => imageUpdateMany(args) },
     $transaction: (...args: unknown[]) => transaction(...args),
   },
@@ -77,8 +81,20 @@ describe("PATCH /api/admin/content-drafts/[id]", () => {
 
   it("writes short descriptions to the description field", async () => {
     draftFindUnique.mockResolvedValue({ ...pendingMeta, kind: "SHORT_DESCRIPTION" });
+    productFindUnique.mockResolvedValue({ description: "Eski", facts: "Kumaş: pamuk" });
     await patch({ action: "approve", text: "AI metni" });
     expect(productUpdate).toHaveBeenCalledWith({ where: { id: 7 }, data: { description: "AI metni" } });
+  });
+
+  it("moves the old description into empty facts instead of losing it", async () => {
+    draftFindUnique.mockResolvedValue({ ...pendingMeta, kind: "SHORT_DESCRIPTION" });
+    productFindUnique.mockResolvedValue({ description: " Interlok kumaş. ", facts: null });
+    const res = await patch({ action: "approve", text: "AI metni" });
+    expect(productUpdate).toHaveBeenCalledWith({
+      where: { id: 7 },
+      data: { description: "AI metni", facts: "Interlok kumaş." },
+    });
+    expect((await res.json()).facts).toBe("Interlok kumaş.");
   });
 
   it("writes SEO titles to the metaTitle field", async () => {
