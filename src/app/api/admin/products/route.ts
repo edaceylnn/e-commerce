@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CATEGORY_SLUGS } from "@/lib/categories";
-import { totalVariantStock, variantDuplicatesError, withGeneratedSkus } from "@/lib/product-stock";
+import { variantDuplicatesError, withGeneratedSkus } from "@/lib/product-variants";
 
 const variantSchema = z.object({
   id: z.string().optional(),
@@ -114,8 +114,6 @@ export async function POST(request: NextRequest) {
   const { categorySlug, images, variants: submittedVariants, ingredientIds, ...rest } = parsed.data;
   void categorySlug; // already resolved to `category` above
   const variants = await withGeneratedSkus(prisma, nextId, submittedVariants);
-  // With variants the product total is derived, never taken from the form.
-  if (variants.length) rest.stock = totalVariantStock(variants);
 
   try {
     const product = await prisma.$transaction(async (tx) => {

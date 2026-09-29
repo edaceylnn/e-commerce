@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CATEGORY_SLUGS } from "@/lib/categories";
-import { totalVariantStock, variantDuplicatesError, withGeneratedSkus } from "@/lib/product-stock";
+import { variantDuplicatesError, withGeneratedSkus } from "@/lib/product-variants";
 import { sendPushToAll } from "@/lib/push/send";
 
 const variantSchema = z.object({
@@ -123,9 +123,6 @@ export async function PATCH(
   const { categorySlug, images, variants: submittedVariants, ingredientIds, ...rest } = parsed.data;
   void categorySlug;
   const variants = await withGeneratedSkus(prisma, productId, submittedVariants);
-  // With variants the product total is derived, never taken from the form;
-  // each variant's own change is already logged below.
-  if (variants.length) rest.stock = totalVariantStock(variants);
 
   // Variants keep their id across an edit (so existing order/wishlist rows
   // stay pointed at a real variant) — rows the form dropped are deleted,
@@ -236,6 +233,9 @@ export async function PATCH(
         }
       }
 
+      // With variants each variant's change is logged above, and the product
+      // total is set by the database — only a variant-less product's own
+      // stock change is logged here.
       if (variants.length === 0 && existing.stock !== rest.stock) {
         await tx.stockMovement.create({
           data: {
@@ -260,7 +260,9 @@ export async function PATCH(
     );
   }
 
-  if (existing.stock === 0 && rest.stock > 0) {
+  // Read back: for a product with variants the DB derived the total.
+  const saved = await prisma.product.findUnique({ where: { id: productId }, select: { stock: true } });
+  if (existing.stock === 0 && (saved?.stock ?? 0) > 0) {
     sendPushToAll(
       "EDACEY",
       `${parsed.data.title} tekrar stokta!`

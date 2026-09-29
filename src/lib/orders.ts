@@ -2,7 +2,6 @@ import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import type { OrderSummaryData } from "@/components/OrderSummary";
 import { refundPayment, type IyzicoItemTransaction } from "@/lib/iyzico";
-import { syncProductStockFromVariants } from "@/lib/product-stock";
 import {
   isOrderCancelable,
   isOrderRefundable,
@@ -43,7 +42,6 @@ async function restockItem(
         note,
       },
     });
-    await syncProductStockFromVariants(tx, item.productId);
   } else {
     const product = await tx.product.update({
       where: { id: item.productId },

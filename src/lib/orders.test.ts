@@ -5,7 +5,6 @@ const findUnique = jest.fn();
 const orderUpdate = jest.fn();
 const productUpdate = jest.fn().mockResolvedValue({ stock: 0 });
 const productVariantUpdate = jest.fn().mockResolvedValue({ stock: 0 });
-const productVariantAggregate = jest.fn().mockResolvedValue({ _sum: { stock: 0 }, _count: 0 });
 const stockMovementCreate = jest.fn();
 const orderEventCreate = jest.fn();
 const orderItemUpdateMany = jest.fn();
@@ -13,10 +12,7 @@ const mockTx = {
   order: { update: (...args: unknown[]) => orderUpdate(...args) },
   orderItem: { updateMany: (...args: unknown[]) => orderItemUpdateMany(...args) },
   product: { update: (...args: unknown[]) => productUpdate(...args) },
-  productVariant: {
-    update: (...args: unknown[]) => productVariantUpdate(...args),
-    aggregate: (...args: unknown[]) => productVariantAggregate(...args),
-  },
+  productVariant: { update: (...args: unknown[]) => productVariantUpdate(...args) },
   stockMovement: { create: (...args: unknown[]) => stockMovementCreate(...args) },
   orderEvent: { create: (...args: unknown[]) => orderEventCreate(...args) },
 };
@@ -73,7 +69,6 @@ beforeEach(() => {
   orderUpdate.mockReset();
   productUpdate.mockReset().mockResolvedValue({ stock: 0 });
   productVariantUpdate.mockReset().mockResolvedValue({ stock: 0 });
-  productVariantAggregate.mockReset().mockResolvedValue({ _sum: { stock: 0 }, _count: 0 });
   stockMovementCreate.mockReset();
   orderEventCreate.mockReset();
   transaction.mockClear();
@@ -139,8 +134,6 @@ describe("refundOrder", () => {
 
   it("refunds a shipped order, restores stock, and moves it to IADE", async () => {
     findUnique.mockResolvedValue({ ...baseOrder, status: "KARGOLANDI" });
-    // Product 2's variants now total 12 after the restock.
-    productVariantAggregate.mockResolvedValue({ _sum: { stock: 12 }, _count: 3 });
 
     const result = await refundOrder("order_1", { ip: "127.0.0.1" });
 
@@ -159,8 +152,6 @@ describe("refundOrder", () => {
       where: { id: "variant_1" },
       data: { stock: { increment: 1 } },
     });
-    // The product total follows its variants, so the storefront sees it.
-    expect(productUpdate).toHaveBeenCalledWith({ where: { id: 2 }, data: { stock: 12 } });
     expect(stockMovementCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         productId: 1,

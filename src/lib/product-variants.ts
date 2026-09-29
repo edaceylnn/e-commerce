@@ -1,25 +1,9 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { slugify } from "@/lib/slugify";
 
-// For a product with variants, Product.stock is not entered by hand: it is
-// the sum of its variants' stock. The storefront's "Tükendi", the admin
-// list and the critical-stock views all read Product.stock, so every write
-// that changes a variant's stock re-syncs it through here.
-
-export function totalVariantStock(variants: { stock: number }[]) {
-  return variants.reduce((sum, v) => sum + v.stock, 0);
-}
-
-// No-op for products without variants — their own stock is authoritative.
-export async function syncProductStockFromVariants(tx: Prisma.TransactionClient, productId: number) {
-  const agg = await tx.productVariant.aggregate({
-    where: { productId },
-    _sum: { stock: true },
-    _count: true,
-  });
-  if (agg._count === 0) return;
-  await tx.product.update({ where: { id: productId }, data: { stock: agg._sum.stock ?? 0 } });
-}
+// Helpers for the admin product payload's variants. Product.stock of a
+// product with variants is kept equal to their sum by the database itself
+// (see the product_stock_trigger migration), not by code here.
 
 // Zod refinement for the admin product payload: one row per color+size and
 // no SKU twice in the same product.

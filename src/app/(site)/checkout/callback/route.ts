@@ -5,7 +5,6 @@ import {
   type LowStockAutomationEvent,
 } from "@/lib/automation";
 import { prisma } from "@/lib/db";
-import { syncProductStockFromVariants } from "@/lib/product-stock";
 import { retrieveCheckoutForm, verifyResponseSignature } from "@/lib/iyzico";
 
 // Thrown inside the payment-confirmation transaction when an item's stock
@@ -146,7 +145,6 @@ export async function POST(request: NextRequest) {
               note: `Sipariş #${order.orderNumber}`,
             },
           });
-          await syncProductStockFromVariants(tx, item.productId);
           continue;
         }
 

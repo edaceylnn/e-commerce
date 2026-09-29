@@ -1,11 +1,4 @@
-import { generateSku, totalVariantStock, variantDuplicatesError } from "./product-stock";
-
-describe("totalVariantStock", () => {
-  it("sums variant stock", () => {
-    expect(totalVariantStock([{ stock: 3 }, { stock: 0 }, { stock: 4 }])).toBe(7);
-    expect(totalVariantStock([])).toBe(0);
-  });
-});
+import { generateSku, variantDuplicatesError } from "./product-variants";
 
 describe("variantDuplicatesError", () => {
   const v = (colorId: string, sizeId: string, sku: string) => ({ colorId, sizeId, sku });
