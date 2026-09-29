@@ -12,7 +12,7 @@ export function getWebPush() {
     }
 
     webpush.setVapidDetails(
-      "mailto:demo@beauty-ecommerce.local",
+      "mailto:demo@e-commerce.local",
       publicKey,
       privateKey
     );

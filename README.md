@@ -243,11 +243,11 @@ bağlanamadığı için kullanıcı dostu bir hata mesajıyla sonuçlanır.
 `DATABASE_URL` için bir Postgres veritabanı gerekiyor. Yerelde en hızlı yol:
 
 ```bash
-createdb beauty_ecommerce
-# .env.local içine: DATABASE_URL=postgresql://<kullanıcı-adın>@localhost:5432/beauty_ecommerce?schema=public
+createdb e_commerce
+# .env.local içine: DATABASE_URL=postgresql://<kullanıcı-adın>@localhost:5432/e_commerce?schema=public
 ```
 
-(Docker tercih edersen `docker run --name beauty-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres` de
+(Docker tercih edersen `docker run --name ecommerce-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres` de
 kullanılabilir — bağlantı dizesini ona göre güncelle. Üretimde
 [Neon](https://neon.tech) gibi serverless bir Postgres sağlayıcısı öneriyoruz.)
 
