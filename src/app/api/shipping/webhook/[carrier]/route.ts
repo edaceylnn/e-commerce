@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { invoiceIfShipped } from "@/lib/invoicing/invoices";
+import { afterOrderStatusChange } from "@/lib/order-lifecycle";
 import { getCarrier } from "@/lib/shipping/carriers";
 import { recordShipmentScan } from "@/lib/shipping/events";
 import { SIGNATURE_HEADER, verifyWebhookSignature, WebhookScanSchema } from "@/lib/shipping/webhook";
@@ -50,6 +50,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       occurredAt: new Date(scan.occurredAt),
     })
   );
-  if (result.recorded) await invoiceIfShipped(shipment.orderId, result.orderStatus);
+  if (result.recorded) await afterOrderStatusChange(shipment.orderId, result.orderStatus);
   return NextResponse.json(result);
 }

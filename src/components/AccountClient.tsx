@@ -15,7 +15,8 @@ const TABS: { mode: Mode; label: string }[] = [
   { mode: "register", label: "Kayıt Ol" },
 ];
 
-export function AccountClient() {
+// `demo`: the public demo's shared account, shown with a fill-in button.
+export function AccountClient({ demo }: { demo?: { email: string; password: string } }) {
   const router = useRouter();
   const nameId = useId();
   const emailId = useId();
@@ -112,6 +113,26 @@ export function AccountClient() {
           onChange={setPassword}
           surface="field"
         />
+
+        {demo && mode === "login" && (
+          <div className="border border-line px-4 py-3 text-card">
+            <p className="font-medium">Demo müşteri hesabı</p>
+            <p className="mt-0.5 text-ink-soft">
+              {demo.email} · {demo.password}
+            </p>
+            <p className="mt-0.5 text-text-3">Test kartı: 5528 7900 0000 0008 · 12/30 · 123</p>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail(demo.email);
+                setPassword(demo.password);
+              }}
+              className="mt-1.5 underline underline-offset-4 hover:text-ink-soft"
+            >
+              Bilgileri doldur
+            </button>
+          </div>
+        )}
 
         {error && <Alert variant="error">{error}</Alert>}
 

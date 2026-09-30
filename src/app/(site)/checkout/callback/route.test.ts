@@ -42,6 +42,11 @@ jest.mock("../../../../lib/orders", () => ({
 
 const retrieveCheckoutForm = jest.fn();
 const verifyResponseSignature = jest.fn();
+// Email content and delivery have their own tests; here only the call matters.
+jest.mock("../../../../lib/email/outbox", () => ({
+  queueOrderEmail: jest.fn().mockResolvedValue(true),
+  deliverSoon: jest.fn(),
+}));
 jest.mock("../../../../lib/iyzico", () => ({
   retrieveCheckoutForm: (...args: unknown[]) => retrieveCheckoutForm(...args),
   verifyResponseSignature: (...args: unknown[]) => verifyResponseSignature(...args),

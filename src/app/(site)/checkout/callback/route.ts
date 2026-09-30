@@ -1,4 +1,5 @@
 import { after, NextRequest, NextResponse } from "next/server";
+import { deliverSoon, queueOrderEmail } from "@/lib/email/outbox";
 import {
   emitLowStockAutomationEvent,
   emitOrderCreatedAutomationEvent,
@@ -121,6 +122,8 @@ export async function POST(request: NextRequest) {
           message: "Ödeme onaylandı, sipariş hazırlanıyor.",
         },
       });
+      // Owed in the same transaction as the payment: both or neither.
+      await queueOrderEmail(tx, "order-confirmed", order.id);
 
       // Usage is only counted once payment is actually confirmed — an
       // abandoned checkout never consumes the coupon's usage limit.
@@ -156,6 +159,7 @@ export async function POST(request: NextRequest) {
     }
     throw err;
   }
+  deliverSoon();
 
   // Only plain (non-variant) stock carries a configured threshold. Read after
   // the payment committed so it reflects this sale.

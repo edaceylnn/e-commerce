@@ -12,6 +12,9 @@ import { Card } from "@/components/admin/Card";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { AdminShipmentPanel } from "@/components/AdminShipmentPanel";
 import { AdminInvoicePanel } from "@/components/AdminInvoicePanel";
+import { StatusBadge } from "@/components/admin/StatusBadge";
+import { EMAIL_STATUS, EMAIL_TEMPLATE_LABELS } from "@/lib/email/labels";
+import Link from "next/link";
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
@@ -60,6 +63,7 @@ export default async function AdminOrderDetailPage({
       events: { include: { actor: true }, orderBy: { createdAt: "asc" } },
       shipments: { orderBy: { createdAt: "desc" }, take: 1, include: { events: { orderBy: { occurredAt: "desc" } } } },
       invoices: { orderBy: { issuedAt: "asc" }, include: { lines: { select: { orderItemId: true } } } },
+      emails: { orderBy: { createdAt: "asc" }, select: { id: true, template: true, status: true, createdAt: true } },
     },
   });
   if (!order) {
@@ -218,6 +222,30 @@ export default async function AdminOrderDetailPage({
                   !order.invoices.some((r) => r.originalInvoiceId === i.id && r.status === "ISSUED"),
               }))}
             />
+          </Card>
+
+          <Card title="E-postalar">
+            {order.emails.length === 0 ? (
+              <p className="text-sm text-adm-text-secondary">Bu sipariş için henüz e-posta yok.</p>
+            ) : (
+              <ul className="divide-y divide-adm-border">
+                {order.emails.map((e) => (
+                  <li key={e.id} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+                    <div className="min-w-0">
+                      <Link href={`/admin/emails/${e.id}`} className="text-sm font-semibold text-adm-text hover:underline">
+                        {EMAIL_TEMPLATE_LABELS[e.template] ?? e.template}
+                      </Link>
+                      <p className="text-xs text-adm-text-tertiary">
+                        {e.createdAt.toLocaleString("tr-TR", { timeZone: "Europe/Istanbul", dateStyle: "short", timeStyle: "short" })}
+                      </p>
+                    </div>
+                    <StatusBadge size="sm" variant={EMAIL_STATUS[e.status].variant}>
+                      {EMAIL_STATUS[e.status].label}
+                    </StatusBadge>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
 
           <Card title="Müşteri">

@@ -1,30 +1,32 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { InfoPage } from "@/components/InfoPage";
+import Link from "next/link";
+import { PasswordResetRequestForm } from "@/components/PasswordResetForms";
+import { isDemoMode } from "@/lib/demo";
 
 export const metadata: Metadata = {
   title: "Şifremi unuttum — EDACEY",
 };
 
-// Target of the "Şifremi unuttum" link on the sign-in form. There is no
-// e-mailed reset flow yet (it needs a mail provider and reset tokens), so this
-// says so plainly and points to support instead of faking a reset form.
 export default function ForgotPasswordPage() {
   return (
-    <InfoPage eyebrow="Hesabım" title="Şifremi unuttum">
-      <p>
-        E-postayla şifre sıfırlama bağlantısı gönderme özelliği henüz hazır
-        değil. Hesabınıza yeniden erişmek için hesabınızın e-posta adresiyle
-        bize ulaşın; şifrenizi sıfırlamanıza yardımcı olalım.
-      </p>
-      <p className="flex flex-wrap gap-x-6 gap-y-2">
-        <Link href="/iletisim" className="font-medium text-ink underline underline-offset-4">
-          İletişime geç
-        </Link>
-        <Link href="/account" className="underline underline-offset-4 hover:text-ink">
-          Giriş sayfasına dön
-        </Link>
-      </p>
-    </InfoPage>
+    <div className="page-x pb-24 pt-20 tab:pt-28 [&>*]:mx-auto [&>*]:max-w-[440px]">
+      <span className="block text-caption uppercase tracking-eyebrow text-text-3">Hesabım</span>
+      <h1 className="headline mt-3 text-[clamp(28px,2.6vw,38px)] leading-[1.1]">Şifremi unuttum</h1>
+      {isDemoMode() ? (
+        <p className="mt-3 text-body font-light text-ink-soft">
+          Demo sitede şifre sıfırlama kapalı; giriş sayfasındaki demo hesabını kullanabilirsin.{" "}
+          <Link href="/account" className="underline underline-offset-4">
+            Giriş sayfası
+          </Link>
+        </p>
+      ) : (
+        <>
+          <p className="mt-3 text-body font-light text-ink-soft">
+            Hesabının e-posta adresini yaz; şifreni sıfırlaman için bir bağlantı gönderelim.
+          </p>
+          <PasswordResetRequestForm />
+        </>
+      )}
+    </div>
   );
 }

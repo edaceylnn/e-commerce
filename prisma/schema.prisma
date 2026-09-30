@@ -53,25 +53,26 @@ enum ProductStatus {
 }
 
 model User {
-  id                String             @id @default(cuid())
-  email             String             @unique
-  name              String
-  passwordHash      String
-  phone             String?
-  birthDate         DateTime?
-  role              Role               @default(CUSTOMER)
-  notifyMarketing   Boolean            @default(false)
-  notifyOrderStatus Boolean            @default(true)
-  notifyNewProducts Boolean            @default(false)
-  notifySms         Boolean            @default(false)
-  createdAt         DateTime           @default(now())
-  addresses         Address[]
-  orders            Order[]
-  wishlist          WishlistItem[]
-  reviews           Review[]
-  pushSubs          PushSubscription[]
-  stockMovements    StockMovement[]
-  orderEvents       OrderEvent[]
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  name                String
+  passwordHash        String
+  phone               String?
+  birthDate           DateTime?
+  role                Role                 @default(CUSTOMER)
+  notifyMarketing     Boolean              @default(false)
+  notifyOrderStatus   Boolean              @default(true)
+  notifyNewProducts   Boolean              @default(false)
+  notifySms           Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  addresses           Address[]
+  orders              Order[]
+  wishlist            WishlistItem[]
+  reviews             Review[]
+  pushSubs            PushSubscription[]
+  stockMovements      StockMovement[]
+  orderEvents         OrderEvent[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Category {
@@ -364,13 +365,13 @@ model Product {
   ingredients       ProductIngredient[]
   stockMovements    StockMovement[]
   contentDrafts     ContentDraft[]
+  // Search also uses a trigram index on search_text(title, description),
+  // created in the catalog_search migration (Prisma can't express it).
 
   @@index([categoryId])
   @@index([title])
   // Storefront listings always filter on ACTIVE within a category.
   @@index([status, categoryId])
-  // Search also uses a trigram index on search_text(title, description),
-  // created in the catalog_search migration (Prisma can't express it).
 }
 
 model ProductImage {
@@ -433,26 +434,26 @@ model Address {
 }
 
 model Order {
-  id                     String       @id @default(cuid())
-  orderNumber            String       @unique
+  id                     String          @id @default(cuid())
+  orderNumber            String          @unique
   userId                 String
-  user                   User         @relation(fields: [userId], references: [id])
+  user                   User            @relation(fields: [userId], references: [id])
   shippingAddressId      String
-  shippingAddress        Address      @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  shippingAddress        Address         @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
   billingAddressId       String
-  billingAddress         Address      @relation("BillingAddress", fields: [billingAddressId], references: [id])
-  status                 OrderStatus  @default(PENDING_PAYMENT)
-  subtotal               Decimal      @db.Decimal(10, 2)
-  discountTotal          Decimal      @default(0) @db.Decimal(10, 2)
-  shippingCost           Decimal      @default(0) @db.Decimal(10, 2)
+  billingAddress         Address         @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  status                 OrderStatus     @default(PENDING_PAYMENT)
+  subtotal               Decimal         @db.Decimal(10, 2)
+  discountTotal          Decimal         @default(0) @db.Decimal(10, 2)
+  shippingCost           Decimal         @default(0) @db.Decimal(10, 2)
   // VAT on the shipping fee (a service), frozen at checkout.
-  shippingTaxRate        Decimal      @default(20) @db.Decimal(5, 2)
-  total                  Decimal      @db.Decimal(10, 2)
+  shippingTaxRate        Decimal         @default(20) @db.Decimal(5, 2)
+  total                  Decimal         @db.Decimal(10, 2)
   couponId               String?
-  coupon                 Coupon?      @relation(fields: [couponId], references: [id])
+  coupon                 Coupon?         @relation(fields: [couponId], references: [id])
   iyzicoPaymentId        String?
-  iyzicoConversationId   String?      @unique
-  iyzicoToken            String?      @unique
+  iyzicoConversationId   String?         @unique
+  iyzicoToken            String?         @unique
   // Captured at payment confirmation from CF-Retrieve's itemTransactions —
   // a refund is issued per transaction, not against the top-level payment,
   // so this is what refundOrder() actually has to work with later.
@@ -470,12 +471,13 @@ model Order {
   stockMovements         StockMovement[]
   shipments              Shipment[]
   invoices               Invoice[]
+  emails                 EmailMessage[]
   internalNote           String?
   campaignId             String?
-  campaign               Campaign?    @relation(fields: [campaignId], references: [id])
+  campaign               Campaign?       @relation(fields: [campaignId], references: [id])
   events                 OrderEvent[]
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -501,34 +503,34 @@ model OrderEvent {
 }
 
 model OrderItem {
-  id         String          @id @default(cuid())
-  orderId    String
-  order      Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId  Int
-  product    Product         @relation(fields: [productId], references: [id])
-  variantId  String?
-  variant    ProductVariant? @relation(fields: [variantId], references: [id])
-  sku        String?
-  title      String
-  thumbnail  String
-  unitPrice  Decimal         @db.Decimal(10, 2)
-  quantity   Int
+  id             String          @id @default(cuid())
+  orderId        String
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      Int
+  product        Product         @relation(fields: [productId], references: [id])
+  variantId      String?
+  variant        ProductVariant? @relation(fields: [variantId], references: [id])
+  sku            String?
+  title          String
+  thumbnail      String
+  unitPrice      Decimal         @db.Decimal(10, 2)
+  quantity       Int
   // Frozen at checkout for the invoice (src/lib/invoicing): the product's
   // VAT rate then, and this line's VAT-inclusive share of the order
   // discount (a campaign only covers some lines, a coupon all of them).
-  taxRate        Decimal       @default(20) @db.Decimal(5, 2)
-  discountAmount Decimal       @default(0) @db.Decimal(10, 2)
+  taxRate        Decimal         @default(20) @db.Decimal(5, 2)
+  discountAmount Decimal         @default(0) @db.Decimal(10, 2)
   invoiceLines   InvoiceLine[]
   // Set once this line's share of the order has been refunded (Bölüm 28 —
   // Kısmi İade). iyzico's refund granularity is per basket item, and
   // checkout/create keys basket items by productId — so lines sharing a
   // productId (e.g. two variants of the same product) share one iyzico
   // transaction and are always refunded together as a group.
-  refundedAt DateTime?
+  refundedAt     DateTime?
   // Optional free-form reason captured from the admin at refund time (Bölüm
   // 28 follow-up — İadeler reporting page). Nullable since it's opt-in and
   // refunds made before this field existed have none.
-  refundReason String?
+  refundReason   String?
 
   @@index([orderId])
 }
@@ -606,24 +608,24 @@ enum ContentDraftStatus {
 // both the raw AI text and what the admin actually approved (plus timing) so
 // we can see which drafts get rewritten and how much time they save.
 model ContentDraft {
-  id            String             @id @default(cuid())
-  productId     Int
-  product       Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
-  kind          ContentDraftKind
+  id           String             @id @default(cuid())
+  productId    Int
+  product      Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  kind         ContentDraftKind
   // IMAGE_ALT only: which photo the alt text is for. Keyed by URL because
   // product images are recreated (new ids) on every product save.
-  imageUrl      String?
-  status        ContentDraftStatus @default(PENDING)
-  aiText        String
-  finalText     String?
+  imageUrl     String?
+  status       ContentDraftStatus @default(PENDING)
+  aiText       String
+  finalText    String?
   // Product data the draft was generated from, for later review.
-  input         Json
-  model         String
-  latencyMs     Int
-  inputTokens   Int
-  outputTokens  Int
-  createdAt     DateTime           @default(now())
-  decidedAt     DateTime?
+  input        Json
+  model        String
+  latencyMs    Int
+  inputTokens  Int
+  outputTokens Int
+  createdAt    DateTime           @default(now())
+  decidedAt    DateTime?
 
   @@index([productId])
 }
@@ -752,4 +754,58 @@ model InvoiceLine {
 model InvoiceSequence {
   series     String @id
   lastNumber Int    @default(0)
+}
+
+enum EmailStatus {
+  QUEUED
+  SENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+// Transactional email outbox. A message is written in the same transaction
+// as the change it reports (payment confirmed, shipped, refunded…), then
+// delivered after commit; failures are retried by
+// scripts/deliver-emails.ts. dedupeKey makes each notification happen once
+// even when its trigger repeats (a carrier re-sending a webhook). SKIPPED:
+// recorded but deliberately not sent (no provider configured, or the
+// public demo, which never mails visitor-entered addresses).
+model EmailMessage {
+  id            String      @id @default(cuid())
+  dedupeKey     String      @unique
+  template      String
+  to            String
+  subject       String
+  html          String
+  text          String
+  orderId       String?
+  order         Order?      @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  status        EmailStatus @default(QUEUED)
+  attempts      Int         @default(0)
+  // With SENDING: a delivery that died mid-send is retried after a while.
+  lastAttemptAt DateTime?
+  lastError     String?
+  provider      String?
+  providerRef   String?
+  sentAt        DateTime?
+  createdAt     DateTime    @default(now())
+
+  @@index([status, createdAt])
+  @@index([orderId])
+}
+
+// "Şifremi unuttum". Only a SHA-256 of the emailed token is stored, so a
+// database leak doesn't hand out working reset links. Single use, short
+// lived; usedAt is set in the same statement that checks it's still unused.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
 }

@@ -63,10 +63,10 @@ async function createInvoice(
   type: "SALE" | "RETURN",
   lines: Line[],
   originalInvoiceId: string | null,
-  actorUserId?: string
+  actorUserId?: string,
+  issuedAt = new Date()
 ) {
   const computed = computeInvoice(lines);
-  const issuedAt = new Date();
   const number = await nextInvoiceNumber(tx, issuedAt);
   const provider = invoiceProvider();
   const { providerRef } = await provider.issue({ number, type, grandTotal: toLira(computed.gross) });
@@ -108,6 +108,7 @@ async function createInvoice(
     data: {
       orderId: order.id,
       type: "NOTE",
+      createdAt: issuedAt,
       message: `${type === "SALE" ? "Fatura" : "İade faturası"} kesildi: ${number} (${toLira(computed.gross).toLocaleString("tr-TR", { style: "currency", currency: "TRY" })}).`,
       actorUserId,
     },
@@ -116,7 +117,13 @@ async function createInvoice(
 }
 
 // The order's sale invoice — issued once; asking again returns it.
-export async function issueSaleInvoice(tx: Prisma.TransactionClient, orderId: string, actorUserId?: string) {
+// `issuedAt` is only ever set by the demo data script (backdated orders).
+export async function issueSaleInvoice(
+  tx: Prisma.TransactionClient,
+  orderId: string,
+  actorUserId?: string,
+  issuedAt?: Date
+) {
   const order = await loadOrder(tx, orderId);
   if (!order) throw new InvoiceError("Sipariş bulunamadı.");
   const existing = order.invoices.find((i) => i.type === "SALE" && i.status === "ISSUED");
@@ -134,7 +141,7 @@ export async function issueSaleInvoice(tx: Prisma.TransactionClient, orderId: st
       `Fatura tutarı (${toLira(gross)}) sipariş tutarıyla (${Number(order.total)}) uyuşmuyor; fatura kesilmedi.`
     );
   }
-  return { invoice: await createInvoice(tx, order, "SALE", lines, null, actorUserId), created: true };
+  return { invoice: await createInvoice(tx, order, "SALE", lines, null, actorUserId, issuedAt), created: true };
 }
 
 // A return document for refunded lines (and the shipping fee when the whole
@@ -199,11 +206,4 @@ export async function invoiceAfter(
   } catch (err) {
     console.error(`invoice after ${label} failed`, err);
   }
-}
-
-// Called after any order status change: an order that has just gone out
-// (or been delivered) gets its sale invoice. Safe to call repeatedly.
-export async function invoiceIfShipped(orderId: string, status: string | null | undefined, actorUserId?: string) {
-  if (status !== "KARGOLANDI" && status !== "TESLIM_EDILDI") return;
-  await invoiceAfter("shipping", (tx) => issueSaleInvoice(tx, orderId, actorUserId));
 }

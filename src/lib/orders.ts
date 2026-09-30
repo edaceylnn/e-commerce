@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import type { OrderSummaryData } from "@/components/OrderSummary";
 import { refundPayment, type IyzicoItemTransaction } from "@/lib/iyzico";
+import { deliverSoon, queueOrderEmail, queueRefundEmail } from "@/lib/email/outbox";
 import { cancelInvoice, invoiceAfter, issueReturnInvoice } from "@/lib/invoicing/invoices";
 import { releaseReservation } from "@/lib/stock-reservation";
 import { SHIPMENTS_INCLUDE, summarizeShipment, type ShipmentSummary } from "@/lib/shipping/summary";
@@ -180,7 +181,13 @@ export async function refundOrder(
         await restockItem(tx, item, "RETURN", `İade #${order.orderNumber}`);
       }
     }
+    await queueRefundEmail(tx, order.id, {
+      refundKey: String(refundedAt.getTime()),
+      itemIds: order.items.map((i) => i.id),
+      full: true,
+    });
   });
+  deliverSoon();
   // The money is back either way; a failed return document is retried
   // from the order page rather than undoing the refund.
   await invoiceAfter("refund", (tx) =>
@@ -316,7 +323,13 @@ export async function refundOrderItems(
       }`,
       actorUserId
     );
+    await queueRefundEmail(tx, order.id, {
+      refundKey: String(refundedAt.getTime()),
+      itemIds: itemsToRefund.map((i) => i.id),
+      full: isFullyRefunded,
+    });
   });
+  deliverSoon();
   // The last lines of an order return the shipping fee with them, so the
   // return documents add up to the whole sale invoice.
   await invoiceAfter("partial refund", (tx) =>
@@ -379,7 +392,12 @@ export async function refundUnfulfillablePayment(
       },
     });
     await logOrderEvent(tx, order.id, note);
+    if (refunded) {
+      const items = await tx.orderItem.findMany({ where: { orderId: order.id }, select: { id: true } });
+      await queueRefundEmail(tx, order.id, { refundKey: "unfulfillable", itemIds: items.map((i) => i.id), full: true });
+    }
   });
+  deliverSoon();
   return { refunded };
 }
 
@@ -410,6 +428,7 @@ export async function cancelOrder(
     // An invoice issued by hand before shipping goes with the order.
     const sale = await tx.invoice.findFirst({ where: { orderId, type: "SALE", status: "ISSUED" } });
     if (sale) await cancelInvoice(tx, sale.id, "Sipariş iptal edildi", actorUserId);
+    await queueOrderEmail(tx, "order-cancelled", orderId);
     if (order.paidAt) {
       for (const item of order.items) {
         await restockItem(tx, item, "CANCELLATION", `İptal #${order.orderNumber}`);
@@ -419,6 +438,7 @@ export async function cancelOrder(
     }
   });
 
+  deliverSoon();
   return { ok: true };
 }
 

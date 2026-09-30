@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { AdminLoginForm } from "@/components/AdminLoginForm";
 import { plusJakartaSans } from "@/lib/admin-fonts";
+import { DEMO_ACCOUNTS, isDemoMode } from "@/lib/demo";
 
 export default async function AdminLoginPage() {
   const session = await getSession();
@@ -21,7 +22,7 @@ export default async function AdminLoginPage() {
           <h1 className="font-adm-headline text-2xl font-semibold tracking-tight text-adm-text">EDACEY</h1>
           <p className="mt-1 text-sm text-adm-text-secondary">Yönetim paneline giriş yapın</p>
         </div>
-        <AdminLoginForm />
+        <AdminLoginForm demo={isDemoMode() ? DEMO_ACCOUNTS.admin : undefined} />
       </div>
     </div>
   );

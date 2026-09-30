@@ -42,6 +42,17 @@ jest.mock("./db", () => ({
 
 const refundPayment = jest.fn();
 
+// Email content and delivery have their own tests; here only the call matters.
+jest.mock("./email/outbox", () => ({
+  queueOrderEmail: jest.fn().mockResolvedValue(true),
+  queueRefundEmail: jest.fn().mockResolvedValue(true),
+  deliverSoon: jest.fn(),
+}));
+jest.mock("./invoicing/invoices", () => ({
+  cancelInvoice: jest.fn(),
+  invoiceAfter: jest.fn(),
+  issueReturnInvoice: jest.fn(),
+}));
 jest.mock("./iyzico", () => ({
   refundPayment: (...args: unknown[]) => refundPayment(...args),
 }));

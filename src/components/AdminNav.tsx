@@ -73,6 +73,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/campaigns", label: "Kampanyalar", Icon: TagIcon },
       { href: "/admin/analytics", label: "Raporlar", Icon: BarChartIcon },
       { href: "/admin/notifications", label: "Bildirimler", Icon: BellIcon },
+      { href: "/admin/emails", label: "E-postalar", Icon: ChatBubbleIcon },
       { href: "/admin/settings", label: "Ayarlar", Icon: GearIcon },
     ],
   },

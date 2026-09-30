@@ -9,9 +9,11 @@
     "lint": "eslint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:db": "tsx --test src/lib/stock-reservation.integration.ts src/lib/shipping/shipping.integration.ts src/lib/catalog.integration.ts src/lib/invoicing/invoices.integration.ts",
+    "test:db": "tsx --test src/lib/stock-reservation.integration.ts src/lib/shipping/shipping.integration.ts src/lib/catalog.integration.ts src/lib/invoicing/invoices.integration.ts src/lib/email/email.integration.ts",
     "test:e2e": "playwright test",
-    "cleanup:pending-orders": "tsx scripts/cleanup-pending-orders.ts"
+    "cleanup:pending-orders": "tsx scripts/cleanup-pending-orders.ts",
+    "demo:reset": "tsx scripts/demo-reset.ts",
+    "emails:deliver": "tsx scripts/deliver-emails.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
@@ -24,6 +26,7 @@
     "graphql-yoga": "^5.22.0",
     "jose": "^6.2.12",
     "next": "16.3.4",
+    "nodemailer": "^10.0.13",
     "pg": "^8.23.0",
     "prisma": "^7.10.0",
     "react": "19.2.8",
@@ -41,6 +44,7 @@
     "@types/bcrypt": "^6.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",

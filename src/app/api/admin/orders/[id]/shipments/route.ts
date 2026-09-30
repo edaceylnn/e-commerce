@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { invoiceIfShipped } from "@/lib/invoicing/invoices";
+import { afterOrderStatusChange } from "@/lib/order-lifecycle";
 import { CARRIERS, getCarrier } from "@/lib/shipping/carriers";
 import { recordShipmentScan } from "@/lib/shipping/events";
 import { simulatorTrackingNumber } from "@/lib/shipping/simulator";
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
       return { created, orderStatus: scan.recorded ? scan.orderStatus : null };
     });
-    await invoiceIfShipped(order.id, shipment.orderStatus, session.userId);
+    await afterOrderStatusChange(order.id, shipment.orderStatus, session.userId);
     return NextResponse.json({ id: shipment.created.id, trackingNumber });
   } catch (err) {
     if ((err as { code?: string }).code === "P2002") {

@@ -3,7 +3,8 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function AdminLoginForm() {
+// `demo`: the public demo's shared account, shown with a fill-in button.
+export function AdminLoginForm({ demo }: { demo?: { email: string; password: string } }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,6 +47,25 @@ export function AdminLoginForm() {
       onSubmit={handleSubmit}
       className="space-y-4 rounded-2xl border border-adm-border bg-adm-surface-card p-6"
     >
+      {demo && (
+        <div className="rounded-lg bg-adm-surface-secondary px-3 py-2.5 text-[13px] text-adm-text">
+          <p className="font-semibold">Demo hesabı</p>
+          <p className="mt-0.5 text-adm-text-secondary">
+            {demo.email} · {demo.password}
+          </p>
+          <p className="mt-0.5 text-xs text-adm-text-tertiary">Her şeyi deneyebilirsiniz; veriler her gece sıfırlanır.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setEmail(demo.email);
+              setPassword(demo.password);
+            }}
+            className="mt-1.5 text-xs font-semibold text-adm-primary hover:underline"
+          >
+            Bilgileri doldur
+          </button>
+        </div>
+      )}
       <div className="space-y-1.5">
         <label
           htmlFor="admin-email"

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { invoiceIfShipped } from "@/lib/invoicing/invoices";
+import { afterOrderStatusChange } from "@/lib/order-lifecycle";
 import { getCarrier } from "@/lib/shipping/carriers";
 import { recordShipmentScan } from "@/lib/shipping/events";
 import { nextSimulatedStatus, sendSimulatedScan, simulatedScan } from "@/lib/shipping/simulator";
@@ -40,7 +40,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         session.userId
       )
     );
-    if (result.recorded) await invoiceIfShipped(shipment.orderId, result.orderStatus, session.userId);
+    if (result.recorded) await afterOrderStatusChange(shipment.orderId, result.orderStatus, session.userId);
     return NextResponse.json(result);
   }
 
