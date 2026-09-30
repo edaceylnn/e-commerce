@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import type { OrderSummaryData } from "@/components/OrderSummary";
 import { refundPayment, type IyzicoItemTransaction } from "@/lib/iyzico";
+import { cancelInvoice, invoiceAfter, issueReturnInvoice } from "@/lib/invoicing/invoices";
 import { releaseReservation } from "@/lib/stock-reservation";
 import { SHIPMENTS_INCLUDE, summarizeShipment, type ShipmentSummary } from "@/lib/shipping/summary";
 import {
@@ -180,6 +181,11 @@ export async function refundOrder(
       }
     }
   });
+  // The money is back either way; a failed return document is retried
+  // from the order page rather than undoing the refund.
+  await invoiceAfter("refund", (tx) =>
+    issueReturnInvoice(tx, order.id, { orderItemIds: "all", includeShipping: true }, actorUserId)
+  );
 
   return { ok: true };
 }
@@ -278,6 +284,9 @@ export async function refundOrderItems(
   const refundedAt = new Date();
   const isReturn = (RETURN_STATUSES as readonly string[]).includes(order.status);
   const productTitles = [...new Set(itemsToRefund.map((i) => i.title))].join(", ");
+  const isFullyRefunded = order.items.every(
+    (i) => itemsToRefund.some((r) => r.id === i.id) || i.refundedAt
+  );
 
   await prisma.$transaction(async (tx) => {
     for (const item of itemsToRefund) {
@@ -286,10 +295,6 @@ export async function refundOrderItems(
         await restockItem(tx, item, "RETURN", `Kısmi iade #${order.orderNumber}`);
       }
     }
-
-    const isFullyRefunded = order.items.every(
-      (i) => itemsToRefund.some((r) => r.id === i.id) || i.refundedAt
-    );
 
     await tx.order.update({
       where: { id: order.id },
@@ -312,6 +317,16 @@ export async function refundOrderItems(
       actorUserId
     );
   });
+  // The last lines of an order return the shipping fee with them, so the
+  // return documents add up to the whole sale invoice.
+  await invoiceAfter("partial refund", (tx) =>
+    issueReturnInvoice(
+      tx,
+      order.id,
+      { orderItemIds: itemsToRefund.map((i) => i.id), includeShipping: isFullyRefunded },
+      actorUserId
+    )
+  );
 
   return { ok: true };
 }
@@ -392,6 +407,9 @@ export async function cancelOrder(
   await prisma.$transaction(async (tx) => {
     await tx.order.update({ where: { id: orderId }, data: { status: "IPTAL" } });
     await logOrderEvent(tx, orderId, "Sipariş iptal edildi.", actorUserId);
+    // An invoice issued by hand before shipping goes with the order.
+    const sale = await tx.invoice.findFirst({ where: { orderId, type: "SALE", status: "ISSUED" } });
+    if (sale) await cancelInvoice(tx, sale.id, "Sipariş iptal edildi", actorUserId);
     if (order.paidAt) {
       for (const item of order.items) {
         await restockItem(tx, item, "CANCELLATION", `İptal #${order.orderNumber}`);
@@ -552,6 +570,8 @@ export type OrderDetail = {
     district: string;
   };
   sameAddress: boolean;
+  // Issued (not cancelled) invoice documents, for the "Fatura" links.
+  invoices: { id: string; number: string; type: "SALE" | "RETURN" }[];
 };
 
 // Richer than getOrderForUser (which only feeds the OrderSummary shared with
@@ -568,6 +588,7 @@ export async function getOrderDetailForUser(
       shipments: SHIPMENTS_INCLUDE,
       shippingAddress: true,
       billingAddress: true,
+      invoices: { where: { status: "ISSUED" }, orderBy: { issuedAt: "asc" }, select: { id: true, number: true, type: true } },
     },
   });
   if (!order || order.userId !== userId) return null;
@@ -598,5 +619,6 @@ export async function getOrderDetailForUser(
     shippingAddress: order.shippingAddress,
     billingAddress: order.billingAddress,
     sameAddress: order.shippingAddressId === order.billingAddressId,
+    invoices: order.invoices,
   };
 }

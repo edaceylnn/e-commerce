@@ -146,6 +146,22 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
             <Line label="Ödeme yöntemi" value="Kredi/Banka Kartı" strong />
             <Line label="Ödeme durumu" value={paymentStatusLabel(order.paidAt, order.status)} strong />
           </dl>
+          {order.invoices.length > 0 && (
+            <ul className="mt-4 space-y-1.5 text-sm">
+              {order.invoices.map((inv) => (
+                <li key={inv.id}>
+                  <a
+                    href={`/fatura/${inv.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline underline-offset-4 hover:text-ink-soft"
+                  >
+                    {inv.type === "SALE" ? "Faturayı görüntüle" : "İade faturası"} ({inv.number})
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </Section>
       </div>
 

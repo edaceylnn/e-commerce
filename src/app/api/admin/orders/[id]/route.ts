@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { invoiceIfShipped } from "@/lib/invoicing/invoices";
 import { cancelOrder } from "@/lib/orders";
 import { ORDER_STATUSES, ORDER_STATUS_LABELS, canTransitionStatus } from "@/lib/order-status";
 import type { Prisma } from "@/generated/prisma/client";
@@ -81,6 +82,7 @@ export async function PATCH(
         },
       });
     });
+    await invoiceIfShipped(id, parsed.data.status, session.userId);
   }
 
   // A bare { status } call (e.g. a quick "cancel order" action) must not

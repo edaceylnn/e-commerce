@@ -445,6 +445,8 @@ model Order {
   subtotal               Decimal      @db.Decimal(10, 2)
   discountTotal          Decimal      @default(0) @db.Decimal(10, 2)
   shippingCost           Decimal      @default(0) @db.Decimal(10, 2)
+  // VAT on the shipping fee (a service), frozen at checkout.
+  shippingTaxRate        Decimal      @default(20) @db.Decimal(5, 2)
   total                  Decimal      @db.Decimal(10, 2)
   couponId               String?
   coupon                 Coupon?      @relation(fields: [couponId], references: [id])
@@ -467,6 +469,7 @@ model Order {
   items                  OrderItem[]
   stockMovements         StockMovement[]
   shipments              Shipment[]
+  invoices               Invoice[]
   internalNote           String?
   campaignId             String?
   campaign               Campaign?    @relation(fields: [campaignId], references: [id])
@@ -510,6 +513,12 @@ model OrderItem {
   thumbnail  String
   unitPrice  Decimal         @db.Decimal(10, 2)
   quantity   Int
+  // Frozen at checkout for the invoice (src/lib/invoicing): the product's
+  // VAT rate then, and this line's VAT-inclusive share of the order
+  // discount (a campaign only covers some lines, a coupon all of them).
+  taxRate        Decimal       @default(20) @db.Decimal(5, 2)
+  discountAmount Decimal       @default(0) @db.Decimal(10, 2)
+  invoiceLines   InvoiceLine[]
   // Set once this line's share of the order has been refunded (Bölüm 28 —
   // Kısmi İade). iyzico's refund granularity is per basket item, and
   // checkout/create keys basket items by productId — so lines sharing a
@@ -665,4 +674,82 @@ model ShipmentEvent {
 
   @@unique([shipmentId, externalId])
   @@index([shipmentId])
+}
+
+enum InvoiceType {
+  SALE
+  // Credit for returned lines, pointing at the sale invoice it reverses.
+  RETURN
+}
+
+enum InvoiceStatus {
+  ISSUED
+  CANCELLED
+}
+
+// An issued invoice is a legal record: its number, buyer, lines and totals
+// never change and it is never deleted — the database enforces that (see
+// the invoices migration). Mistakes are cancelled; returns get a RETURN
+// document. Amounts are VAT-inclusive-derived, see src/lib/invoicing/tax.ts.
+model Invoice {
+  id                String        @id @default(cuid())
+  orderId           String
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  type              InvoiceType
+  status            InvoiceStatus @default(ISSUED)
+  // e-Arşiv format: 3-letter prefix + year + 9-digit gapless sequence.
+  number            String        @unique
+  // ETTN: the document's universal id (UUID) on the e-Arşiv system, printed
+  // on the invoice next to the number.
+  ettn              String        @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  issuedAt          DateTime      @default(now())
+  cancelledAt       DateTime?
+  cancelReason      String?
+  // The buyer as invoiced (a later address change doesn't rewrite it).
+  buyerName         String
+  buyerIdentity     String
+  buyerAddress      String
+  buyerEmail        String
+  netTotal          Decimal       @db.Decimal(12, 2)
+  vatTotal          Decimal       @db.Decimal(12, 2)
+  grandTotal        Decimal       @db.Decimal(12, 2)
+  // Which e-invoice provider issued it, and its reference there.
+  provider          String
+  providerRef       String?
+  originalInvoiceId String?
+  originalInvoice   Invoice?      @relation("InvoiceReturns", fields: [originalInvoiceId], references: [id], onDelete: Restrict)
+  returns           Invoice[]     @relation("InvoiceReturns")
+  lines             InvoiceLine[]
+  createdAt         DateTime      @default(now())
+
+  @@index([orderId])
+}
+
+model InvoiceLine {
+  id          String     @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice    @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  // Null for the shipping line.
+  orderItemId String?
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  position    Int
+  description String
+  quantity    Int
+  vatRate     Decimal    @db.Decimal(5, 2)
+  unitPrice   Decimal    @db.Decimal(12, 2)
+  discount    Decimal    @db.Decimal(12, 2)
+  gross       Decimal    @db.Decimal(12, 2)
+  net         Decimal    @db.Decimal(12, 2)
+  vat         Decimal    @db.Decimal(12, 2)
+
+  @@index([invoiceId])
+  @@index([orderItemId])
+}
+
+// Last number used per series+year ("EDA2026"). Incremented in the same
+// transaction as the invoice it numbers, so numbers are unique and — as
+// rolled-back invoices roll their increment back too — gapless.
+model InvoiceSequence {
+  series     String @id
+  lastNumber Int    @default(0)
 }

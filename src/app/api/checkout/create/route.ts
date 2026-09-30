@@ -8,9 +8,10 @@ import {
   initializeCheckoutForm,
   verifyResponseSignature,
 } from "@/lib/iyzico";
-import { computeShippingCost } from "@/lib/shipping";
+import { computeShippingCost, SHIPPING_TAX_RATE } from "@/lib/shipping";
 import { computeCouponDiscount } from "@/lib/coupons";
-import { computeCampaignDiscount, type CampaignCartLine } from "@/lib/campaigns";
+import { computeCampaignDiscount, isCampaignEligible, type CampaignCartLine } from "@/lib/campaigns";
+import { allocateDiscount, toKurus, toLira } from "@/lib/invoicing/tax";
 import {
   InsufficientStockError,
   releaseExpiredReservations,
@@ -92,6 +93,8 @@ export async function POST(request: NextRequest) {
     thumbnail: string;
     unitPrice: number;
     quantity: number;
+    taxRate: number;
+    discountAmount?: number;
   }[] = [];
   const campaignLines: CampaignCartLine[] = [];
 
@@ -127,9 +130,16 @@ export async function POST(request: NextRequest) {
     // A variant's own price (when set) is authoritative and doesn't stack
     // with the product's discountPercentage — matches how the product page
     // displays it (see ProductPurchasePanel).
-    const unitPrice = variant
-      ? Number(variant.priceOverride ?? product.price)
-      : Number(product.price) * (1 - Number(product.discountPercentage) / 100);
+    // Rounded to the kuruş here, before anything is summed: a sub-kuruş
+    // unit price (999.99 × 85% = 849.9915) would otherwise make the charged
+    // total and the invoice's line amounts disagree by a kuruş.
+    const unitPrice = toLira(
+      toKurus(
+        variant
+          ? Number(variant.priceOverride ?? product.price)
+          : Number(product.price) * (1 - Number(product.discountPercentage) / 100)
+      )
+    );
 
     orderItemsData.push({
       productId: product.id,
@@ -139,6 +149,8 @@ export async function POST(request: NextRequest) {
       thumbnail: product.thumbnail,
       unitPrice,
       quantity: item.quantity,
+      // Frozen for the invoice: the rate that applies at the time of sale.
+      taxRate: Number(product.taxRate),
     });
     campaignLines.push({
       categoryId: product.categoryId,
@@ -213,8 +225,23 @@ export async function POST(request: NextRequest) {
     appliedCampaignId = bestCampaignId;
   }
 
+  // Money is settled in whole kuruş from here on (see src/lib/invoicing/tax.ts).
+  discountTotal = toLira(toKurus(discountTotal));
   const shippingCost = computeShippingCost(subtotal);
-  const total = subtotal + shippingCost - discountTotal;
+  const total = toLira(toKurus(subtotal) + toKurus(shippingCost) - toKurus(discountTotal));
+
+  // Each line's share of the discount, frozen for its invoice line: a
+  // coupon covers the whole basket, a campaign only its category/brand.
+  const appliedCampaign = activeCampaigns.find((c) => c.id === appliedCampaignId);
+  const discountShares = allocateDiscount(
+    orderItemsData.map((item, i) => ({
+      gross: toKurus(item.unitPrice) * item.quantity,
+      campaignEligible: appliedCampaign ? isCampaignEligible(appliedCampaign, campaignLines[i]) : false,
+    })),
+    toKurus(discountTotal),
+    appliedCouponId ? "coupon" : appliedCampaign ? "campaign" : null
+  );
+  orderItemsData.forEach((item, i) => (item.discountAmount = toLira(discountShares[i])));
 
   // The stock check above gives a friendly message; the reservation below
   // is what actually guarantees the units — it takes them atomically, so of
@@ -235,6 +262,7 @@ export async function POST(request: NextRequest) {
           couponId: appliedCouponId,
           campaignId: appliedCampaignId,
           total,
+          shippingTaxRate: SHIPPING_TAX_RATE,
           reservedUntil: reservationDeadline(),
           items: { create: orderItemsData },
         },

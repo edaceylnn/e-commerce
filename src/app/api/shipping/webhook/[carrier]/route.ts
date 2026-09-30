@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { invoiceIfShipped } from "@/lib/invoicing/invoices";
 import { getCarrier } from "@/lib/shipping/carriers";
 import { recordShipmentScan } from "@/lib/shipping/events";
 import { SIGNATURE_HEADER, verifyWebhookSignature, WebhookScanSchema } from "@/lib/shipping/webhook";
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const shipment = await prisma.shipment.findUnique({
     where: { carrier_trackingNumber: { carrier, trackingNumber: scan.trackingNumber } },
-    select: { id: true },
+    select: { id: true, orderId: true },
   });
   // Not ours (or deleted): acknowledge so the carrier doesn't retry forever.
   if (!shipment) {
@@ -49,5 +50,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       occurredAt: new Date(scan.occurredAt),
     })
   );
+  if (result.recorded) await invoiceIfShipped(shipment.orderId, result.orderStatus);
   return NextResponse.json(result);
 }

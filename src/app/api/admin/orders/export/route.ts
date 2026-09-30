@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
       user: true,
       items: true,
       shipments: { orderBy: { createdAt: "desc" }, take: 1, select: { carrier: true, trackingNumber: true } },
+      invoices: { where: { type: "SALE", status: "ISSUED" }, select: { number: true } },
     },
     orderBy: { createdAt: "desc" },
     take: EXPORT_ROW_CAP,
@@ -79,6 +80,7 @@ export async function GET(request: NextRequest) {
     "Sipariş Durumu",
     "Kargo Firması",
     "Kargo Takip No",
+    "Fatura No",
   ];
   const rows = orders.map((o) =>
     [
@@ -92,6 +94,7 @@ export async function GET(request: NextRequest) {
       ORDER_STATUS_LABELS[o.status] ?? o.status,
       o.shipments[0] ? carrierName(o.shipments[0].carrier) : "",
       o.shipments[0]?.trackingNumber ?? "",
+      o.invoices[0]?.number ?? "",
     ].map(csvCell)
   );
 

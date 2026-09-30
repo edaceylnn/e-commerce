@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { invoiceIfShipped } from "@/lib/invoicing/invoices";
 import { CARRIERS, getCarrier } from "@/lib/shipping/carriers";
 import { recordShipmentScan } from "@/lib/shipping/events";
 import { simulatorTrackingNumber } from "@/lib/shipping/simulator";
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const created = await tx.shipment.create({
         data: { orderId: order.id, carrier: carrier.code, trackingNumber },
       });
-      await recordShipmentScan(
+      const scan = await recordShipmentScan(
         tx,
         created.id,
         carrier.integrated
@@ -48,9 +49,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           : { externalId: "handed-over", status: "PICKED_UP", description: `${carrier.name}'ya teslim edildi`, occurredAt: new Date() },
         session.userId
       );
-      return created;
+      return { created, orderStatus: scan.recorded ? scan.orderStatus : null };
     });
-    return NextResponse.json({ id: shipment.id, trackingNumber });
+    await invoiceIfShipped(order.id, shipment.orderStatus, session.userId);
+    return NextResponse.json({ id: shipment.created.id, trackingNumber });
   } catch (err) {
     if ((err as { code?: string }).code === "P2002") {
       return NextResponse.json({ error: "Bu takip numarası bu firmada zaten kayıtlı." }, { status: 409 });
