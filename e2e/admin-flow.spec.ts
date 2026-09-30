@@ -7,6 +7,17 @@ import { adminCredentials } from "./helpers";
 const { email: ADMIN_EMAIL, password: ADMIN_PASSWORD } = adminCredentials();
 
 test.describe("admin panel", () => {
+  // Products and uploads a test created, removed even when it fails
+  // halfway — otherwise a failed run leaves "E2E …" products in the store.
+  let createdProductIds: string[] = [];
+  let uploadedUrls: string[] = [];
+  test.afterEach(async ({ page }) => {
+    for (const id of createdProductIds) await page.request.delete(`/api/admin/products/${id}`);
+    for (const url of uploadedUrls) await rm(path.join("public", url), { force: true });
+    createdProductIds = [];
+    uploadedUrls = [];
+  });
+
   test.beforeEach(async ({ page }) => {
     await page.goto("/admin/login");
     await page.getByLabel("E-posta").fill(ADMIN_EMAIL);
@@ -32,6 +43,10 @@ test.describe("admin panel", () => {
 
   test("new product lands on the editor with live completeness warnings", async ({ page }) => {
     const title = `E2E Spor Tayt ${Date.now()}`;
+    // The newest product before ours: ours must be listed above it. (Not
+    // "first row" — another test may be creating a product in parallel.)
+    await page.goto("/admin/products");
+    const previousNewest = (await page.locator("tbody tr").first().getByRole("link").first().textContent())!.trim();
 
     await page.goto("/admin/products/new");
     await page.getByPlaceholder("örn. Yüksek Bel Toparlayıcı Spor Tayt").fill(title);
@@ -41,7 +56,7 @@ test.describe("admin panel", () => {
     await expect(uploaded).toBeVisible();
     // The stored file is actually served back, not just referenced.
     await expect.poll(() => uploaded.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
-    const uploadedUrl = (await uploaded.getAttribute("src"))!;
+    uploadedUrls.push((await uploaded.getAttribute("src"))!);
 
     const audit = page.locator("aside").filter({ hasText: "Kart kontrolü" });
     await expect(audit.getByText("Açıklama yok", { exact: true })).toBeVisible();
@@ -49,6 +64,7 @@ test.describe("admin panel", () => {
 
     await page.getByRole("button", { name: "Ürünü oluştur" }).click();
     await expect(page).toHaveURL(/\/admin\/products\/\d+\/edit$/);
+    createdProductIds.push(page.url().match(/products\/(\d+)\/edit/)![1]);
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
 
     // Fixing a field clears its warning immediately, before saving.
@@ -61,8 +77,12 @@ test.describe("admin panel", () => {
     // From the list: the name opens the editor, the trash icon deletes
     // (after a confirmation).
     await page.goto("/admin/products");
-    // Newest first: the product just created heads the list.
-    await expect(page.locator("tbody tr").first().getByRole("link", { name: title, exact: true })).toBeVisible();
+    // Newest first: the product just created is above the previous newest.
+    await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
+    const listed = await page.locator("tbody tr").evaluateAll((rows) =>
+      rows.map((r) => r.querySelector("a")?.textContent?.trim() ?? "")
+    );
+    expect(listed.indexOf(title)).toBeLessThan(listed.indexOf(previousNewest));
     await page.getByRole("link", { name: title, exact: true }).click();
     await expect(page).toHaveURL(editUrl);
 
@@ -70,7 +90,6 @@ test.describe("admin panel", () => {
     page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: `${title} ürününü sil` }).click();
     await expect(page.getByRole("link", { name: title, exact: true })).not.toBeVisible();
-    await rm(path.join("public", uploadedUrl), { force: true });
   });
 
   test("variant stock drives the storefront's availability", async ({ page }) => {
@@ -83,7 +102,7 @@ test.describe("admin panel", () => {
     await page.locator('input[type="file"]').setInputFiles("public/products/green-legging.jpg");
     const uploaded = page.locator('img[src^="/uploads/products/"]').first();
     await expect(uploaded).toBeVisible();
-    const uploadedUrl = (await uploaded.getAttribute("src"))!;
+    uploadedUrls.push((await uploaded.getAttribute("src"))!);
 
     // Picking a color and two sizes lists both combinations.
     await page.getByRole("button", { name: "Kil", exact: true }).click();
@@ -101,6 +120,7 @@ test.describe("admin panel", () => {
     await expect(page).toHaveURL(/\/admin\/products\/\d+\/edit$/);
     const editUrl = page.url();
     const productId = editUrl.match(/products\/(\d+)\/edit/)![1];
+    createdProductIds.push(productId);
     // Blank SKUs were generated from the product id, color and size.
     await expect(page.getByLabel("Kil M SKU")).toHaveValue(`ED-${productId}-KIL-M`);
 
@@ -118,7 +138,6 @@ test.describe("admin panel", () => {
 
     const res = await page.request.delete(`/api/admin/products/${productId}`);
     expect(res.ok()).toBe(true);
-    await rm(path.join("public", uploadedUrl), { force: true });
   });
 
   test("order page saves the internal note without touching the status", async ({ page }) => {

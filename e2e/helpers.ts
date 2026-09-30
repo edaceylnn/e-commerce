@@ -47,14 +47,18 @@ export async function fillAndSaveAddress(
   // Scoped to the most-recently-opened <AddressForm> (a <form> element) —
   // on the checkout page two AddressPicker instances (shipping + billing)
   // can each have their own open form at once, so an unscoped page-wide
-  // locator is ambiguous. The last <form> in DOM order is always whichever
-  // one was just revealed by a "Yeni adres ekle" click.
+  // locator is ambiguous. The last address form in DOM order is whichever
+  // one was just revealed by a "Yeni adres ekle" click. (Not just the last
+  // <form>: the header's search form can mount after it and take that spot.)
   //
   // Required fields render their label as "Label *" (see FormField) — exact
   // matches need the asterisk; substring matches ("Telefon", "İlçe", ...)
   // are safe as long as they aren't a prefix of another field's label,
   // which is why "Adres" and "İl" need exact + the literal "*" here.
-  const form = page.locator("form").last();
+  const form = page
+    .locator("form")
+    .filter({ has: page.getByRole("button", { name: "Adresi Kaydet" }) })
+    .last();
   await form.getByLabel("Ad Soyad").fill(overrides.fullName ?? "Checkout Test");
   await form.getByLabel("Telefon").fill(overrides.phone ?? "05551234567");
   await form.getByLabel("Adres *", { exact: true }).fill(overrides.line1 ?? "Test Sokak No:1");

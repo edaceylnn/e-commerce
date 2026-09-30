@@ -26,6 +26,10 @@ export function demoBlockReason(method: string, pathname: string, sessionEmail?:
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") return null;
   if (pathname.startsWith("/api/admin/")) {
     if (method === "DELETE") return "Demo modunda silme kapalı.";
+    // Downloads images from any URL onto the server; the preview is fine.
+    if (pathname === "/api/admin/products/import") {
+      return "Demo modunda içe aktarma kapalı; önizlemeyi deneyebilirsiniz.";
+    }
     if (pathname.startsWith("/api/admin/users/") || pathname === "/api/admin/settings") {
       return "Demo modunda kullanıcılar ve mağaza ayarları değiştirilemez.";
     }

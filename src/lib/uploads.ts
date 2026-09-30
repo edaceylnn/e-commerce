@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, rm, writeFile } from "fs/promises";
 import path from "path";
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -31,4 +31,14 @@ export async function saveProductImage(bytes: Buffer, ext: string, publicDir = p
   const fileName = `${randomUUID()}.${ext}`;
   await writeFile(path.join(dir, fileName), bytes);
   return `/${UPLOAD_SUBDIR.split(path.sep).join("/")}/${fileName}`;
+}
+
+// Deletes a stored upload by its public URL. Anything that isn't one of our
+// uploads (a seeded /products/… image, an external URL) is left alone.
+export async function removeProductImage(url: string, publicDir = path.join(process.cwd(), "public")) {
+  const prefix = `/${UPLOAD_SUBDIR.split(path.sep).join("/")}/`;
+  if (!url.startsWith(prefix)) return;
+  const name = url.slice(prefix.length);
+  if (!/^[0-9a-f-]+\.(jpg|png|gif|webp)$/.test(name)) return;
+  await rm(path.join(publicDir, UPLOAD_SUBDIR, name), { force: true });
 }

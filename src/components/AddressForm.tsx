@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { FormField, fieldInputClass } from "@/components/FormField";
 import { PhoneInput } from "@/components/PhoneInput";
 import { PrimaryButton, TextButton } from "@/components/account/AccountButtons";
@@ -38,6 +38,9 @@ export function AddressForm({
   onSubmit: (values: AddressFormValues) => void;
   onCancel?: () => void;
 }) {
+  // Unique per form: checkout can show the shipping and billing forms at
+  // once, and shared ids would tie one form's labels to the other's inputs.
+  const uid = useId();
   const [values, setValues] = useState<AddressFormValues>({
     type: initial?.type ?? "SHIPPING",
     label: initial?.label ?? "",
@@ -64,9 +67,9 @@ export function AddressForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="Adres Tipi" htmlFor="addr-type">
+        <FormField label="Adres Tipi" htmlFor={`${uid}-type`}>
           <select
-            id="addr-type"
+            id={`${uid}-type`}
             value={values.type}
             onChange={(e) => set("type", e.target.value as AddressFormValues["type"])}
             className={fieldInputClass()}
@@ -75,51 +78,51 @@ export function AddressForm({
             <option value="BILLING">Fatura Adresi</option>
           </select>
         </FormField>
-        <FormField label="Adres Etiketi" htmlFor="addr-label" hint="Ör. Ev, İş — opsiyonel">
+        <FormField label="Adres Etiketi" htmlFor={`${uid}-label`} hint="Ör. Ev, İş — opsiyonel">
           <input
-            id="addr-label"
+            id={`${uid}-label`}
             value={values.label}
             onChange={(e) => set("label", e.target.value)}
             className={fieldInputClass()}
           />
         </FormField>
-        <FormField label="Ad Soyad" htmlFor="addr-name" required className="sm:col-span-2">
+        <FormField label="Ad Soyad" htmlFor={`${uid}-name`} required className="sm:col-span-2">
           <input
-            id="addr-name"
+            id={`${uid}-name`}
             required
             value={values.fullName}
             onChange={(e) => set("fullName", e.target.value)}
             className={fieldInputClass()}
           />
         </FormField>
-        <FormField label="Telefon" htmlFor="addr-phone" required className="sm:col-span-2">
+        <FormField label="Telefon" htmlFor={`${uid}-phone`} required className="sm:col-span-2">
           <PhoneInput
-            id="addr-phone"
+            id={`${uid}-phone`}
             required
             value={values.phone}
             onChange={(v) => set("phone", v)}
           />
         </FormField>
-        <FormField label="Adres" htmlFor="addr-line1" required className="sm:col-span-2">
+        <FormField label="Adres" htmlFor={`${uid}-line1`} required className="sm:col-span-2">
           <input
-            id="addr-line1"
+            id={`${uid}-line1`}
             required
             value={values.line1}
             onChange={(e) => set("line1", e.target.value)}
             className={fieldInputClass()}
           />
         </FormField>
-        <FormField label="Adres Devamı" htmlFor="addr-line2" hint="Opsiyonel" className="sm:col-span-2">
+        <FormField label="Adres Devamı" htmlFor={`${uid}-line2`} hint="Opsiyonel" className="sm:col-span-2">
           <input
-            id="addr-line2"
+            id={`${uid}-line2`}
             value={values.line2}
             onChange={(e) => set("line2", e.target.value)}
             className={fieldInputClass()}
           />
         </FormField>
-        <FormField label="İl" htmlFor="addr-city" required>
+        <FormField label="İl" htmlFor={`${uid}-city`} required>
           <select
-            id="addr-city"
+            id={`${uid}-city`}
             required
             value={values.city}
             onChange={(e) => set("city", e.target.value)}
@@ -135,18 +138,18 @@ export function AddressForm({
             ))}
           </select>
         </FormField>
-        <FormField label="İlçe" htmlFor="addr-district" required>
+        <FormField label="İlçe" htmlFor={`${uid}-district`} required>
           <input
-            id="addr-district"
+            id={`${uid}-district`}
             required
             value={values.district}
             onChange={(e) => set("district", e.target.value)}
             className={fieldInputClass()}
           />
         </FormField>
-        <FormField label="Posta Kodu" htmlFor="addr-postal" required className="sm:col-span-2">
+        <FormField label="Posta Kodu" htmlFor={`${uid}-postal`} required className="sm:col-span-2">
           <input
-            id="addr-postal"
+            id={`${uid}-postal`}
             required
             inputMode="numeric"
             value={values.postalCode}

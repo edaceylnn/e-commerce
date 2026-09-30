@@ -113,6 +113,9 @@ export default async function AdminProductsPage({
               <DownloadIcon className="h-4 w-4" />
               Dışa Aktar
             </AdminButtonLink>
+            <AdminButtonLink variant="secondary" href="/admin/products/import">
+              Shopify CSV
+            </AdminButtonLink>
             <AdminButtonLink href="/admin/products/new">
               <PlusIcon className="h-4 w-4" />
               Yeni Ürün

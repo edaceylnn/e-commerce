@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CATEGORY_SLUGS } from "@/lib/categories";
 import { variantDuplicatesError, withGeneratedSkus } from "@/lib/product-variants";
+import { nextProductId } from "@/lib/product-ids";
 
 const variantSchema = z.object({
   id: z.string().optional(),
@@ -105,18 +106,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Kategori bulunamadı." }, { status: 400 });
   }
 
-  // Product.id is not autoincrement — the original DummyJSON ids were kept
-  // on purpose for URL stability (see prisma/seed.ts) — so an admin-created
-  // product gets the next free id computed here.
-  const maxId = await prisma.product.aggregate({ _max: { id: true } });
-  const nextId = (maxId._max.id ?? 0) + 1;
-
   const { categorySlug, images, variants: submittedVariants, ingredientIds, ...rest } = parsed.data;
   void categorySlug; // already resolved to `category` above
-  const variants = await withGeneratedSkus(prisma, nextId, submittedVariants);
 
   try {
     const product = await prisma.$transaction(async (tx) => {
+      const nextId = await nextProductId(tx);
+      const variants = await withGeneratedSkus(tx, nextId, submittedVariants);
       const created = await tx.product.create({
         data: {
           id: nextId,
