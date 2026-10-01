@@ -62,3 +62,6 @@ next-env.d.ts
 
 # Admin-uploaded product photos (local storage)
 /public/uploads
+
+# Private planning documents — never part of the repo.
+/E-ticaret_AI_Operasyon_Asistani_Urun_Plani.pdf
