@@ -22,20 +22,3 @@ export function FilterToolbar({
     </div>
   );
 }
-
-export function ToolbarSearchIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-[17px] w-[17px] shrink-0 text-adm-text-tertiary"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m21 21-4.3-4.3" />
-    </svg>
-  );
-}

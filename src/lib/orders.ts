@@ -8,7 +8,6 @@ import { releaseReservation } from "@/lib/stock-reservation";
 import { SHIPMENTS_INCLUDE, summarizeShipment, type ShipmentSummary } from "@/lib/shipping/summary";
 import {
   isOrderCancelable,
-  isOrderRefundable,
   paymentStatusLabel,
   REFUNDABLE_STATUSES,
   RETURN_STATUSES,
@@ -18,7 +17,7 @@ import {
 // lib modules) can keep importing these from here — only client
 // components need to reach past this file straight to @/lib/order-status
 // (see the comment there for why).
-export { isOrderCancelable, isOrderRefundable, paymentStatusLabel };
+export { isOrderCancelable, paymentStatusLabel };
 
 // Restores stock for one order line (variant-specific if the line has one,
 // else product-level) and writes a matching StockMovement row in the same

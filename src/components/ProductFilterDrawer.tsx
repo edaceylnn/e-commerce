@@ -88,8 +88,8 @@ export function ProductFilterDrawer({
           <button
             type="button"
             onClick={() =>
-              // Keep URL-only filters (brand, skin type, rating) the drawer doesn't show.
-              apply({ ...EMPTY_FILTERS, brands: draft.brands, skinTypes: draft.skinTypes, minRating: draft.minRating })
+              // Keep URL-only filters (brand, rating) the drawer doesn't show.
+              apply({ ...EMPTY_FILTERS, brands: draft.brands, minRating: draft.minRating })
             }
             className="h-[50px] border border-line-strong text-nav uppercase tracking-cta transition-colors hover:border-ink"
           >

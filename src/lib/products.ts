@@ -41,8 +41,6 @@ export type Product = {
   images: ProductImageSummary[];
   isNew: boolean;
   variants: ProductVariantSummary[];
-  volumeLabel: string | null;
-  skinTypes: string[];
 };
 
 export type CategorySummary = {
@@ -102,8 +100,6 @@ function toProduct(row: ProductWithRelations): Product {
       stock: v.stock,
       price: v.priceOverride ? Number(v.priceOverride) : null,
     })),
-    volumeLabel: row.volumeLabel,
-    skinTypes: row.skinTypes,
   };
 }
 
@@ -207,7 +203,6 @@ export type ProductExtras = {
   sizeChart: SizeChartView | null;
   composition: string | null;
   care: string | null;
-  warnings: string | null;
 };
 
 // Product-page-only extras kept out of the shared Product shape (cards and
@@ -217,9 +212,8 @@ export async function getProductExtras(id: number): Promise<ProductExtras> {
   const row = await prisma.product.findUnique({
     where: { id },
     select: {
-      fullIngredients: true,
-      usageInstructions: true,
-      warnings: true,
+      composition: true,
+      careInstructions: true,
       sizeChart: {
         include: { rows: { include: { size: true } } },
       },
@@ -241,8 +235,7 @@ export async function getProductExtras(id: number): Promise<ProductExtras> {
               })),
           }
         : null,
-    composition: row?.fullIngredients ?? null,
-    care: row?.usageInstructions ?? null,
-    warnings: row?.warnings ?? null,
+    composition: row?.composition ?? null,
+    care: row?.careInstructions ?? null,
   };
 }

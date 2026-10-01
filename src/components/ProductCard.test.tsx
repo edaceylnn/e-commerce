@@ -29,8 +29,6 @@ const product: Product = {
   images: [],
   isNew: false,
   variants: [],
-  volumeLabel: null,
-  skinTypes: [],
 };
 
 const variant = (id: string, size: string, colorId: string, colorName: string, stock = 5) => ({

@@ -107,8 +107,6 @@ describe("products", () => {
         images: [],
         isNew: true,
         variants: [],
-        volumeLabel: null,
-        skinTypes: [],
       })
     ).toBe(true);
   });
@@ -130,8 +128,6 @@ describe("selectNewArrivals", () => {
     images: [],
     isNew,
     variants: [],
-    volumeLabel: null,
-    skinTypes: [],
   });
 
   it("puts flagged-new products first, then tops up with the newest ids", () => {

@@ -13,7 +13,3 @@ export const REFUND_REASONS = [
 ] as const;
 
 export type RefundReason = (typeof REFUND_REASONS)[number];
-
-export function isRefundReason(value: string): value is RefundReason {
-  return (REFUND_REASONS as readonly string[]).includes(value);
-}

@@ -55,29 +55,14 @@ export type AdminProductInitial = {
   thumbnail: string;
   images: AdminProductImageInitial[];
   variants: AdminProductVariantInitial[];
-  skinTypes: string[];
-  skinConcerns: string[];
-  finish?: string;
-  coverage?: string;
-  texture?: string;
-  usagePurpose?: string;
-  fullIngredients?: string;
-  usageInstructions?: string;
-  warnings?: string;
-  isVegan: boolean;
-  isCrueltyFree: boolean;
-  isParabenFree: boolean;
-  spf?: number;
-  volumeLabel?: string;
-  origin?: string;
-  expiryInfo?: string;
+  composition?: string;
+  careInstructions?: string;
   metaTitle?: string;
   metaDescription?: string;
   status: "DRAFT" | "ACTIVE" | "ARCHIVED";
 };
 
-// Fields this simplified form no longer shows (pricing extras, brand, legacy
-// cosmetic attributes…). They're sent back exactly as loaded so saving here
+// Fields this simplified form no longer shows (pricing extras, brand…). They're sent back exactly as loaded so saving here
 // never wipes data entered elsewhere or before the simplification.
 function preservedFields(initial: AdminProductInitial | undefined, defaultLowStockThreshold: number) {
   return {
@@ -89,20 +74,6 @@ function preservedFields(initial: AdminProductInitial | undefined, defaultLowSto
     sizeChartId: initial?.sizeChartId,
     tags: initial?.tags ?? [],
     isNew: initial?.isNew ?? false,
-    skinTypes: initial?.skinTypes ?? [],
-    skinConcerns: initial?.skinConcerns ?? [],
-    finish: initial?.finish,
-    coverage: initial?.coverage,
-    texture: initial?.texture,
-    usagePurpose: initial?.usagePurpose,
-    warnings: initial?.warnings,
-    isVegan: initial?.isVegan ?? false,
-    isCrueltyFree: initial?.isCrueltyFree ?? false,
-    isParabenFree: initial?.isParabenFree ?? false,
-    spf: initial?.spf,
-    volumeLabel: initial?.volumeLabel,
-    origin: initial?.origin,
-    expiryInfo: initial?.expiryInfo,
   };
 }
 
@@ -148,8 +119,8 @@ export function AdminProductForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [facts, setFacts] = useState(initial?.facts ?? "");
-  const [composition, setComposition] = useState(initial?.fullIngredients ?? "");
-  const [care, setCare] = useState(initial?.usageInstructions ?? "");
+  const [composition, setComposition] = useState(initial?.composition ?? "");
+  const [care, setCare] = useState(initial?.careInstructions ?? "");
   const [categorySlug, setCategorySlug] = useState(initial?.categorySlug ?? PRODUCT_CATEGORIES[0].slug);
   const [price, setPrice] = useState(initial ? String(initial.price) : "");
   const [stock, setStock] = useState(initial ? String(initial.stock) : "0");
@@ -239,8 +210,8 @@ export function AdminProductForm({
       title,
       description,
       facts,
-      fullIngredients: composition,
-      usageInstructions: care,
+      composition,
+      careInstructions: care,
       categorySlug,
       price: Number(price),
       stock: Number(stock),

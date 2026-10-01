@@ -52,15 +52,6 @@ export function UserIcon({ className = "h-5 w-5" }: IconProps) {
   );
 }
 
-export function LockIcon({ className = "h-5 w-5" }: IconProps) {
-  return (
-    <svg {...base} className={className} xmlns="http://www.w3.org/2000/svg">
-      <rect x="5" y="10.5" width="14" height="9" rx="2" />
-      <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
-    </svg>
-  );
-}
-
 export function BellIcon({ className = "h-5 w-5" }: IconProps) {
   return (
     <svg {...base} className={className} xmlns="http://www.w3.org/2000/svg">
@@ -122,14 +113,6 @@ export function EmptyBoxIcon({ className = "h-12 w-12" }: IconProps) {
     >
       <path d="M4 8h16l-1.2 11.2a2 2 0 0 1-2 1.8H7.2a2 2 0 0 1-2-1.8L4 8Z" />
       <path d="M8 8V6a4 4 0 0 1 8 0v2" />
-    </svg>
-  );
-}
-
-export function ChevronDownIcon({ className = "h-5 w-5" }: IconProps) {
-  return (
-    <svg {...base} className={className} xmlns="http://www.w3.org/2000/svg">
-      <path d="m6 9 6 6 6-6" />
     </svg>
   );
 }

@@ -2,10 +2,9 @@ import { ReactNode, ThHTMLAttributes, TdHTMLAttributes, HTMLAttributes } from "r
 
 // The reusable table system for admin list screens — Table (scroll/card
 // shell) > TableHeader > TableRow > TableHead, and TableBody > TableRow >
-// TableCell, plus TableEmptyState/TableLoadingState for the no-rows and
-// loading cases. Every admin table (products, orders, customers, stock, …)
-// can compose these instead of hand-rolling its own <table> markup, and a
-// spacing/color tweak here applies everywhere at once.
+// TableCell, plus TableEmptyState for the no-rows case. Every admin table
+// (products, orders, customers, stock, …) can compose these instead of
+// hand-rolling its own <table> markup.
 //
 // AdminTable (admin/AdminTable.tsx) is the older, simpler wrapper still used
 // by ~9 existing screens — left as is on purpose so this rollout doesn't
@@ -114,19 +113,5 @@ export function TableEmptyState({ colSpan, children }: { colSpan: number; childr
         {children}
       </td>
     </tr>
-  );
-}
-
-export function TableLoadingState({ colSpan, rows = 4 }: { colSpan: number; rows?: number }) {
-  return (
-    <>
-      {Array.from({ length: rows }).map((_, i) => (
-        <tr key={i}>
-          <td colSpan={colSpan}>
-            <div className="h-4 w-full animate-pulse rounded bg-adm-surface-secondary" />
-          </td>
-        </tr>
-      ))}
-    </>
   );
 }

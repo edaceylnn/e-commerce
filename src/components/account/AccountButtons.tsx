@@ -1,5 +1,4 @@
-import Link from "next/link";
-import type { ButtonHTMLAttributes, ReactNode, AnchorHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { PillButton, PillLink } from "@/components/Pill";
 
 // Thin, explicitly-named wrappers over Pill's existing solid/outline
@@ -47,32 +46,6 @@ export function PrimaryLink({
   );
 }
 
-export function SecondaryButton({
-  children,
-  className = "",
-  size = "md",
-  ...props
-}: CommonProps & ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <PillButton variant="outline" className={`${SIZE_CLASS[size]} ${className}`} {...props}>
-      {children}
-    </PillButton>
-  );
-}
-
-export function SecondaryLink({
-  href,
-  children,
-  className = "",
-  size = "md",
-}: CommonProps & { href: string }) {
-  return (
-    <PillLink href={href} variant="outline" className={`${SIZE_CLASS[size]} ${className}`}>
-      {children}
-    </PillLink>
-  );
-}
-
 const TEXT_BUTTON_CLASS =
   "text-[12px] text-ink-soft underline decoration-disabled underline-offset-4 transition-colors hover:text-ink disabled:opacity-50 disabled:no-underline";
 
@@ -85,18 +58,5 @@ export function TextButton({
     <button type="button" className={`${TEXT_BUTTON_CLASS} ${className}`} {...props}>
       {children}
     </button>
-  );
-}
-
-export function TextLink({
-  href,
-  children,
-  className = "",
-  ...props
-}: { href: string; children: ReactNode; className?: string } & AnchorHTMLAttributes<HTMLAnchorElement>) {
-  return (
-    <Link href={href} className={`${TEXT_BUTTON_CLASS} ${className}`} {...props}>
-      {children}
-    </Link>
   );
 }

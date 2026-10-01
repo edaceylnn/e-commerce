@@ -49,7 +49,6 @@ type SearchParams = {
   sort?: string;
   brand?: string | string[];
   type?: string | string[];
-  skinType?: string | string[];
   size?: string | string[];
   color?: string | string[];
   minPrice?: string;
@@ -103,7 +102,6 @@ export default async function ProductsPage({
   const clearHref = listingHref(ctx, {
     ...EMPTY_FILTERS,
     brands: filters.brands,
-    skinTypes: filters.skinTypes,
     minRating: filters.minRating,
   });
 

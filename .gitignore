@@ -14,8 +14,9 @@
 /coverage
 
 # next.js
-/.next/
-/.next-e2e/
+# Next build output — .next plus the separate dirs the e2e suite (and any
+# other side-by-side server) builds into via NEXT_DIST_DIR.
+/.next*/
 /out/
 
 # production

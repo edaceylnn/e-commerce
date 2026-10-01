@@ -75,7 +75,6 @@ function filterConditions(f: ProductFilters): Prisma.Sql[] {
     conds.push(Prisma.sql`p."brandId" IN (SELECT "id" FROM "Brand" WHERE "slug" IN (${Prisma.join(f.brands)}))`);
   }
   if (f.types.length) conds.push(Prisma.sql`p."tags" && ${f.types}::text[]`);
-  if (f.skinTypes.length) conds.push(Prisma.sql`p."skinTypes" && ${f.skinTypes}::text[]`);
   if (f.minPrice !== undefined && Number.isFinite(f.minPrice)) conds.push(Prisma.sql`${EFFECTIVE_PRICE} >= ${f.minPrice}`);
   if (f.maxPrice !== undefined && Number.isFinite(f.maxPrice)) conds.push(Prisma.sql`${EFFECTIVE_PRICE} <= ${f.maxPrice}`);
   if (f.minRating !== undefined && Number.isFinite(f.minRating)) conds.push(Prisma.sql`p."ratingAvg" >= ${f.minRating}`);
@@ -157,7 +156,7 @@ export async function searchCatalog({
 // options never disappear as the visitor narrows the list.
 async function catalogFacets(scopeConds: Prisma.Sql[]) {
   const scopeSql = Prisma.sql`SELECT p.* FROM "Product" p WHERE ${where(scopeConds)}`;
-  const [summary, sizes, colors, types, skinTypes, brands] = await Promise.all([
+  const [summary, sizes, colors, types, brands] = await Promise.all([
     prisma.$queryRaw<{ count: bigint; min: Prisma.Decimal | null; max: Prisma.Decimal | null }[]>`
       WITH scope AS (${scopeSql})
       SELECT count(*) AS count, min(${EFFECTIVE_PRICE}) AS min, max(${EFFECTIVE_PRICE}) AS max FROM scope p`,
@@ -176,9 +175,6 @@ async function catalogFacets(scopeConds: Prisma.Sql[]) {
     prisma.$queryRaw<{ value: string; count: bigint }[]>`
       WITH scope AS (${scopeSql})
       SELECT t AS value, count(*) AS count FROM scope p, unnest(p."tags") t GROUP BY t ORDER BY count(*) DESC, t`,
-    prisma.$queryRaw<{ value: string; count: bigint }[]>`
-      WITH scope AS (${scopeSql})
-      SELECT t AS value, count(*) AS count FROM scope p, unnest(p."skinTypes") t GROUP BY t ORDER BY count(*) DESC, t`,
     prisma.$queryRaw<{ slug: string; label: string; count: bigint }[]>`
       WITH scope AS (${scopeSql})
       SELECT b."slug" AS slug, b."name" AS label, count(*) AS count
@@ -192,7 +188,6 @@ async function catalogFacets(scopeConds: Prisma.Sql[]) {
     facets: {
       brands: brands.map((b) => ({ slug: b.slug, label: b.label, count: n(b.count) })),
       types: types.map((t) => ({ value: t.value, count: n(t.count) })),
-      skinTypes: skinTypes.map((t) => ({ value: t.value, count: n(t.count) })),
       sizes: sizes.map((s) => ({ value: s.value, count: n(s.count) })),
       colors: colors.map((c) => ({ value: c.value, hex: c.hex, count: n(c.count) })),
       priceMin: summary[0].min ? Math.floor(Number(summary[0].min)) : 0,

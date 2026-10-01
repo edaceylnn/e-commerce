@@ -114,7 +114,7 @@ export function ProductDetail({ product, extras }: { product: Product; extras: P
 
   const accordions: { key: string; title: string; body: ReactNode }[] = [
     { key: "desc", title: "Açıklama", body: <p>{product.description}</p> },
-    ...(extras.composition || extras.care || extras.warnings
+    ...(extras.composition || extras.care
       ? [
           {
             key: "care",
@@ -123,7 +123,6 @@ export function ProductDetail({ product, extras }: { product: Product; extras: P
               <>
                 {extras.composition && <p>{extras.composition}</p>}
                 {extras.care && <p>{extras.care}</p>}
-                {extras.warnings && <p>{extras.warnings}</p>}
               </>
             ),
           },

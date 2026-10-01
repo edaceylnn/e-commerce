@@ -68,29 +68,11 @@ export function PencilIcon({ className = "h-5 w-5" }: IconProps) {
   );
 }
 
-export function CoinIcon({ className = "h-5 w-5" }: IconProps) {
-  return (
-    <svg {...base} className={className} xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="8" />
-      <path d="M12 8v8" />
-      <path d="M14.5 10.2c-.3-.9-1.2-1.4-2.3-1.4-1.3 0-2.4.7-2.4 1.9 0 2.5 4.7 1.1 4.7 3.6 0 1.2-1.1 1.9-2.4 1.9-1.1 0-2-.5-2.3-1.4" />
-    </svg>
-  );
-}
-
 export function BadgeIcon({ className = "h-5 w-5" }: IconProps) {
   return (
     <svg {...base} className={className} xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="9.5" r="5.5" />
       <path d="m8.5 14 -1.5 6 4-2 1 2 1-2 4 2-1.5-6" />
-    </svg>
-  );
-}
-
-export function DropletIcon({ className = "h-5 w-5" }: IconProps) {
-  return (
-    <svg {...base} className={className} xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 3.5s6.5 7.1 6.5 11.3a6.5 6.5 0 1 1-13 0C5.5 10.6 12 3.5 12 3.5Z" />
     </svg>
   );
 }

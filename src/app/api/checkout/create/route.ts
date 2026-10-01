@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
   const productIds = parsed.data.items.map((item) => item.id);
   const products = await prisma.product.findMany({
     where: { id: { in: productIds } },
-    include: { variants: { include: { color: true, size: true } } },
+    include: { variants: { include: { color: true, size: true } }, category: { select: { label: true } } },
   });
   const productById = new Map(products.map((p) => [p.id, p]));
 
@@ -336,7 +336,8 @@ export async function POST(request: NextRequest) {
       id: String(item.productId),
       price: (item.unitPrice * item.quantity).toFixed(2),
       name: item.title,
-      category1: "Kozmetik",
+      // iyzico requires a category per basket line: the product's own.
+      category1: productById.get(item.productId)?.category.label ?? "Giyim",
       itemType: "PHYSICAL",
     })),
   }).catch((err) => {

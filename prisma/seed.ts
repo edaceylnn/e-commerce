@@ -1,15 +1,7 @@
 // EDACEY catalog seed — a static loungewear/spor/pijama catalog (no external
-// fetch). This replaces the project's original DummyJSON-import seed after
-// the storefront's rebrand from a beauty/cosmetics demo to an apparel brand.
-//
-// Deliberately written as upserts against the SAME product ids the old
-// cosmetics catalog used (see prisma/migrations history) rather than fresh
-// rows: those ids are already referenced by seeded Order/Review/WishlistItem
-// test data, and reusing them keeps that data valid instead of orphaning it.
-// Categories are upserted by slug; a database seeded before the slug rename
-// (beauty/fragrances/skin-care) is migrated in place by renameLegacyCategories(). Every cosmetic-specific field (skinTypes, spf,
-// fullIngredients, ...) is explicitly cleared for the same reason — nothing
-// from the old catalog should leak through into the apparel one.
+// fetch): categories, the brand, colors, sizes, products with images and
+// variants, and the admin account from SEED_ADMIN_EMAIL/SEED_ADMIN_PASSWORD.
+// Upserts throughout, so running it again refreshes the catalog in place.
 import bcrypt from "bcrypt";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
@@ -24,25 +16,6 @@ const CATEGORIES = [
 ] as const;
 
 const BRAND = { name: "EDACEY", slug: "edacey" };
-
-const COSMETIC_FIELD_RESET = {
-  skinTypes: [] as string[],
-  skinConcerns: [] as string[],
-  finish: null,
-  coverage: null,
-  texture: null,
-  usagePurpose: null,
-  fullIngredients: null,
-  usageInstructions: null,
-  warnings: null,
-  isVegan: false,
-  isCrueltyFree: false,
-  isParabenFree: false,
-  spf: null,
-  volumeLabel: null,
-  origin: "İzmir",
-  expiryInfo: null,
-};
 
 type SeedProduct = {
   id: number;
@@ -222,27 +195,6 @@ const PRODUCTS: SeedProduct[] = [
   },
 ];
 
-// Slugs the categories had before the apparel rename. Renaming the rows in
-// place (rather than upserting new ones) keeps every product, campaign and
-// order that points at them by id intact.
-const LEGACY_CATEGORY_SLUGS: Record<string, (typeof CATEGORIES)[number]["slug"]> = {
-  beauty: "loungewear",
-  fragrances: "spor",
-  "skin-care": "pijama",
-};
-
-async function renameLegacyCategories() {
-  for (const [from, to] of Object.entries(LEGACY_CATEGORY_SLUGS)) {
-    const [legacy, current] = await Promise.all([
-      prisma.category.findUnique({ where: { slug: from } }),
-      prisma.category.findUnique({ where: { slug: to } }),
-    ]);
-    if (legacy && !current) {
-      await prisma.category.update({ where: { id: legacy.id }, data: { slug: to } });
-    }
-  }
-}
-
 async function seedCatalog() {
   const categoryIdBySlug: Record<string, string> = {};
   for (const { slug, label } of CATEGORIES) {
@@ -253,13 +205,6 @@ async function seedCatalog() {
     });
     categoryIdBySlug[slug] = category.id;
   }
-
-  // The old catalog's "skin-care" category had one empty subcategory
-  // ("Yüz Serumları") with no products — drop it, it doesn't map to
-  // anything in the apparel taxonomy.
-  await prisma.category.deleteMany({
-    where: { slug: "yuz-serumlari", products: { none: {} } },
-  });
 
   const brand = await prisma.brand.upsert({
     where: { name: BRAND.name },
@@ -312,7 +257,6 @@ async function seedCatalog() {
         ratingCount: 0,
         isNew: p.isNew ?? false,
         thumbnail: p.images[0],
-        ...COSMETIC_FIELD_RESET,
       },
       create: {
         id: p.id,
@@ -328,7 +272,6 @@ async function seedCatalog() {
         ratingCount: 0,
         isNew: p.isNew ?? false,
         thumbnail: p.images[0],
-        ...COSMETIC_FIELD_RESET,
       },
     });
 
@@ -359,28 +302,6 @@ async function seedCatalog() {
   console.log(`  ${PRODUCTS.length} ürün, ${CATEGORIES.length} kategori, marka: ${brand.name}`);
 }
 
-// Test-run noise ("E2E test yorumu ...") accumulated on the old catalog's
-// product ids by repeated Playwright runs — not curated demo content, and
-// meaningless once attached to a different product after the rebrand.
-async function clearStaleReviews() {
-  const { count } = await prisma.review.deleteMany({});
-  if (count > 0) console.log(`  ${count} eski yorum temizlendi.`);
-}
-
-async function rebrandExtras() {
-  await prisma.campaign.updateMany({
-    where: { name: "Makyaj Kampanyası" },
-    data: { name: "Loungewear Kampanyası" },
-  });
-  await prisma.collection.updateMany({
-    where: { slug: "altin-isiltisi-serisi" },
-    data: {
-      label: "İzmir Serisi",
-      description: "Yerel atölyede dokunan, sınırlı sayıda üretilen parçalar.",
-    },
-  });
-}
-
 async function seedAdmin() {
   const email = process.env.SEED_ADMIN_EMAIL;
   const password = process.env.SEED_ADMIN_PASSWORD;
@@ -407,10 +328,7 @@ async function seedAdmin() {
 
 async function main() {
   console.log("Katalog güncelleniyor...");
-  await renameLegacyCategories();
   await seedCatalog();
-  await rebrandExtras();
-  await clearStaleReviews();
   console.log("Admin kullanıcı oluşturuluyor...");
   await seedAdmin();
   console.log("Seed tamamlandı.");

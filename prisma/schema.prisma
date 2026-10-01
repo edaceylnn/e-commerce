@@ -318,27 +318,10 @@ model Product {
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 
-  // Cosmetic-specific attributes
   status            ProductStatus       @default(ACTIVE)
-  skinTypes         String[]            @default([])
-  skinConcerns      String[]            @default([])
-  finish            String?
-  coverage          String?
-  texture           String?
-  usagePurpose      String?
-  // Shown on the product page under "İçerik & Bakım" — the fabric
-  // composition and care instructions. (Column names are from the
-  // cosmetics template this schema started as.)
-  fullIngredients   String?
-  usageInstructions String?
-  warnings          String?
-  isVegan           Boolean             @default(false)
-  isCrueltyFree     Boolean             @default(false)
-  isParabenFree     Boolean             @default(false)
-  spf               Int?
-  volumeLabel       String?
-  origin            String?
-  expiryInfo        String?
+  // Shown on the product page under "İçerik & Bakım".
+  composition       String?
+  careInstructions  String?
   metaTitle         String?
   metaDescription   String?
   variants          ProductVariant[]

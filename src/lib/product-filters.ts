@@ -6,7 +6,6 @@
 export type ProductFilters = {
   brands: string[];
   types: string[];
-  skinTypes: string[];
   /** Size labels ("M") — matches a product with an in-stock variant in that size. */
   sizes: string[];
   /** Colour names ("Krem") — matches a product with a variant in that colour. */
@@ -45,7 +44,6 @@ function toList(value: string | string[] | undefined): string[] {
 export function parseFilters(searchParams: {
   brand?: string | string[];
   type?: string | string[];
-  skinType?: string | string[];
   size?: string | string[];
   color?: string | string[];
   minPrice?: string;
@@ -56,7 +54,6 @@ export function parseFilters(searchParams: {
   return {
     brands: toList(searchParams.brand),
     types: toList(searchParams.type),
-    skinTypes: toList(searchParams.skinType),
     sizes: toList(searchParams.size),
     colors: toList(searchParams.color),
     minPrice: searchParams.minPrice ? Number(searchParams.minPrice) : undefined,
@@ -69,7 +66,6 @@ export function parseFilters(searchParams: {
 export type Facets = {
   brands: { slug: string; label: string; count: number }[];
   types: { value: string; count: number }[];
-  skinTypes: { value: string; count: number }[];
   sizes: { value: string; count: number }[];
   colors: { value: string; hex: string; count: number }[];
   priceMin: number;
@@ -79,7 +75,6 @@ export type Facets = {
 export const EMPTY_FILTERS: ProductFilters = {
   brands: [],
   types: [],
-  skinTypes: [],
   sizes: [],
   colors: [],
   inStockOnly: false,
@@ -99,7 +94,6 @@ export function listingHref(ctx: ListingContext, f: ProductFilters): string {
   if (ctx.sort) params.set("sort", ctx.sort);
   f.brands.forEach((b) => params.append("brand", b));
   f.types.forEach((t) => params.append("type", t));
-  f.skinTypes.forEach((st) => params.append("skinType", st));
   f.sizes.forEach((s) => params.append("size", s));
   f.colors.forEach((c) => params.append("color", c));
   if (f.minPrice !== undefined) params.set("minPrice", String(f.minPrice));

@@ -62,10 +62,9 @@ göre tasarlandı. Admin paneli (`src/app/admin`) kendi ayrı token setini
   ürünler, renk/beden varyantları kendi Postgres veritabanımızda tutuluyor
   ([`src/lib/products.ts`](../src/lib/products.ts), Prisma ile sorgulanıyor).
   Katalog [`prisma/seed.ts`](../prisma/seed.ts)'te statik olarak tanımlı;
-  çalışma zamanında harici bir katalog servisine istek atılmıyor. Seed,
-  projenin eski kozmetik kataloğundaki ürün id'lerini upsert ederek yeniden
-  kullanır — böylece o id'lere bağlı test siparişleri, yorumlar ve favoriler
-  geçerli kalır. Fiyatlar TRY'dir.
+  çalışma zamanında harici bir katalog servisine istek atılmıyor. Seed
+  upsert'lerle çalışır; tekrar çalıştırmak kataloğu yerinde günceller.
+  Fiyatlar TRY'dir.
 - **Sepet**: Zustand store, `persist` middleware ile localStorage'a yazıyor.
   Hydration uyumsuzluğunu önlemek için `useSyncExternalStore` tabanlı bir
   `useHasMounted` hook'u kullanılıyor (bkz. `src/lib/use-has-mounted.ts`).
@@ -133,10 +132,10 @@ göre tasarlandı. Admin paneli (`src/app/admin`) kendi ayrı token setini
   autoincrement olmadığı için yeni ürünler bir sonraki boş id'yi alır — aynı
   anda oluşturulan iki ürün aynı id'yi almasın diye bir advisory lock
   altında; bkz. [`src/lib/product-ids.ts`](../src/lib/product-ids.ts)), kategoriler, markalar,
-  koleksiyonlar, renkler, bedenler ve beden tabloları, içerik (ingredient)
-  kütüphanesi, stok (kritik stok ve
-  stok hareketleri), siparişler ve iadeler, kampanyalar ve kuponlar,
-  yorum moderasyonu, kullanıcılar, bildirimler ve ayarlar.
+  koleksiyonlar, renkler, bedenler ve beden tabloları, stok durumu (kritik
+  ve tükenen filtreleriyle) ve stok hareketleri, siparişler ve iadeler,
+  kampanyalar ve kuponlar, yorum moderasyonu, müşteriler, e-postalar,
+  bildirimler ve ayarlar.
 - **Favoriler**: `WishlistItem` tablosunda kullanıcı başına tutuluyor.
   [`WishlistButton.tsx`](../src/components/WishlistButton.tsx) hem ürün
   kartlarında hem detay sayfasında kullanılıyor; anlık durum
