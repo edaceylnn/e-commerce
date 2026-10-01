@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { AdminUsersTable } from "@/components/AdminUsersTable";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { KpiCard } from "@/components/admin/KpiCard";
+import { PageTabs } from "@/components/admin/PageTabs";
 import { isVipCustomer } from "@/lib/customer-tiers";
 import { getSettings } from "@/lib/settings";
 import type { CustomerSegment } from "@/components/AdminUsersTable";
@@ -132,21 +133,14 @@ export default async function AdminUsersPage({
         <KpiCard label="Churn riski" value={String(churnRiskCount)} note={`${CHURN_RISK_DAYS} gündür sipariş yok`} />
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        {SEGMENT_FILTERS.map(({ key, label }) => (
-          <a
-            key={label}
-            href={key ? `/admin/users?segment=${key}` : "/admin/users"}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              segment === key || (!segment && !key)
-                ? "bg-adm-primary text-adm-on-primary"
-                : "bg-adm-surface-secondary text-adm-text-secondary hover:bg-adm-surface-tertiary"
-            }`}
-          >
-            {label}
-          </a>
-        ))}
-      </div>
+      <PageTabs
+        tabs={SEGMENT_FILTERS.map(({ key, label }) => ({
+          href: key ? `/admin/users?segment=${key}` : "/admin/users",
+          label,
+          count: key ? allRows.filter((r) => r.segment === SEGMENT_KEY[key]).length : allRows.length,
+          active: key ? segment === key : !segment || !SEGMENT_KEY[segment],
+        }))}
+      />
 
       <AdminUsersTable users={filteredRows} currentUserId={session!.userId} />
     </div>

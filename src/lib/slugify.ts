@@ -1,5 +1,5 @@
 // Shared Turkish-aware slugify — used by every admin "create by label" API
-// route (categories, collections, brands, ingredients) so slugs stay
+// route (categories, collections, brands) so slugs stay
 // consistent and this logic isn't hand-copied per route.
 export function slugify(label: string): string {
   return label

@@ -95,10 +95,10 @@ export function AdminOrdersTable({ orders }: { orders: OrderRow[] }) {
       {bulkResult && <p className="mb-3 text-xs text-adm-text-secondary">{bulkResult}</p>}
 
       <div className="overflow-x-auto rounded-xl border border-adm-border bg-adm-surface-card">
-        <table className="w-full min-w-[860px] text-left text-sm">
+        <table className="adm-table min-w-[860px]">
           <thead>
-            <tr className="border-b border-adm-border bg-adm-surface-secondary/60 text-[11px] font-semibold uppercase tracking-wider text-adm-text-secondary">
-              <th className="w-8 py-3 pr-2 pl-4">
+            <tr>
+              <th className="w-8">
                 <input
                   type="checkbox"
                   checked={orders.length > 0 && selected.size === orders.length}
@@ -107,25 +107,20 @@ export function AdminOrdersTable({ orders }: { orders: OrderRow[] }) {
                   aria-label="Tümünü seç"
                 />
               </th>
-              <th className="py-3 pr-4">Sipariş</th>
-              <th className="py-3 pr-4">Müşteri</th>
-              <th className="py-3 pr-4">Ürünler</th>
-              <th className="py-3 pr-4">Tarih</th>
-              <th className="py-3 pr-4">Ödeme</th>
-              <th className="py-3 pr-4">Durum</th>
-              <th className="py-3 pr-4 text-right">Tutar</th>
-              <th className="py-3 pr-4 pl-4" />
+              <th>Sipariş</th>
+              <th>Müşteri</th>
+              <th>Ürünler</th>
+              <th>Tarih</th>
+              <th>Ödeme</th>
+              <th>Durum</th>
+              <th className="text-right">Tutar</th>
+              <th />
             </tr>
           </thead>
-          <tbody className="divide-y divide-adm-border">
-            {orders.map((order, index) => (
-              <tr
-                key={order.id}
-                className={`transition-colors hover:bg-adm-primary-soft/40 ${
-                  index % 2 === 1 ? "bg-adm-bg/50" : ""
-                }`}
-              >
-                <td className="py-4 pr-2 pl-4">
+          <tbody>
+            {orders.map((order) => (
+              <tr key={order.id} className={selected.has(order.id) ? "bg-adm-primary-soft/50" : undefined}>
+                <td>
                   <input
                     type="checkbox"
                     checked={selected.has(order.id)}
@@ -134,7 +129,7 @@ export function AdminOrdersTable({ orders }: { orders: OrderRow[] }) {
                     aria-label={`${order.orderNumber} seç`}
                   />
                 </td>
-                <td className="py-4 pr-4">
+                <td>
                   <Link
                     href={`/admin/orders/${order.id}`}
                     className="font-semibold text-adm-primary hover:underline"
@@ -142,7 +137,7 @@ export function AdminOrdersTable({ orders }: { orders: OrderRow[] }) {
                     {order.orderNumber}
                   </Link>
                 </td>
-                <td className="py-4 pr-4">
+                <td>
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-adm-primary text-[10px] font-bold text-adm-on-primary">
                       {getInitials(order.customerName)}
@@ -150,7 +145,7 @@ export function AdminOrdersTable({ orders }: { orders: OrderRow[] }) {
                     <span className="text-adm-text">{order.customerName}</span>
                   </div>
                 </td>
-                <td className="py-4 pr-4">
+                <td>
                   <div className="flex -space-x-2">
                     {order.thumbnails.map((item) => (
                       <div
@@ -168,31 +163,29 @@ export function AdminOrdersTable({ orders }: { orders: OrderRow[] }) {
                     )}
                   </div>
                 </td>
-                <td className="py-4 pr-4 text-adm-text-secondary">{order.createdAtLabel}</td>
-                <td className="py-4 pr-4">
+                <td className="text-adm-text-secondary">{order.createdAtLabel}</td>
+                <td>
                   <StatusBadge variant={order.paidAt ? "success" : "warning"} size="sm">
                     {order.paidAt ? "Ödendi" : "Bekliyor"}
                   </StatusBadge>
                 </td>
-                <td className="py-4 pr-4">
+                <td>
                   <OrderStatusBadge status={order.status} size="sm" />
                 </td>
-                <td className="py-4 pr-4 text-right font-semibold text-adm-text">
+                <td className="text-right font-semibold text-adm-text">
                   {formatPrice(order.total)}
                 </td>
-                <td className="py-4 pl-4 text-right">
+                <td className="text-right">
                   <AdminOrderRowActions
                     orderId={order.id}
-                    status={order.status}
-                    paidAt={order.paidAt}
-                    refundedAt={order.refundedAt}
+                    orderNumber={order.orderNumber}
                   />
                 </td>
               </tr>
             ))}
             {orders.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-14 text-center text-sm text-adm-text-secondary">
+                <td colSpan={9} className="py-14 text-center text-adm-text-secondary">
                   Sipariş bulunamadı.
                 </td>
               </tr>

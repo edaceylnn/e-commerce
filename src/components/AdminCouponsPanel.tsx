@@ -167,35 +167,35 @@ export function AdminCouponsPanel({ coupons }: { coupons: Coupon[] }) {
 
       <AdminTable>
         <thead>
-          <tr className="border-b border-adm-border bg-adm-surface-secondary text-[11px] font-semibold uppercase tracking-widest text-adm-text-secondary">
-            <th className="py-3 pl-4 pr-4">Kod</th>
-            <th className="py-3 pr-4">Değer</th>
-            <th className="py-3 pr-4">Kullanım</th>
-            <th className="py-3 pr-4">Son Kullanma</th>
-            <th className="py-3 pr-4">Durum</th>
-            <th className="py-3 pr-4" />
+          <tr>
+            <th>Kod</th>
+            <th>Değer</th>
+            <th>Kullanım</th>
+            <th>Son Kullanma</th>
+            <th>Durum</th>
+            <th />
           </tr>
         </thead>
-        <tbody className="divide-y divide-adm-border">
+        <tbody>
           {rows.map((coupon) => (
             <tr key={coupon.id}>
-              <td className="py-3 pl-4 pr-4 font-semibold text-adm-text">{coupon.code}</td>
-              <td className="py-3 pr-4 text-adm-text-secondary">
+              <td className="font-semibold text-adm-text">{coupon.code}</td>
+              <td className="text-adm-text-secondary">
                 {coupon.type === "PERCENTAGE"
                   ? `%${coupon.value}`
                   : formatPrice(coupon.value)}
               </td>
-              <td className="py-3 pr-4 text-adm-text-secondary">
+              <td className="text-adm-text-secondary">
                 {coupon.usedCount}
                 {coupon.usageLimit ? ` / ${coupon.usageLimit}` : ""}
               </td>
-              <td className="py-3 pr-4 text-adm-text-secondary">{coupon.expiresAt ?? "—"}</td>
-              <td className="py-3 pr-4">
+              <td className="text-adm-text-secondary">{coupon.expiresAt ?? "—"}</td>
+              <td>
                 <StatusBadge variant={coupon.active ? "success" : "neutral"} size="sm">
                   {coupon.active ? "Aktif" : "Pasif"}
                 </StatusBadge>
               </td>
-              <td className="py-3 pr-4 text-right whitespace-nowrap">
+              <td className="text-right whitespace-nowrap">
                 <button
                   onClick={() => handleToggle(coupon.id, coupon.active)}
                   className="mr-2 rounded-full border border-adm-border px-3 py-1 text-xs font-semibold uppercase tracking-wide text-adm-primary transition hover:border-adm-primary hover:bg-adm-primary-soft"

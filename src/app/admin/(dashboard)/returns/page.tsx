@@ -86,20 +86,20 @@ export default async function AdminReturnsPage() {
         <Card title="İade Kayıtları">
           <AdminTable>
             <thead>
-              <tr className="border-b border-adm-border text-[11px] font-medium uppercase tracking-wider text-adm-text-tertiary">
-                <th className="py-3 pl-4 pr-4">Sipariş</th>
-                <th className="py-3 pr-4">Ürün</th>
-                <th className="py-3 pr-4">Sebep</th>
-                <th className="py-3 pr-4">Tutar</th>
-                <th className="py-3 pr-4">Müşteri</th>
-                <th className="py-3 pr-4">Durum</th>
-                <th className="py-3 pr-4 text-right">Tarih</th>
+              <tr>
+                <th>Sipariş</th>
+                <th>Ürün</th>
+                <th>Sebep</th>
+                <th>Tutar</th>
+                <th>Müşteri</th>
+                <th>Durum</th>
+                <th className="text-right">Tarih</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-adm-border">
+            <tbody>
               {refundedItems.map((item) => (
                 <tr key={item.id}>
-                  <td className="py-3 pl-4 pr-4">
+                  <td>
                     <Link
                       href={`/admin/orders/${item.orderId}`}
                       className="font-semibold text-adm-primary hover:underline"
@@ -107,18 +107,18 @@ export default async function AdminReturnsPage() {
                       {item.order.orderNumber}
                     </Link>
                   </td>
-                  <td className="py-3 pr-4 text-adm-text">{item.title}</td>
-                  <td className="py-3 pr-4 text-adm-text-secondary">{item.refundReason ?? "—"}</td>
-                  <td className="py-3 pr-4 text-adm-text-secondary">
+                  <td className="text-adm-text">{item.title}</td>
+                  <td className="text-adm-text-secondary">{item.refundReason ?? "—"}</td>
+                  <td className="text-adm-text-secondary">
                     {formatPrice(Number(item.unitPrice) * item.quantity)}
                   </td>
-                  <td className="py-3 pr-4 text-adm-text-secondary">{item.order.user.name}</td>
-                  <td className="py-3 pr-4">
+                  <td className="text-adm-text-secondary">{item.order.user.name}</td>
+                  <td>
                     <StatusBadge variant="success" size="sm">
                       İade Edildi
                     </StatusBadge>
                   </td>
-                  <td className="py-3 pr-4 text-right text-xs text-adm-text-tertiary">
+                  <td className="text-right text-adm-text-tertiary">
                     {item.refundedAt?.toLocaleDateString("tr-TR")}
                   </td>
                 </tr>

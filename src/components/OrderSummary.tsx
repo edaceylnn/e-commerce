@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { formatPrice } from "@/lib/format";
-import { OrderStatusBadge } from "@/components/OrderStatusBadge";
+import { OrderStatusText } from "@/components/account/OrderStatusText";
 import type { ShipmentSummary } from "@/lib/shipping/summary";
 
 export type OrderSummaryData = {
@@ -52,7 +52,11 @@ export function OrderSummary({ order }: { order: OrderSummaryData }) {
             </p>
           )}
         </div>
-        <OrderStatusBadge status={order.status} />
+        {/* Storefront style: status as text, no admin-panel badge. */}
+        <div className="text-right">
+          <p className="text-xs font-medium uppercase tracking-wide text-ink-soft">Durum</p>
+          <OrderStatusText status={order.status} className="mt-1 block" />
+        </div>
       </div>
 
       <ul className="divide-y divide-line">

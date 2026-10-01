@@ -198,7 +198,7 @@ export default async function AdminHomePage({
         : "Mağazanız bu dönemde önceki döneme yakın performans gösteriyor.";
   const alerts = [
     ...(data.lowStockCount > 0
-      ? [{ label: `${data.lowStockCount} ürün kritik stok seviyesinde`, href: "/admin/stock" }]
+      ? [{ label: `${data.lowStockCount} ürün kritik stok seviyesinde`, href: "/admin/stock?durum=kritik" }]
       : []),
     ...(data.pendingPaymentCount > 0
       ? [{ label: `${data.pendingPaymentCount} sipariş ödeme bekliyor`, href: "/admin/orders?status=PENDING_PAYMENT" }]
@@ -387,25 +387,25 @@ export default async function AdminHomePage({
           </Link>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="adm-table adm-table-flush min-w-[640px]">
             <thead>
-              <tr className="border-b border-adm-border text-[11px] font-medium uppercase tracking-wider text-adm-text-tertiary">
-                <th className="py-2.5 pr-4">Sipariş</th>
-                <th className="py-2.5 pr-4">Müşteri</th>
-                <th className="py-2.5 pr-4">Ürün</th>
-                <th className="py-2.5 pr-4">Tutar</th>
-                <th className="py-2.5 pr-4">Durum</th>
-                <th className="py-2.5 pr-4 text-right">Tarih</th>
+              <tr>
+                <th>Sipariş</th>
+                <th>Müşteri</th>
+                <th>Ürün</th>
+                <th>Tutar</th>
+                <th>Durum</th>
+                <th className="text-right">Tarih</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-adm-border">
+            <tbody>
               {data.recentOrders.map((order) => (
-                <tr key={order.id} className="transition-colors hover:bg-adm-surface-secondary/50">
-                  <td className="py-4 pr-4 font-semibold text-adm-primary">
+                <tr key={order.id}>
+                  <td className="font-semibold text-adm-primary">
                     <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
                   </td>
-                  <td className="py-4 pr-4 text-adm-text">{order.user.name}</td>
-                  <td className="py-4 pr-4">
+                  <td className="text-adm-text">{order.user.name}</td>
+                  <td>
                     <div className="flex -space-x-2">
                       {order.items.slice(0, 3).map((item) => (
                         <div key={item.id} className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border-2 border-adm-bg bg-adm-surface-secondary">
@@ -414,18 +414,18 @@ export default async function AdminHomePage({
                       ))}
                     </div>
                   </td>
-                  <td className="py-4 pr-4 font-semibold text-adm-text">{formatPrice(Number(order.total))}</td>
-                  <td className="py-4 pr-4">
+                  <td className="font-semibold text-adm-text">{formatPrice(Number(order.total))}</td>
+                  <td>
                     <OrderStatusBadge status={order.status} />
                   </td>
-                  <td className="py-4 pr-4 text-right text-xs text-adm-text-tertiary">
+                  <td className="text-right text-adm-text-tertiary">
                     {order.createdAt.toLocaleDateString("tr-TR")}
                   </td>
                 </tr>
               ))}
               {data.recentOrders.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-sm text-adm-text-tertiary">
+                  <td colSpan={6} className="py-10 text-center text-adm-text-tertiary">
                     Henüz sipariş yok.
                   </td>
                 </tr>

@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useHasMounted } from "@/lib/use-has-mounted";
 
 // Records the choice, then hands the token to the store's callback with a
 // form POST — exactly what iyzico's hosted page does after a payment.
 export function SimulatedPaymentActions({ token }: { token: string }) {
   const [busy, setBusy] = useState<"SUCCESS" | "FAILURE" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Disabled until hydrated: a click before then would do nothing at all.
+  const ready = useHasMounted();
 
   async function choose(outcome: "SUCCESS" | "FAILURE") {
     setBusy(outcome);
@@ -38,7 +41,7 @@ export function SimulatedPaymentActions({ token }: { token: string }) {
     <div className="space-y-3">
       <button
         type="button"
-        disabled={busy !== null}
+        disabled={!ready || busy !== null}
         onClick={() => choose("SUCCESS")}
         className="flex h-12 w-full items-center justify-center bg-ink text-nav uppercase tracking-cta text-background transition-opacity disabled:opacity-60"
       >
@@ -46,7 +49,7 @@ export function SimulatedPaymentActions({ token }: { token: string }) {
       </button>
       <button
         type="button"
-        disabled={busy !== null}
+        disabled={!ready || busy !== null}
         onClick={() => choose("FAILURE")}
         className="flex h-12 w-full items-center justify-center border border-ink text-nav uppercase tracking-cta transition-colors hover:bg-cream disabled:opacity-60"
       >

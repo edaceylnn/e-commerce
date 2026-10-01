@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
 import Link from "next/link";
-import { CountBadge } from "@/components/admin/CountBadge";
 
 export type PageTab = {
   href: string;
@@ -12,17 +11,15 @@ export type PageTab = {
 
 type TabsSize = "sm" | "md";
 
-// One filter's worth of state, laid out as segments of a single bounded
-// control — not a row of separate buttons. This is the reusable tab/filter
-// system for every admin list screen (ürün/sipariş/müşteri/kampanya/stok
-// durumları, rapor periyotları, …): pass hrefs that carry the filter in the
-// URL (how every current caller already works, so no filtering logic
-// changes) and this renders the segmented look, active pill, counts and
-// disabled state consistently everywhere.
-const SIZE_CLASS: Record<TabsSize, { shell: string; tab: string }> = {
-  sm: { shell: "p-0.5", tab: "px-2.5 py-1 text-[12.5px]" },
-  // Same overall height as the search/select controls under it (~42px).
-  md: { shell: "p-1", tab: "px-4 py-2 text-sm" },
+// One filter's worth of state as a row of pills: the active one filled,
+// the rest on a soft tint — the reusable tab/filter system for every admin
+// list screen (sipariş/müşteri/yorum durumları, …). Pass hrefs that carry
+// the filter in the URL; this renders the pills, counts and disabled state
+// the same everywhere.
+const SIZE_CLASS: Record<TabsSize, string> = {
+  sm: "px-3 py-1 text-[12.5px]",
+  // Same overall height as the search/select controls under it.
+  md: "px-4 py-2 text-sm",
 };
 
 export function PageTabs({
@@ -33,15 +30,12 @@ export function PageTabs({
 }: {
   tabs: PageTab[];
   actions?: ReactNode;
-  // true when a parent already provides the surrounding card/divider (the
-  // Products page's unified table card) — false keeps the standalone
-  // bottom-border/margin every other PageTabs caller (Orders, ...) relies on.
+  // true when a parent already provides the surrounding card/divider —
+  // false keeps the standalone bottom-border/margin.
   bare?: boolean;
-  // Admin list screens use "md", matching the height of the filter controls
-  // below; "sm" is for tighter spots.
   size?: TabsSize;
 }) {
-  const { shell, tab: tabClass } = SIZE_CLASS[size];
+  const pill = `inline-flex shrink-0 items-center whitespace-nowrap rounded-full font-medium ${SIZE_CLASS[size]}`;
 
   return (
     <div
@@ -52,17 +46,13 @@ export function PageTabs({
       {/* This is a filter that swaps the page's query string, not a
           same-page tabpanel switch — so it's a nav-style link group
           (aria-current on the active item), not role="tablist"/"tab". */}
-      <div
-        className={`inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-xl border border-adm-border bg-adm-surface-secondary/50 ${shell}`}
-      >
+      <div className="flex max-w-full flex-wrap items-center gap-2">
         {tabs.map((tab) => {
           const content = (
             <>
               {tab.label}
               {typeof tab.count === "number" && (
-                <CountBadge inverse={tab.active} className="ml-1.5">
-                  {tab.count}
-                </CountBadge>
+                <span className="ml-1.5 tabular-nums opacity-60">{tab.count}</span>
               )}
             </>
           );
@@ -72,7 +62,7 @@ export function PageTabs({
               <span
                 key={tab.href}
                 aria-disabled="true"
-                className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-lg font-semibold text-adm-text-tertiary opacity-50 ${tabClass}`}
+                className={`${pill} bg-adm-surface-secondary text-adm-text-tertiary opacity-50`}
               >
                 {content}
               </span>
@@ -84,10 +74,10 @@ export function PageTabs({
               key={tab.href}
               href={tab.href}
               aria-current={tab.active ? "true" : undefined}
-              className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-lg font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-adm-primary/30 ${tabClass} ${
+              className={`${pill} transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-adm-primary/30 ${
                 tab.active
-                  ? "bg-adm-primary text-white"
-                  : "text-adm-text-secondary hover:bg-adm-surface-card/70 hover:text-adm-text"
+                  ? "bg-adm-primary text-adm-on-primary"
+                  : "bg-adm-surface-secondary text-adm-text-secondary hover:bg-adm-surface-tertiary hover:text-adm-text"
               }`}
             >
               {content}

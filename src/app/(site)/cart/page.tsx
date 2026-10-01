@@ -11,7 +11,6 @@ import { CartLineItem, type CartLineStock } from "@/components/CartLineItem";
 import { CartOrderSummary } from "@/components/CartOrderSummary";
 import { CartCrossSell } from "@/components/CartCrossSell";
 
-type AppliedCoupon = { code: string; type: "PERCENTAGE" | "FIXED"; value: number };
 type CampaignPreview = {
   name: string;
   discount: number;
@@ -31,7 +30,9 @@ export default function CartPage() {
   const [campaign, setCampaign] = useState<CampaignPreview | null>(null);
   const [couponOpen, setCouponOpen] = useState(false);
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  // Kept in the cart store so checkout gets the same coupon.
+  const appliedCoupon = useCartStore((s) => s.coupon);
+  const setAppliedCoupon = useCartStore((s) => s.setCoupon);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
 
@@ -235,7 +236,9 @@ export default function CartPage() {
     <div className="page-x pb-24 pt-12 tab:pb-0">
       <div className="grid grid-cols-12 items-start gap-x-2 gap-y-16">
         <div className="col-span-12 tab:col-span-7">
-          <div className="border-b border-line pb-6">
+          {/* Same height as the order summary's heading from tablet up, so
+              the two rules beneath them line up. */}
+          <div className="border-b border-line-strong pb-6 tab:flex tab:h-24 tab:flex-col tab:justify-end">
             <div className="flex items-baseline gap-3.5">
               <h1 className="headline text-[clamp(28px,2.6vw,38px)] leading-[1.1]">Sepetim</h1>
               <span className="text-body-sm text-text-3">{itemCount} ürün</span>
@@ -278,7 +281,7 @@ export default function CartPage() {
           <span className="text-base font-medium">{formatPrice(total)}</span>
         </div>
         <Link
-          href="/checkout/address"
+          href="/checkout"
           className="flex h-[52px] flex-1 items-center justify-center bg-ink text-nav uppercase tracking-[0.14em] text-background"
         >
           Ödemeye geç

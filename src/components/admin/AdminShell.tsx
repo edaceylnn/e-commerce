@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AdminNav } from "@/components/AdminNav";
 import { MenuIcon, CloseIcon } from "@/components/icons/AdminIcons";
 import { LogOutIcon, UserIcon } from "@/components/icons/AccountIcons";
+import { getInitials } from "@/lib/format";
 
 // Premium editorial admin shell ("Yönetim Paneli") — dark warm-neutral
 // sidebar (never pure black), warm-ivory content area, a bordered search
@@ -57,8 +58,8 @@ export function AdminShell({
 
   return (
     <div className="admin-shell min-h-screen bg-adm-bg font-adm-body text-adm-text">
-      <aside className="fixed left-0 top-0 z-50 hidden h-full w-60 flex-col bg-adm-sidebar-bg px-2.5 pb-5 pt-6 lg:flex">
-        <AdminNav name={name} email={email} />
+      <aside className="fixed left-0 top-0 z-50 hidden h-full w-60 flex-col bg-adm-sidebar-bg px-2.5 pb-4 pt-5 lg:flex">
+        <AdminNav />
       </aside>
 
       {open && (
@@ -76,7 +77,7 @@ export function AdminShell({
             >
               <CloseIcon className="h-5 w-5" />
             </button>
-            <AdminNav onNavigate={() => setOpen(false)} name={name} email={email} />
+            <AdminNav onNavigate={() => setOpen(false)} />
           </aside>
         </div>
       )}
@@ -119,9 +120,9 @@ export function AdminShell({
               <button
                 onClick={() => setMenuOpen((v) => !v)}
                 aria-label="Hesap menüsü"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-adm-primary text-adm-on-primary"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-adm-primary text-xs font-bold text-adm-on-primary"
               >
-                <UserIcon className="h-[18px] w-[18px]" />
+                {name || email ? getInitials(name, email) : <UserIcon className="h-[18px] w-[18px]" />}
               </button>
               {menuOpen && (
                 <>
@@ -130,7 +131,13 @@ export function AdminShell({
                     className="fixed inset-0 z-40 cursor-default"
                     onClick={() => setMenuOpen(false)}
                   />
-                  <div className="absolute right-0 top-12 z-50 w-48 overflow-hidden border border-adm-border bg-adm-surface-card py-1">
+                  <div className="absolute right-0 top-12 z-50 w-56 overflow-hidden border border-adm-border bg-adm-surface-card py-1">
+                    {(name || email) && (
+                      <div className="border-b border-adm-border px-4 pb-2.5 pt-2">
+                        <p className="truncate text-sm font-semibold text-adm-text">{name || email}</p>
+                        <p className="truncate text-xs text-adm-text-tertiary">Mağaza yöneticisi</p>
+                      </div>
+                    )}
                     <Link
                       href="/"
                       className="block px-4 py-2.5 text-sm text-adm-text-secondary transition hover:bg-adm-surface-secondary"

@@ -78,7 +78,6 @@ const productSchema = z.object({
   volumeLabel: z.string().trim().optional(),
   origin: z.string().trim().optional(),
   expiryInfo: z.string().trim().optional(),
-  ingredientIds: z.array(z.string()).default([]),
   metaTitle: z.string().trim().optional(),
   metaDescription: z.string().trim().optional(),
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
@@ -106,7 +105,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Kategori bulunamadı." }, { status: 400 });
   }
 
-  const { categorySlug, images, variants: submittedVariants, ingredientIds, ...rest } = parsed.data;
+  const { categorySlug, images, variants: submittedVariants, ...rest } = parsed.data;
   void categorySlug; // already resolved to `category` above
 
   try {
@@ -136,9 +135,6 @@ export async function POST(request: NextRequest) {
               lowStockThreshold: v.lowStockThreshold ?? null,
               position,
             })),
-          },
-          ingredients: {
-            create: ingredientIds.map((ingredientId) => ({ ingredientId })),
           },
         },
         include: { variants: true },

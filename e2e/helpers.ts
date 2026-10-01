@@ -1,4 +1,4 @@
-import { type Page, expect } from "@playwright/test";
+import { type Browser, type Page, expect } from "@playwright/test";
 import { config } from "dotenv";
 
 // Admin e2e flows log in with the seeded admin account. Its credentials live
@@ -31,7 +31,7 @@ export async function registerNewCustomer(
 }
 
 // Fills whichever AddressForm is currently on screen (shipping or billing —
-// only one is visible at a time on /checkout/address) and saves it. Does
+// only one is visible at a time on /checkout) and saves it. Does
 // NOT click the outer "Devam Et" continue button.
 export async function fillAndSaveAddress(
   page: Page,
@@ -77,4 +77,28 @@ export async function addCurrentProductToBag(page: Page) {
   const sizes = page.locator("main").getByRole("button", { name: /^\S+ beden$/ });
   if ((await sizes.count()) > 0) await sizes.first().click();
   await page.locator("main").getByRole("button", { name: "Sepete ekle", exact: true }).first().click();
+}
+
+// A fresh customer places and pays a one-item order through the built-in
+// payment simulator, in a context of its own. Returns the order number —
+// for tests that need an order to work on (the e2e database starts empty).
+export async function placeSimulatedOrder(browser: Browser): Promise<string> {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await registerNewCustomer(page, {
+    name: "Sipariş Test",
+    email: `e2e-order-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`,
+  });
+  await page.goto("/products");
+  await page.locator("a[href^='/products/']").first().click();
+  await page.waitForURL(/\/products\/\d+$/);
+  await addCurrentProductToBag(page);
+  await page.goto("/checkout");
+  await fillAndSaveAddress(page);
+  await page.getByRole("button", { name: "Ödemeyi Başlat" }).click();
+  await page.getByRole("button", { name: "Ödemeyi tamamla" }).click();
+  await page.waitForURL(/\/checkout\/confirmation\//);
+  const orderNumber = page.url().split("/").pop()!;
+  await context.close();
+  return orderNumber;
 }

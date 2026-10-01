@@ -1,85 +1,74 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { registerNewCustomer, fillAndSaveAddress, addCurrentProductToBag } from "./helpers";
 
-// Stops at the review step, before "Ödemeyi Başlat" — that click triggers a
-// real server-to-server call to iyzico's sandbox, which this suite
-// deliberately never does (see src/lib/iyzico.test.ts and
-// src/app/checkout/callback/route.test.ts for the payment-logic coverage).
-test("checkout: address form leads to a review page with the right total", async ({
-  page,
-}) => {
-  await registerNewCustomer(page, {
-    name: "Checkout Test",
-    email: `e2e-checkout-${Date.now()}@example.com`,
-  });
+// One-page checkout, cart to confirmation. Payment is completed only when
+// the store runs its built-in payment simulator (no iyzico keys — the
+// usual dev/test setup); with real keys the test stops before "Ödemeyi
+// Başlat" and never calls iyzico.
+async function payIfSimulated(page: Page) {
+  const simulated = await page.getByText(/ödeme bir simülatörle yapılır/).isVisible();
+  if (!simulated) return false;
+  await page.getByRole("button", { name: "Ödemeyi Başlat" }).click();
+  await expect(page.getByRole("heading", { name: "Test ödemesi" })).toBeVisible();
+  await page.getByRole("button", { name: "Ödemeyi tamamla" }).click();
+  await page.waitForURL(/\/checkout\/confirmation\//);
+  return true;
+}
 
+async function startCheckout(page: Page, name: string) {
+  await registerNewCustomer(page, { name, email: `e2e-checkout-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com` });
   await page.goto("/products");
   await page.locator("a[href^='/products/']").first().click();
   await page.waitForURL(/\/products\/\d+$/);
   const productTitle = (await page.locator("h1").textContent())?.trim() ?? "";
   await addCurrentProductToBag(page);
-
   await page.goto("/cart");
-  await page.getByRole("link", { name: "Ödemeye Geç" }).click();
-  await expect(page).toHaveURL("/checkout/address");
+  await page.getByRole("link", { name: "Ödemeye Geç" }).first().click();
+  await expect(page).toHaveURL("/checkout");
+  return productTitle;
+}
 
-  // Shipping address — "Fatura adresim teslimat adresimle aynı" stays
-  // checked by default, so saving one address is enough to continue.
+test("checkout: one page from cart to a paid order", async ({ page }) => {
+  const productTitle = await startCheckout(page, "Checkout Test");
+
+  // No address yet: nothing to pay with.
+  const pay = page.getByRole("button", { name: "Ödemeyi Başlat" });
+  await expect(pay).toBeDisabled();
+  await expect(page.getByText("Teslimat adresini seç ya da ekle.")).toBeVisible();
+
+  // "Fatura adresim teslimat adresimle aynı" is checked by default, so one
+  // saved address is enough.
   await fillAndSaveAddress(page);
-  await page.getByRole("button", { name: "Devam Et" }).click();
+  await expect(pay).toBeEnabled();
+  await expect(page.locator("aside").getByText(productTitle)).toBeVisible();
+  await expect(page.locator("aside").getByText("Toplam", { exact: true })).toBeVisible();
 
-  await expect(page).toHaveURL(/\/checkout\/review\?shippingAddressId=/);
-  await expect(page.getByText(productTitle)).toBeVisible();
-  await expect(page.getByText("Toplam", { exact: true })).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Ödemeyi Başlat" })
-  ).toBeVisible();
+  if (await payIfSimulated(page)) {
+    await expect(page.getByText(productTitle).first()).toBeVisible();
+    await expect(page.getByRole("banner").getByRole("link", { name: /Sepet \(0\)/ })).toBeVisible();
+  }
 });
 
-test("checkout: a different billing address is recorded separately", async ({
-  page,
-}) => {
-  await registerNewCustomer(page, {
-    name: "Billing Test",
-    email: `e2e-billing-${Date.now()}@example.com`,
-  });
-
-  await page.goto("/products");
-  await page.locator("a[href^='/products/']").first().click();
-  await page.waitForURL(/\/products\/\d+$/);
-  await addCurrentProductToBag(page);
-
-  await page.goto("/cart");
-  await page.getByRole("link", { name: "Ödemeye Geç" }).click();
-
+test("checkout: a different billing address is recorded separately", async ({ page }) => {
+  await startCheckout(page, "Billing Test");
   await fillAndSaveAddress(page, { fullName: "Ev Adresim" });
+  // Saved and selected before the billing picker mounts (it opens straight
+  // to its form while there are no saved addresses yet).
+  await expect(page.getByRole("radio", { name: /Ev Adresim/ })).toBeChecked();
 
-  await page
-    .getByText("Fatura adresim teslimat adresimle aynı")
-    .click();
-  // Wait for the billing section to actually mount before touching its
-  // controls — clicking too early can hit the shipping picker's own "Yeni
-  // adres ekle" instead (only one match at that point) and reopen its form.
-  await expect(page.getByRole("heading", { name: "Fatura Adresi", exact: true })).toBeVisible();
-  // The billing picker shows the saved shipping address as a reusable
-  // option first — reveal the "add new" form to create a distinct one.
-  // (Two "Yeni adres ekle" buttons exist now — shipping's and billing's —
-  // the billing section is the one rendered last.)
-  await page.getByRole("button", { name: "Yeni adres ekle" }).last().click();
-  await fillAndSaveAddress(page, {
-    fullName: "Şirket Adresim",
-    line1: "Ofis Sokak No:2",
-  });
+  await page.getByText("Fatura adresim teslimat adresimle aynı").click();
+  // The billing picker offers the saved address too; add a distinct one
+  // with its own "Yeni adres ekle" (the second one on the page).
+  const addNew = page.getByRole("button", { name: "Yeni adres ekle" });
+  await expect(addNew).toHaveCount(2);
+  await addNew.last().click();
+  await fillAndSaveAddress(page, { fullName: "Şirket Adresim", line1: "Ofis Sokak No:2" });
+  await expect(page.getByRole("button", { name: "Ödemeyi Başlat" })).toBeEnabled();
 
-  await page.getByRole("button", { name: "Devam Et" }).click();
-  await page.waitForURL(/\/checkout\/review\?/);
-
-  const [, shippingId, billingId] =
-    page.url().match(/shippingAddressId=([^&]+)&billingAddressId=([^&]+)/) ?? [];
-  expect(shippingId).toBeTruthy();
-  expect(billingId).toBeTruthy();
-  expect(shippingId).not.toBe(billingId);
-
-  await expect(page.getByText("Şirket Adresim")).toBeVisible();
-  await expect(page.getByText("Ev Adresim")).toBeVisible();
+  if (await payIfSimulated(page)) {
+    // The order keeps both: shipping and billing are separate fields.
+    await expect(page.getByText("Fatura Adresi", { exact: true })).toBeVisible();
+    await expect(page.getByText("Şirket Adresim")).toBeVisible();
+    await expect(page.getByText("Ev Adresim")).toBeVisible();
+  }
 });

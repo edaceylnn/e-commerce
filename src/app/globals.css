@@ -357,3 +357,65 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Admin tables — the one place their spacing and type is set. Every admin
+   <table> carries .adm-table (Table, AdminTable and the hand-written ones);
+   cells only add alignment, width, weight and colour, never padding or
+   font size. Change a value here and every table follows.
+   .adm-table-flush: for a table inside a card that already has padding —
+   the outer columns lose their inset so the text lines up with the card. */
+:root {
+  --adm-cell-x: 1rem;
+  --adm-cell-y: 0.75rem;
+  --adm-head-y: 0.625rem;
+  --adm-cell-font: 0.875rem;
+  --adm-head-font: 0.6875rem;
+}
+@layer components {
+  .adm-table {
+    width: 100%;
+    text-align: left;
+    font-size: var(--adm-cell-font);
+    line-height: 1.25rem;
+    color: var(--adm-text);
+  }
+  .adm-table :where(th, td) {
+    padding: var(--adm-cell-y) var(--adm-cell-x) var(--adm-cell-y) 0;
+    vertical-align: middle;
+  }
+  .adm-table :where(th, td):first-child {
+    padding-left: var(--adm-cell-x);
+  }
+  .adm-table th {
+    padding-block: var(--adm-head-y);
+    font-size: var(--adm-head-font);
+    line-height: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--adm-text-secondary);
+  }
+  .adm-table > thead > tr {
+    border-bottom: 1px solid var(--adm-border);
+    background: color-mix(in srgb, var(--adm-surface-secondary) 60%, transparent);
+  }
+  .adm-table > tbody > tr + tr {
+    border-top: 1px solid var(--adm-border);
+  }
+  .adm-table > tbody > tr {
+    transition: background-color 150ms;
+  }
+  .adm-table > tbody > tr:hover {
+    background: color-mix(in srgb, var(--adm-surface-secondary) 50%, transparent);
+  }
+  .adm-table-flush :where(th, td):first-child {
+    padding-left: 0;
+  }
+  .adm-table-flush :where(th, td):last-child {
+    padding-right: 0;
+  }
+  .adm-table-flush > thead > tr {
+    background: none;
+  }
+}

@@ -22,7 +22,6 @@ export default async function AdminEditProductPage({
         category: true,
         brand: true,
         variants: { orderBy: { position: "asc" } },
-        ingredients: true,
       },
     }),
     prisma.color.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
@@ -97,7 +96,6 @@ export default async function AdminEditProductPage({
           metaTitle: product.metaTitle ?? undefined,
           metaDescription: product.metaDescription ?? undefined,
           status: product.status,
-          ingredientIds: product.ingredients.map((pi) => pi.ingredientId),
         }}
       />
     </div>

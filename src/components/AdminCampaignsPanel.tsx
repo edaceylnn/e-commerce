@@ -287,41 +287,41 @@ export function AdminCampaignsPanel({
       </p>
       <AdminTable>
         <thead>
-          <tr className="border-b border-adm-border bg-adm-surface-secondary text-[11px] font-semibold uppercase tracking-widest text-adm-text-secondary">
-            <th className="py-3 pl-4 pr-4">Kampanya</th>
-            <th className="py-3 pr-4">Kapsam</th>
-            <th className="py-3 pr-4">İndirim</th>
-            <th className="py-3 pr-4">Kullanım</th>
-            <th className="py-3 pr-4">Ciro</th>
-            <th className="py-3 pr-4">Tarih Aralığı</th>
-            <th className="py-3 pr-4">Durum</th>
-            <th className="py-3 pr-4" />
+          <tr>
+            <th>Kampanya</th>
+            <th>Kapsam</th>
+            <th>İndirim</th>
+            <th>Kullanım</th>
+            <th>Ciro</th>
+            <th>Tarih Aralığı</th>
+            <th>Durum</th>
+            <th />
           </tr>
         </thead>
-        <tbody className="divide-y divide-adm-border">
+        <tbody>
           {rows.map((campaign) => {
             const status = campaignStatus(campaign);
             return (
             <tr key={campaign.id}>
-              <td className="py-3 pl-4 pr-4 font-semibold text-adm-text">{campaign.name}</td>
-              <td className="py-3 pr-4 text-adm-text-secondary">
+              <td className="font-semibold text-adm-text">{campaign.name}</td>
+              <td className="text-adm-text-secondary">
                 {campaign.categoryLabel ?? campaign.brandName ?? "Tüm ürünler"}
                 {campaign.minSpend
                   ? ` · min. ${formatPrice(campaign.minSpend)}`
                   : ""}
               </td>
-              <td className="py-3 pr-4 text-adm-text-secondary">%{campaign.discountPercentage}</td>
-              <td className="py-3 pr-4 text-adm-text-secondary">{campaign.usage}</td>
-              <td className="py-3 pr-4 text-adm-text-secondary">{formatPrice(campaign.revenue)}</td>
-              <td className="py-3 pr-4 text-xs text-adm-text-tertiary">
+              <td className="text-adm-text-secondary">%{campaign.discountPercentage}</td>
+              <td className="text-adm-text-secondary">{campaign.usage}</td>
+              <td className="text-adm-text-secondary">{formatPrice(campaign.revenue)}</td>
+              <td className="text-adm-text-tertiary">
                 {campaign.startAt} – {campaign.endAt}
               </td>
-              <td className="py-3 pr-4">
+              <td>
                 <StatusBadge variant={status.variant} size="sm">
                   {status.label}
                 </StatusBadge>
               </td>
-              <td className="py-3 pr-4 text-right whitespace-nowrap">
+              <td className="text-right whitespace-nowrap">
                 <button
                   onClick={() => handleToggle(campaign.id, campaign.active)}
                   className="mr-2 rounded-full border border-adm-border px-3 py-1 text-xs font-semibold uppercase tracking-wide text-adm-primary transition hover:border-adm-primary hover:bg-adm-primary-soft"

@@ -17,8 +17,14 @@ export type CartItem = {
   compareAtPrice?: number;
 };
 
+/** A coupon the shopper applied in the cart — carried to checkout, where
+ *  the server checks it again (and decides it against any campaign). */
+export type AppliedCoupon = { code: string; type: "PERCENTAGE" | "FIXED"; value: number };
+
 type CartState = {
   items: CartItem[];
+  coupon: AppliedCoupon | null;
+  setCoupon: (coupon: AppliedCoupon | null) => void;
   addItem: (item: Omit<CartItem, "quantity">) => void;
   removeItem: (id: number, variantId?: string) => void;
   setQuantity: (id: number, quantity: number, variantId?: string) => void;
@@ -37,6 +43,8 @@ export const useCartStore = create<CartState>()(
   persist(
     (set) => ({
       items: [],
+      coupon: null,
+      setCoupon: (coupon) => set({ coupon }),
       addItem: (item) =>
         set((state) => {
           const existing = state.items.find((i) =>
@@ -66,7 +74,7 @@ export const useCartStore = create<CartState>()(
                   isSameLine(i, id, variantId) ? { ...i, quantity } : i
                 ),
         })),
-      clear: () => set({ items: [] }),
+      clear: () => set({ items: [], coupon: null }),
     }),
     // Bumped from "ecommerce-cart" — CartItem's shape changed (variantId/sku),
     // and old persisted carts predate variant-aware line matching.

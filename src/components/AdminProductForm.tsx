@@ -74,7 +74,6 @@ export type AdminProductInitial = {
   metaTitle?: string;
   metaDescription?: string;
   status: "DRAFT" | "ACTIVE" | "ARCHIVED";
-  ingredientIds: string[];
 };
 
 // Fields this simplified form no longer shows (pricing extras, brand, legacy
@@ -96,8 +95,6 @@ function preservedFields(initial: AdminProductInitial | undefined, defaultLowSto
     coverage: initial?.coverage,
     texture: initial?.texture,
     usagePurpose: initial?.usagePurpose,
-    fullIngredients: initial?.fullIngredients,
-    usageInstructions: initial?.usageInstructions,
     warnings: initial?.warnings,
     isVegan: initial?.isVegan ?? false,
     isCrueltyFree: initial?.isCrueltyFree ?? false,
@@ -106,7 +103,6 @@ function preservedFields(initial: AdminProductInitial | undefined, defaultLowSto
     volumeLabel: initial?.volumeLabel,
     origin: initial?.origin,
     expiryInfo: initial?.expiryInfo,
-    ingredientIds: initial?.ingredientIds ?? [],
   };
 }
 
@@ -152,6 +148,8 @@ export function AdminProductForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [facts, setFacts] = useState(initial?.facts ?? "");
+  const [composition, setComposition] = useState(initial?.fullIngredients ?? "");
+  const [care, setCare] = useState(initial?.usageInstructions ?? "");
   const [categorySlug, setCategorySlug] = useState(initial?.categorySlug ?? PRODUCT_CATEGORIES[0].slug);
   const [price, setPrice] = useState(initial ? String(initial.price) : "");
   const [stock, setStock] = useState(initial ? String(initial.stock) : "0");
@@ -241,6 +239,8 @@ export function AdminProductForm({
       title,
       description,
       facts,
+      fullIngredients: composition,
+      usageInstructions: care,
       categorySlug,
       price: Number(price),
       stock: Number(stock),
@@ -359,6 +359,27 @@ export function AdminProductForm({
                 className={inputClass}
               />
             </Field>
+            {/* Shown on the product page under "İçerik & Bakım". */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Kumaş içeriği" hint="Mağazada görünür">
+                <textarea
+                  placeholder="%78 polyamid, %22 elastan"
+                  rows={2}
+                  value={composition}
+                  onChange={(e) => setComposition(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Bakım talimatı" hint="Mağazada görünür">
+                <textarea
+                  placeholder="30°C'de tersten yıkayın, kurutma makinesine atmayın."
+                  rows={2}
+                  value={care}
+                  onChange={(e) => setCare(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
           </div>
         </Card>
 

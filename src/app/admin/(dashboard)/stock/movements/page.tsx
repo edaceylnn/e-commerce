@@ -115,40 +115,40 @@ export default async function AdminStockMovementsPage({
 
       <AdminTable>
         <thead>
-          <tr className="border-b border-adm-border/30 text-xs font-medium uppercase tracking-wider text-adm-text-tertiary">
-            <th className="px-4 py-3">Tarih/Saat</th>
-            <th className="px-4 py-3">Ürün</th>
-            <th className="px-4 py-3">Varyant / SKU</th>
-            <th className="px-4 py-3">İşlem Tipi</th>
-            <th className="px-4 py-3">Miktar</th>
-            <th className="px-4 py-3">Önceki → Yeni</th>
-            <th className="px-4 py-3">Kullanıcı</th>
-            <th className="px-4 py-3">Açıklama</th>
+          <tr>
+            <th>Tarih/Saat</th>
+            <th>Ürün</th>
+            <th>Varyant / SKU</th>
+            <th>İşlem Tipi</th>
+            <th>Miktar</th>
+            <th>Önceki → Yeni</th>
+            <th>Kullanıcı</th>
+            <th>Açıklama</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-adm-border/15">
+        <tbody>
           {movements.map((m) => (
-            <tr key={m.id} className="transition-colors hover:bg-adm-surface-secondary">
-              <td className="px-4 py-3 text-sm text-adm-text-secondary">
+            <tr key={m.id}>
+              <td className="text-adm-text-secondary">
                 {m.createdAt.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}
               </td>
-              <td className="px-4 py-3 text-sm font-medium text-adm-text">{m.product.title}</td>
-              <td className="px-4 py-3 text-sm text-adm-text-secondary">
+              <td className="font-medium text-adm-text">{m.product.title}</td>
+              <td className="text-adm-text-secondary">
                 {m.variant ? `${m.variant.size.label} / ${m.variant.color.name} — ${m.variant.sku}` : "—"}
               </td>
-              <td className="px-4 py-3">
+              <td>
                 <StatusBadge variant={m.quantity < 0 ? "danger" : "success"} size="sm">
                   {STOCK_MOVEMENT_TYPE_LABELS[m.type]}
                 </StatusBadge>
               </td>
-              <td className="px-4 py-3 text-sm font-medium text-adm-text">
+              <td className="font-medium text-adm-text">
                 {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
               </td>
-              <td className="px-4 py-3 text-sm text-adm-text-secondary">
+              <td className="text-adm-text-secondary">
                 {m.previousStock} → {m.newStock}
               </td>
-              <td className="px-4 py-3 text-sm text-adm-text-secondary">{m.user?.name ?? "Sistem"}</td>
-              <td className="px-4 py-3 text-sm text-adm-text-secondary">{m.note ?? "—"}</td>
+              <td className="text-adm-text-secondary">{m.user?.name ?? "Sistem"}</td>
+              <td className="text-adm-text-secondary">{m.note ?? "—"}</td>
             </tr>
           ))}
           {movements.length === 0 && <AdminTableEmpty colSpan={8}>Kayıtlı stok hareketi yok.</AdminTableEmpty>}

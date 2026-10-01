@@ -116,7 +116,7 @@ export function VariantMatrix({
   if (colors.length === 0 || sizes.length === 0) {
     return (
       <p className="text-xs text-adm-danger">
-        Varyant eklemeden önce en az bir renk ve bir beden tanımlanmış olmalı (Diğer → Renkler / Bedenler).
+        Varyant eklemeden önce en az bir renk ve bir beden tanımlanmış olmalı (Ürün Özellikleri → Renkler / Bedenler).
       </p>
     );
   }

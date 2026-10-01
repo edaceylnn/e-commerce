@@ -209,7 +209,10 @@ npm run lint
 
 `test:db` kendi test verisini oluşturup siler; fatura testleri gerçek
 numaralara dokunmamak için ayrı bir seri (`TST`) kullanır. E2e testleri
-seed'deki admin hesabıyla giriş yapar.
+kendi sunucusunda (3100 portu) ve her çalıştırmada sıfırdan kurulan ayrı bir
+veritabanında (`<veritabanın>_e2e`) çalışır; siparişleri ödeme simülatörüyle
+uçtan uca tamamlar, ama geliştirdiğin veritabanına hiç dokunmaz. Admin
+testleri seed'deki admin hesabıyla giriş yapar.
 
 ## Bilinen sınırlar
 

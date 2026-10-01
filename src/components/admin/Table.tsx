@@ -29,11 +29,11 @@ export function Table({
 }) {
   return (
     <div
-      className={`overflow-x-auto [&_tbody>tr:nth-child(even)]:bg-adm-bg/40 ${
+      className={`overflow-x-auto ${
         embedded ? "" : "rounded-xl border border-adm-border bg-adm-surface-card"
       } ${className}`}
     >
-      <table className="w-full text-left text-sm" style={{ minWidth }}>
+      <table className="adm-table" style={{ minWidth }}>
         {children}
       </table>
     </div>
@@ -47,11 +47,11 @@ export function TableHeader({ children }: { children: ReactNode }) {
 // The header row never hovers/highlights like a data row does — a plain
 // wrapper rather than reusing TableRow (which always carries a hover tint).
 export function TableHeadRow({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <tr className={`border-b border-adm-border ${className}`}>{children}</tr>;
+  return <tr className={className}>{children}</tr>;
 }
 
 export function TableBody({ children }: { children: ReactNode }) {
-  return <tbody className="divide-y divide-adm-border">{children}</tbody>;
+  return <tbody>{children}</tbody>;
 }
 
 export function TableRow({
@@ -62,9 +62,7 @@ export function TableRow({
 }: HTMLAttributes<HTMLTableRowElement> & { selected?: boolean }) {
   return (
     <tr
-      className={`transition-colors hover:bg-adm-surface-secondary/50 ${
-        selected ? "bg-adm-primary-soft/50" : ""
-      } ${className}`}
+      className={`${selected ? "bg-adm-primary-soft/50" : ""} ${className}`}
       {...props}
     >
       {children}
@@ -72,8 +70,7 @@ export function TableRow({
   );
 }
 
-// Small, muted, uppercase — a header row answers "what's the column", it
-// never competes with the data below it for attention.
+// Spacing and type come from .adm-table (globals.css) — only alignment here.
 export function TableHead({
   children,
   align = "left",
@@ -82,7 +79,7 @@ export function TableHead({
 }: ThHTMLAttributes<HTMLTableCellElement> & { align?: "left" | "right" | "center" }) {
   return (
     <th
-      className={`py-2.5 pr-4 text-[11px] font-semibold uppercase tracking-wider text-adm-text-secondary first:pl-4 last:pr-4 ${
+      className={`${
         align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left"
       } ${className}`}
       {...props}
@@ -100,7 +97,7 @@ export function TableCell({
 }: TdHTMLAttributes<HTMLTableCellElement> & { align?: "left" | "right" | "center" }) {
   return (
     <td
-      className={`py-2.5 pr-4 first:pl-4 last:pr-4 ${
+      className={`${
         align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left"
       } ${className}`}
       {...props}
@@ -113,7 +110,7 @@ export function TableCell({
 export function TableEmptyState({ colSpan, children }: { colSpan: number; children: ReactNode }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="py-14 text-center text-sm text-adm-text-secondary">
+      <td colSpan={colSpan} className="py-14 text-center text-adm-text-secondary">
         {children}
       </td>
     </tr>
@@ -125,7 +122,7 @@ export function TableLoadingState({ colSpan, rows = 4 }: { colSpan: number; rows
     <>
       {Array.from({ length: rows }).map((_, i) => (
         <tr key={i}>
-          <td colSpan={colSpan} className="py-3 pl-4 pr-4">
+          <td colSpan={colSpan}>
             <div className="h-4 w-full animate-pulse rounded bg-adm-surface-secondary" />
           </td>
         </tr>

@@ -78,7 +78,6 @@ const productSchema = z.object({
   volumeLabel: z.string().trim().optional(),
   origin: z.string().trim().optional(),
   expiryInfo: z.string().trim().optional(),
-  ingredientIds: z.array(z.string()).default([]),
   metaTitle: z.string().trim().optional(),
   metaDescription: z.string().trim().optional(),
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
@@ -120,14 +119,13 @@ export async function PATCH(
     return NextResponse.json({ error: "Ürün bulunamadı." }, { status: 404 });
   }
 
-  const { categorySlug, images, variants: submittedVariants, ingredientIds, ...rest } = parsed.data;
+  const { categorySlug, images, variants: submittedVariants, ...rest } = parsed.data;
   void categorySlug;
   const variants = await withGeneratedSkus(prisma, productId, submittedVariants);
 
   // Variants keep their id across an edit (so existing order/wishlist rows
   // stay pointed at a real variant) — rows the form dropped are deleted,
-  // rows without an id are new. Ingredients have no such external
-  // references, so the join table is simply cleared and rewritten.
+  // rows without an id are new.
   const existingVariants = await prisma.productVariant.findMany({
     where: { productId },
     select: { id: true, stock: true },
@@ -143,7 +141,6 @@ export async function PATCH(
   try {
     await prisma.$transaction(async (tx) => {
       await tx.productImage.deleteMany({ where: { productId } });
-      await tx.productIngredient.deleteMany({ where: { productId } });
       if (variantIdsToDelete.length) {
         await tx.productVariant.deleteMany({ where: { id: { in: variantIdsToDelete } } });
       }
@@ -159,9 +156,6 @@ export async function PATCH(
               position,
               ...(img.colorId ? { color: { connect: { id: img.colorId } } } : {}),
             })),
-          },
-          ingredients: {
-            create: ingredientIds.map((ingredientId) => ({ ingredientId })),
           },
           variants: {
             update: variants

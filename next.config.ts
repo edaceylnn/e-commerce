@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // The e2e suite runs its own dev server next to yours (see
+  // playwright.config.ts); a separate build directory keeps them apart.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   turbopack: {
     root: __dirname,
   },

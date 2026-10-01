@@ -347,20 +347,20 @@ export default async function AdminAnalyticsPage() {
           {data.couponPerformance.length === 0 ? (
             <p className="mt-1 text-xs text-adm-text-tertiary">Henüz kullanılan kupon yok.</p>
           ) : (
-            <table className="w-full text-left text-sm">
+            <table className="adm-table adm-table-flush">
               <thead>
-                <tr className="text-xs uppercase tracking-wide text-adm-text-tertiary">
-                  <th className="pb-2">Kod</th>
-                  <th className="pb-2">Sipariş</th>
-                  <th className="pb-2 text-right">Verilen İndirim</th>
+                <tr>
+                  <th>Kod</th>
+                  <th>Sipariş</th>
+                  <th className="text-right">Verilen İndirim</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-adm-border/10">
+              <tbody>
                 {data.couponPerformance.map((c) => (
                   <tr key={c.label}>
-                    <td className="py-2 font-semibold text-adm-text">{c.label}</td>
-                    <td className="py-2 text-adm-text-secondary">{c.orders}</td>
-                    <td className="py-2 text-right text-adm-text-secondary">
+                    <td className="font-semibold text-adm-text">{c.label}</td>
+                    <td className="text-adm-text-secondary">{c.orders}</td>
+                    <td className="text-right text-adm-text-secondary">
                       {formatPrice(c.discountGiven)}
                     </td>
                   </tr>
@@ -377,20 +377,20 @@ export default async function AdminAnalyticsPage() {
           {data.campaignPerformance.length === 0 ? (
             <p className="mt-1 text-xs text-adm-text-tertiary">Henüz kullanılan kampanya yok.</p>
           ) : (
-            <table className="w-full text-left text-sm">
+            <table className="adm-table adm-table-flush">
               <thead>
-                <tr className="text-xs uppercase tracking-wide text-adm-text-tertiary">
-                  <th className="pb-2">Kampanya</th>
-                  <th className="pb-2">Sipariş</th>
-                  <th className="pb-2 text-right">Verilen İndirim</th>
+                <tr>
+                  <th>Kampanya</th>
+                  <th>Sipariş</th>
+                  <th className="text-right">Verilen İndirim</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-adm-border/10">
+              <tbody>
                 {data.campaignPerformance.map((c) => (
                   <tr key={c.label}>
-                    <td className="py-2 font-semibold text-adm-text">{c.label}</td>
-                    <td className="py-2 text-adm-text-secondary">{c.orders}</td>
-                    <td className="py-2 text-right text-adm-text-secondary">
+                    <td className="font-semibold text-adm-text">{c.label}</td>
+                    <td className="text-adm-text-secondary">{c.orders}</td>
+                    <td className="text-right text-adm-text-secondary">
                       {formatPrice(c.discountGiven)}
                     </td>
                   </tr>
@@ -444,23 +444,23 @@ export default async function AdminAnalyticsPage() {
         {data.sizeReturnRates.length === 0 ? (
           <p className="mt-1 text-xs text-adm-text-tertiary">Henüz satış verisi yok.</p>
         ) : (
-          <table className="w-full text-left text-sm">
+          <table className="adm-table adm-table-flush">
             <thead>
-              <tr className="text-xs uppercase tracking-wide text-adm-text-tertiary">
-                <th className="pb-2">Beden</th>
-                <th className="pb-2 text-right">Satılan</th>
-                <th className="pb-2 text-right">İade Edilen</th>
-                <th className="pb-2 text-right">İade Oranı</th>
+              <tr>
+                <th>Beden</th>
+                <th className="text-right">Satılan</th>
+                <th className="text-right">İade Edilen</th>
+                <th className="text-right">İade Oranı</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-adm-border/10">
+            <tbody>
               {data.sizeReturnRates.map((r) => (
                 <tr key={r.label}>
-                  <td className="py-2 font-semibold text-adm-text">{r.label}</td>
-                  <td className="py-2 text-right text-adm-text-secondary">{r.unitsSold}</td>
-                  <td className="py-2 text-right text-adm-text-secondary">{r.unitsReturned}</td>
+                  <td className="font-semibold text-adm-text">{r.label}</td>
+                  <td className="text-right text-adm-text-secondary">{r.unitsSold}</td>
+                  <td className="text-right text-adm-text-secondary">{r.unitsReturned}</td>
                   <td
-                    className={`py-2 text-right font-medium ${r.rate > 15 ? "text-adm-danger" : "text-adm-text"}`}
+                    className={`text-right font-medium ${r.rate> 15 ? "text-adm-danger" : "text-adm-text"}`}
                   >
                     %{r.rate.toFixed(1)}
                   </td>

@@ -22,7 +22,7 @@ export default async function CheckoutConfirmationPage({
   }
 
   return (
-    <div className="page-x py-16 [&>*]:max-w-2xl">
+    <div className="page-x py-16 [&>*]:mx-auto [&>*]:max-w-2xl">
       <ClearCartOnMount />
       <div className="text-center">
         <h1 className="font-light tracking-title text-4xl">
@@ -38,7 +38,9 @@ export default async function CheckoutConfirmationPage({
       </div>
 
       <div className="mt-8 flex justify-center gap-3">
-        <PillLink href="/products" variant="outline">
+        {/* The outline pill is 48px, the solid one 52px: side by side they
+            share the taller height so their edges line up. */}
+        <PillLink href="/products" variant="outline" className="!h-[52px]">
           Alışverişe Devam Et
         </PillLink>
         <PillLink href="/account/orders">Siparişlerim</PillLink>

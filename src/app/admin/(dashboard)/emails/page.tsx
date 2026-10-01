@@ -44,25 +44,25 @@ export default async function AdminEmailsPage() {
       <Card title="Son e-postalar">
         <AdminTable>
           <thead>
-            <tr className="border-b border-adm-border text-[11px] font-medium uppercase tracking-wider text-adm-text-tertiary">
-              <th className="py-3 pl-4 pr-4">E-posta</th>
-              <th className="py-3 pr-4">Alıcı</th>
-              <th className="py-3 pr-4">Sipariş</th>
-              <th className="py-3 pr-4">Durum</th>
-              <th className="py-3 pr-4 text-right">Tarih</th>
+            <tr>
+              <th>E-posta</th>
+              <th>Alıcı</th>
+              <th>Sipariş</th>
+              <th>Durum</th>
+              <th className="text-right">Tarih</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-adm-border">
+          <tbody>
             {emails.map((e) => (
               <tr key={e.id}>
-                <td className="py-3 pl-4 pr-4">
+                <td>
                   <Link href={`/admin/emails/${e.id}`} className="font-semibold text-adm-text hover:underline">
                     {e.subject}
                   </Link>
                   <p className="text-xs text-adm-text-tertiary">{EMAIL_TEMPLATE_LABELS[e.template] ?? e.template}</p>
                 </td>
-                <td className="py-3 pr-4 text-adm-text-secondary">{e.to}</td>
-                <td className="py-3 pr-4">
+                <td className="text-adm-text-secondary">{e.to}</td>
+                <td>
                   {e.order && e.orderId ? (
                     <Link href={`/admin/orders/${e.orderId}`} className="text-adm-primary hover:underline">
                       {e.order.orderNumber}
@@ -71,12 +71,12 @@ export default async function AdminEmailsPage() {
                     <span className="text-adm-text-tertiary">—</span>
                   )}
                 </td>
-                <td className="py-3 pr-4">
+                <td>
                   <StatusBadge size="sm" variant={EMAIL_STATUS[e.status].variant}>
                     {EMAIL_STATUS[e.status].label}
                   </StatusBadge>
                 </td>
-                <td className="py-3 pr-4 text-right text-xs text-adm-text-tertiary">
+                <td className="text-right text-adm-text-tertiary">
                   {e.createdAt.toLocaleString("tr-TR", { timeZone: "Europe/Istanbul", dateStyle: "short", timeStyle: "short" })}
                 </td>
               </tr>

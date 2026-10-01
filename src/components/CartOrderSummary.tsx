@@ -34,7 +34,11 @@ export function CartOrderSummary({
 }) {
   return (
     <section aria-labelledby="order-summary-title">
-      <h2 id="order-summary-title" className="border-b border-line-strong pb-5 text-body-sm uppercase tracking-eyebrow">
+      {/* tab:h-24 matches the cart heading block beside it (see cart page). */}
+      <h2
+        id="order-summary-title"
+        className="border-b border-line-strong pb-5 text-body-sm uppercase tracking-eyebrow tab:flex tab:h-24 tab:items-end"
+      >
         Sipariş Özeti
       </h2>
 
@@ -85,7 +89,7 @@ export function CartOrderSummary({
       <p className="mt-1 text-caption text-text-4">KDV dahil · Tahmini teslimat {deliveryEstimate}</p>
 
       <Link
-        href="/checkout/address"
+        href="/checkout"
         className="mt-6 flex h-14 items-center justify-center bg-ink text-nav uppercase tracking-[0.16em] text-background transition-colors hover:bg-ink-hover"
       >
         Ödemeye geç

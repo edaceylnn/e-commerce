@@ -14,9 +14,9 @@ export function AdminTable({
 }) {
   return (
     <div
-      className={`overflow-x-auto rounded-xl border border-adm-border bg-adm-surface-card [&_tbody>tr:nth-child(even)]:bg-adm-bg/40 ${className}`}
+      className={`overflow-x-auto rounded-xl border border-adm-border bg-adm-surface-card ${className}`}
     >
-      <table className="w-full text-left text-sm">{children}</table>
+      <table className="adm-table">{children}</table>
     </div>
   );
 }
@@ -30,7 +30,7 @@ export function AdminTableEmpty({
 }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="py-10 text-center text-sm text-adm-text-tertiary">
+      <td colSpan={colSpan} className="py-10 text-center text-adm-text-tertiary">
         {children}
       </td>
     </tr>

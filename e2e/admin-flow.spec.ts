@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { rm } from "fs/promises";
 import path from "path";
-import { adminCredentials } from "./helpers";
+import { adminCredentials, placeSimulatedOrder } from "./helpers";
 
 // Requires the seed admin account to exist (npx prisma db seed — see README).
 const { email: ADMIN_EMAIL, password: ADMIN_PASSWORD } = adminCredentials();
@@ -26,14 +26,18 @@ test.describe("admin panel", () => {
     await expect(page).toHaveURL(/\/admin$/);
   });
 
-  test("sidebar shows the everyday screens and tucks the rest away", async ({ page }) => {
+  test("sidebar shows every page by group; a folded group is remembered", async ({ page }) => {
     const aside = page.locator("aside");
-    for (const label of ["Genel Bakış", "Ürünler", "Siparişler"]) {
+    for (const label of ["Genel Bakış", "Siparişler", "Ürünler", "Kampanyalar", "Stok Durumu", "Ayarlar"]) {
       await expect(aside.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
-    await expect(aside.getByRole("link", { name: "Kampanyalar" })).not.toBeVisible();
-    await aside.getByRole("button", { name: "Diğer" }).click();
-    await expect(aside.getByRole("link", { name: "Kampanyalar" })).toBeVisible();
+    await aside.getByRole("button", { name: "Ürün Özellikleri" }).click();
+    await expect(aside.getByRole("link", { name: "Renkler" })).not.toBeVisible();
+    await page.reload();
+    await expect(aside.getByRole("link", { name: "Renkler" })).not.toBeVisible();
+    // ...but never folds away the page you're on.
+    await page.goto("/admin/colors");
+    await expect(aside.getByRole("link", { name: "Renkler" })).toBeVisible();
 
     // A sub-page highlights only itself, not its parent entry too.
     await page.goto("/admin/stock/movements");
@@ -136,13 +140,25 @@ test.describe("admin panel", () => {
     await page.goto(`/products/${productId}`);
     await expect(page.getByRole("button", { name: "Tükendi" }).first()).toBeDisabled();
 
+    // Fabric and care entered on the form show on the product page.
+    await page.goto(editUrl);
+    await page.getByLabel("Kumaş içeriği").fill("%78 polyamid, %22 elastan");
+    await page.getByLabel("Bakım talimatı").fill("30°C'de tersten yıkayın.");
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await expect(page.getByText("Kaydedildi.")).toBeVisible();
+    await page.goto(`/products/${productId}`);
+    await page.getByRole("button", { name: "İçerik & Bakım" }).click();
+    await expect(page.getByText("%78 polyamid, %22 elastan")).toBeVisible();
+    await expect(page.getByText("30°C'de tersten yıkayın.")).toBeVisible();
+
     const res = await page.request.delete(`/api/admin/products/${productId}`);
     expect(res.ok()).toBe(true);
   });
 
-  test("order page saves the internal note without touching the status", async ({ page }) => {
+  test("order page saves the internal note without touching the status", async ({ page, browser }) => {
+    const orderNumber = await placeSimulatedOrder(browser);
     await page.goto("/admin/orders");
-    await page.locator('a[href^="/admin/orders/"]').first().click();
+    await page.getByRole("link", { name: orderNumber }).first().click();
     await expect(page.getByLabel("Sipariş durumu")).toBeVisible();
 
     const status = page.getByLabel("Sipariş durumu");

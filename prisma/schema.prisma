@@ -102,29 +102,6 @@ model Brand {
   campaigns Campaign[]
 }
 
-model Ingredient {
-  id          String              @id @default(cuid())
-  name        String              @unique
-  slug        String              @unique
-  description String?
-  products    ProductIngredient[]
-  createdAt   DateTime            @default(now())
-}
-
-// Join table for the Product <-> Ingredient many-to-many — deliberately only
-// for the small set of *named/active* ingredients worth cross-referencing
-// ("which products contain Niacinamide"), kept separate from the raw INCI
-// text blob (Product.fullIngredients) which is descriptive, not queryable.
-model ProductIngredient {
-  productId    Int
-  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  ingredientId String
-  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
-
-  @@id([productId, ingredientId])
-  @@index([ingredientId])
-}
-
 // A reusable color swatch — named once, referenced by every variant that
 // uses it, instead of each variant carrying its own free-text name/hex.
 model Color {
@@ -349,6 +326,9 @@ model Product {
   coverage          String?
   texture           String?
   usagePurpose      String?
+  // Shown on the product page under "İçerik & Bakım" — the fabric
+  // composition and care instructions. (Column names are from the
+  // cosmetics template this schema started as.)
   fullIngredients   String?
   usageInstructions String?
   warnings          String?
@@ -362,7 +342,6 @@ model Product {
   metaTitle         String?
   metaDescription   String?
   variants          ProductVariant[]
-  ingredients       ProductIngredient[]
   stockMovements    StockMovement[]
   contentDrafts     ContentDraft[]
   // Search also uses a trigram index on search_text(title, description),

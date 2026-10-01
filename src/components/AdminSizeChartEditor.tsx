@@ -66,23 +66,23 @@ export function AdminSizeChartEditor({
   return (
     <div>
       <div className="overflow-x-auto border border-adm-border bg-adm-surface-card rounded-xl">
-        <table className="w-full text-sm">
+        <table className="adm-table">
           <thead>
-            <tr className="border-b border-adm-border/30 text-xs font-medium uppercase tracking-wider text-adm-text-tertiary">
-              <th className="px-4 py-3 text-left">Beden</th>
+            <tr>
+              <th className="text-left">Beden</th>
               {columns.map((col) => (
-                <th key={col} className="px-4 py-3 text-left">
+                <th key={col} className="text-left">
                   {sizeChartColumnLabel(col)} ({unit})
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-adm-border/15">
+          <tbody>
             {rows.map((row) => (
               <tr key={row.id}>
-                <td className="px-4 py-3 font-medium text-adm-text">{row.label}</td>
+                <td className="font-medium text-adm-text">{row.label}</td>
                 {columns.map((col) => (
-                  <td key={col} className="px-4 py-2">
+                  <td key={col}>
                     <input
                       type="number"
                       min="0"

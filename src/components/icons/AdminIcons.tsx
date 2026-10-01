@@ -161,3 +161,12 @@ export function LedgerIcon({ className = "h-5 w-5" }: IconProps) {
     </svg>
   );
 }
+
+export function MailIcon({ className = "h-5 w-5" }: IconProps) {
+  return (
+    <svg {...base} className={className} xmlns="http://www.w3.org/2000/svg">
+      <rect x="3.5" y="5.5" width="17" height="13" rx="1.5" />
+      <path d="m4 6.5 8 6 8-6" />
+    </svg>
+  );
+}

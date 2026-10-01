@@ -82,18 +82,18 @@ export function AdminBrandsPanel({ brands }: { brands: Brand[] }) {
 
       <AdminTable>
         <thead>
-          <tr className="border-b border-adm-border bg-adm-surface-secondary text-[11px] font-semibold uppercase tracking-widest text-adm-text-secondary">
-            <th className="py-3 pl-4 pr-4">Marka</th>
-            <th className="py-3 pr-4">Ürün Sayısı</th>
-            <th className="py-3 pr-4" />
+          <tr>
+            <th>Marka</th>
+            <th>Ürün Sayısı</th>
+            <th />
           </tr>
         </thead>
-        <tbody className="divide-y divide-adm-border">
+        <tbody>
           {rows.map((brand) => (
             <tr key={brand.id}>
-              <td className="py-3 pl-4 pr-4 font-semibold text-adm-text">{brand.name}</td>
-              <td className="py-3 pr-4 text-adm-text-secondary">{brand.productCount}</td>
-              <td className="py-3 pr-4 text-right whitespace-nowrap">
+              <td className="font-semibold text-adm-text">{brand.name}</td>
+              <td className="text-adm-text-secondary">{brand.productCount}</td>
+              <td className="text-right whitespace-nowrap">
                 <button
                   onClick={() => handleDelete(brand.id)}
                   aria-label="Sil"
