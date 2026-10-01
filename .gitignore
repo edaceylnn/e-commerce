@@ -54,7 +54,10 @@ next-env.d.ts
 /.agents/
 /.windsurf/
 /skills-lock.json
-/docs/
+/docs/*
+# …except what the README links to.
+!/docs/mimari.md
+!/docs/screenshots/
 
 # Admin-uploaded product photos (local storage)
 /public/uploads

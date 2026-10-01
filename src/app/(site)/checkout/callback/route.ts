@@ -103,6 +103,8 @@ export async function POST(request: NextRequest) {
     itemId: t.itemId,
     paymentTransactionId: t.paymentTransactionId,
     price: t.price,
+    // What was actually charged for this item — refunds are made from it.
+    paidPrice: t.paidPrice,
   }));
 
   try {

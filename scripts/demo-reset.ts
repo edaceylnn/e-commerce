@@ -1,6 +1,6 @@
 // Resets the public demo to fresh sample data: wipes every table, runs the
 // normal seed (catalog + admin), then adds the shared demo accounts and a
-// month of orders in every state — delivered, on the way, waiting to be
+// two months of orders in every state — delivered, on the way, waiting to be
 // shipped, cancelled — so the admin panel has something to show and
 // something to try. Runs nightly on the demo server (cron):
 //   DEMO_MODE=1 npm run demo:reset
@@ -213,7 +213,7 @@ async function main() {
   // Everything older than a few days has arrived; the newest wait to be
   // shipped. The demo customer gets one order in each state worth a look.
   const plans: [Customer, number, Plan, boolean][] = [];
-  for (let day = 30; day >= 1; day -= 1 + Math.floor(random() * 2)) {
+  for (let day = 60; day >= 1; day -= 1 + Math.floor(random() * 2)) {
     plans.push([pick(customers), day, day > 4 ? "delivered" : day > 2 ? "in-transit" : "preparing", random() < 0.3]);
   }
   plans.push([pick(customers), 12, "cancelled", false], [pick(customers), 0, "pending", false]);

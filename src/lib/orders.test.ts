@@ -118,6 +118,44 @@ describe("refundOrder", () => {
     expect(refundPayment).not.toHaveBeenCalled();
   });
 
+  it("refunds what was charged per item (paidPrice), not the list price", async () => {
+    findUnique.mockResolvedValue({
+      ...baseOrder,
+      iyzicoItemTransactions: [
+        { itemId: "1", paymentTransactionId: "txn_1", price: "1690.00", paidPrice: "1521.00" },
+        { itemId: "2", paymentTransactionId: "txn_2", price: "690.00", paidPrice: "650.90" },
+      ],
+    });
+    await refundOrder("order_1", { ip: "127.0.0.1" });
+    expect(refundPayment.mock.calls.map((c) => c[0].price)).toEqual(["1521.00", "650.90"]);
+  });
+
+  it("after a partial refund, refunds and restocks only what's left", async () => {
+    findUnique.mockResolvedValue({
+      ...baseOrder,
+      status: "TESLIM_EDILDI",
+      items: [
+        { id: "line_1", productId: 1, variantId: null, quantity: 2, refundedAt: new Date() },
+        { id: "line_2", productId: 2, variantId: "variant_1", quantity: 1, refundedAt: null },
+      ],
+    });
+
+    const result = await refundOrder("order_1", { ip: "127.0.0.1" });
+
+    expect(result).toEqual({ ok: true });
+    // Product 1's transaction was refunded by the partial refund already.
+    expect(refundPayment).toHaveBeenCalledTimes(1);
+    expect(refundPayment).toHaveBeenCalledWith(expect.objectContaining({ paymentTransactionId: "txn_2" }));
+    // Only the remaining line goes back into stock.
+    expect(productUpdate).not.toHaveBeenCalled();
+    expect(productVariantUpdate).toHaveBeenCalledTimes(1);
+    expect(stockMovementCreate).toHaveBeenCalledTimes(1);
+    // The earlier refund keeps its own date and reason.
+    expect(orderItemUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { orderId: "order_1", refundedAt: null } })
+    );
+  });
+
   it("refunds a cancelled (IPTAL) order without touching stock or status again", async () => {
     findUnique.mockResolvedValue(baseOrder);
 

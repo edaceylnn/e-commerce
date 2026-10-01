@@ -1,296 +1,223 @@
-# EDACEY — E-ticaret Portfolio Demo
+# EDACEY — uçtan uca e-ticaret sistemi
 
-Next.js 16 (App Router) ile geliştirilmiş, loungewear, spor ve pijama satan
-bir giyim markasının e-ticaret sitesini taklit eden bir portföy projesi. Bir
-iş ilanında istenen yetkinlikleri (Next.js, REST & GraphQL, state
-management, güvenli oturum yönetimi, ödeme entegrasyonu, push bildirimleri,
-Vercel/edge farkındalığı ve test altyapısı) tek, çalışan bir uygulamada
-göstermek amacıyla yazıldı.
+Loungewear, spor giyim ve pijama satan bir markanın mağazası ve yönetim
+paneli; sıfırdan, bir e-ticaret sisteminin arka planını baştan sona öğrenmek
+için geliştirildi. Ürün ve varyant yönetimi, stok rezervasyonu, iyzico ile
+ödeme, kargo takibi, e-Arşiv fatura ve KDV, iade, bilgilendirme e-postaları
+ve Shopify ile uyumlu ürün aktarımı — hepsi çalışan tek bir uygulamada.
 
-> Bu proje bir portföy demosudur; gerçek bir şirket veya sistemle hiçbir
-> bağlantısı yoktur. Ürün kataloğu [`prisma/seed.ts`](prisma/seed.ts)
-> içinde statik olarak tanımlıdır; ürün ve kampanya görselleri
-> [`public/`](public) altındadır. Mağaza arayüzü, harici bir tasarım
-> teslimindeki (design handoff) yüksek sadakatli prototiplere göre
-> uygulanmıştır.
+> Kişisel portföy projesi; gerçek bir şirketle bağlantısı yok. Ödemeler
+> iyzico'nun test (sandbox) ortamında alınır, faturalar bir simülatörle
+> üretilir ve Gelir İdaresi'ne gönderilmez.
 
-## Neyi, neden gösteriyor
+**Canlı demo:** yakında. Demo sitede giriş sayfaları hazır demo hesaplarını
+gösterir; her şey denenebilir, veriler her gece sıfırlanır.
 
-| Yetkinlik                          | Nerede                                                                                  |
-| ----------------------------------- | ---------------------------------------------------------------------------------------- |
-| Next.js ile production web app       | Tüm `src/app` — App Router, Server Components, Route Handlers                          |
-| Veritabanı / ORM                    | [`prisma/schema.prisma`](prisma/schema.prisma) — Postgres + Prisma 7; ürün kataloğu, varyantlar, kullanıcılar, siparişler, yorumlar vb. için tek şema |
-| REST API (inşa + tüketim)            | [`src/app/api/`](src/app/api) route handler'ları istemci bileşenlerinden tüketiliyor (ör. favoriler, sepet stok kontrolü, ilgili ürünler); dışarıda iyzico'nun REST API'si |
-| GraphQL (inşa + tüketim)             | [`src/app/api/graphql/route.ts`](src/app/api/graphql/route.ts) (graphql-yoga) + [`ReviewSection.tsx`](src/components/ReviewSection.tsx) (urql); resolver'lar Postgres'teki `Review` tablosuna yazıyor |
-| Üçüncü taraf ödeme entegrasyonu (iyzico) | [`src/lib/iyzico.ts`](src/lib/iyzico.ts) — HMACSHA256 imzalama elle yazıldı; [`src/app/(site)/checkout/`](src/app/%28site%29/checkout) — adres → özet → ödeme → onay akışı |
-| Rol tabanlı admin paneli              | [`src/app/admin/`](src/app/admin) — katalog, stok, sipariş, kampanya, kullanıcı yönetimi; `src/app/api/admin/*` |
-| State management                     | [`src/lib/store/`](src/lib/store) — Zustand: sepet (localStorage persist), favoriler, bildirimler (toast) |
-| Güvenli kimlik doğrulama              | [`src/lib/auth.ts`](src/lib/auth.ts) — `jose` ile imzalı JWT, httpOnly/secure/sameSite cookie; parolalar `bcrypt` ile hash'lenir ([`src/lib/password.ts`](src/lib/password.ts)); rol tabanlı erişim (`CUSTOMER`/`ADMIN`) ile korunan `/admin` |
-| Push bildirimleri                    | [`src/lib/push/`](src/lib/push) + [`public/sw.js`](public/sw.js) — gerçek Web Push (VAPID), abonelikler Postgres'te (`PushSubscription`) |
-| Deep link / yönlendirme yönetimi     | [`src/proxy.ts`](src/proxy.ts) — eski `/urun/:id` bağlantılarını `/products/:id`'e yönlendirir |
-| Vercel / edge farkındalığı           | `src/proxy.ts` (edge'e yakın çalışan proxy katmanı) + README'deki "Next.js 16 notları" |
-| Test pratikleri (Jest, RTL, Playwright)| [`src/**/*.test.ts(x)`](src/lib/store/cart-store.test.ts) + [`e2e/`](e2e) |
-| Agile/Scrum işbirliği                | Bu README'deki mimari kararlar ve gerekçeleri; kod incelemesinde tartışılabilir |
+| Mağaza | Yönetim paneli |
+| --- | --- |
+| ![Ana sayfa](docs/screenshots/magaza-ana-sayfa.jpg) | ![Genel bakış](docs/screenshots/admin-genel-bakis.jpg) |
+| ![Ürün listesi ve filtreler](docs/screenshots/magaza-liste.jpg) | ![Sipariş: kargo, fatura ve e-postalar](docs/screenshots/admin-siparis.jpg) |
+| ![Ürün sayfası](docs/screenshots/magaza-urun.jpg) | ![Shopify CSV içe aktarma önizlemesi](docs/screenshots/admin-shopify-csv.jpg) |
 
-React Native / mobil ve FCM/APNs maddeleri kapsam dışı bırakıldı — bu proje
-bilinçli olarak **sadece web** (Next.js) kapsamında tutuldu. Push bildirimleri
-gerçek Web Push standardıyla (FCM/APNs'in tarayıcı eşdeğeri) uygulandı.
+| e-Arşiv fatura | Müşteriye giden e-posta | Mobil |
+| --- | --- | --- |
+| ![Fatura](docs/screenshots/fatura.jpg) | ![E-posta önizlemesi](docs/screenshots/admin-eposta.jpg) | ![Mobil ürün sayfası](docs/screenshots/mobil-urun.jpg) |
 
-## Mağaza arayüzü ve tasarım sistemi
+## Neler var
 
-Mağaza tarafı (`src/app/(site)`) sade, görsel ağırlıklı bir editoryal dile
-göre tasarlandı. Admin paneli (`src/app/admin`) kendi ayrı token setini
-(`--adm-*`) kullanır ve bu sistemden etkilenmez.
+**Mağaza**
+- Kategori sayfaları, veritabanında çalışan arama ve filtreler (beden, renk,
+  fiyat, stok), sıralama, sayfalama; Türkçe karakterlere duyarsız arama
+  ("tisort" → "Tişört").
+- Renk × beden varyantlı ürün sayfası, beden rehberi, favoriler, yorumlar
+  (admin onaylı, "doğrulanmış alışveriş" etiketi).
+- Sepet, adres defteri, ayrı teslimat ve fatura adresi, kupon ve otomatik
+  kampanya indirimi, iyzico ile ödeme.
+- Hesabım: siparişler ve kargo takibi, fatura bağlantıları, sipariş iptali,
+  şifre değiştirme ve e-postayla şifre sıfırlama.
 
-- **Tokenlar** — [`src/app/globals.css`](src/app/globals.css): sıcak taş
-  tonlarında bir palet, tek mürekkep rengi, anlamlı tek renk olarak indirim
-  ve hata için pas kırmızısı (`--sale`). Köşeler kare; gölge ve gradyan yok.
-  Tipografi tek aile: **Hanken Grotesk** 300/400/500
-  ([`src/app/layout.tsx`](src/app/layout.tsx)).
-- **Sayfa container'ı** — `page-x` utility'si: içerik en fazla 1280px,
-  kenar boşluğu mobilde 20px, ≥760px'te 40px. Header, footer ve tüm
-  bölümler aynı hizada ilerler; yalnızca ana sayfa hero'su tam genişliktir.
-  `full-bleed` ve `bleed-gutter` utility'leri çizgilerin ve yatay kayan
-  satırların container dışına taşmasını sağlar.
-- **Kırılma noktaları** — Tailwind varsayılanlarına dokunmadan eklendi:
-  `tab` (≥760px), `desk` (≥1100px), `wide` (≥1280px), `hdr` (≥1360px, tek
-  satırlı header).
-- **İkonlar** — Phosphor (Light, kaydedilmiş favori için Fill),
-  [`src/components/icons/Ph.tsx`](src/components/icons/Ph.tsx) üzerinden
-  ikon başına import edilir; server component'lerde de çalışır.
-- **Ürün kartı** — [`ProductCard.tsx`](src/components/ProductCard.tsx):
-  2:3 görsel, favori kalbi, masaüstünde üzerine gelince bedene göre hızlı
-  ekleme şeridi, mobilde hızlı görünüm, renk seçenekleri. Kart, hızlı görünüm
-  ve ürün sayfası sepete ekleme için tek bir hook kullanır
-  ([`use-add-to-bag.ts`](src/lib/use-add-to-bag.ts)); fiyat, varyant ve
-  görsel hesapları DB'ye dokunmayan
-  [`product-view.ts`](src/lib/product-view.ts) içindedir, bu yüzden istemci
-  bileşenleri Prisma/pg'yi pakete çekmez.
-- **Sayfalar**:
-  - Ana sayfa ([`page.tsx`](src/app/%28site%29/page.tsx), bölümler
-    [`src/components/home/`](src/components/home)): hero, kategori kartları,
-    sezon seçkisi, satış adedine göre "Çok Satanlar", Spor bölümü, kategori
-    listesi, yeni gelenler şeridi, yaşam tarzı bloğu, bülten.
-  - Kategori ([`ProductListing.tsx`](src/components/plp/ProductListing.tsx)):
-    sticky araç çubuğu, sayılı sekmeler, 3/4 sütun görünüm, sıralama, anlık
-    çalışan filtre çekmecesi (beden, renk, fiyat, tip, stok), "daha fazla
-    yükle". Filtreler ve sıralama URL'de tutulur
-    ([`product-filters.ts`](src/lib/product-filters.ts)).
-  - Ürün detay ([`ProductDetail.tsx`](src/components/pdp/ProductDetail.tsx)):
-    galeri ve tam ekran görüntüleyici, sticky satın alma paneli, beden
-    doğrulaması, ürünün beden tablosundan beslenen beden rehberi, akordeonlar,
-    "Kombini tamamla", mobilde sabit sepet çubuğu.
-  - Sepet ve hesap sayfaları aynı tasarım diline taşındı; sepetten silinen
-    ürün bildirimdeki "Geri al" ile geri eklenebilir.
-- **"Yeni Gelenler" tanımı** — [`selectNewArrivals`](src/lib/products.ts):
-  önce `isNew` işaretli ürünler, sonra en son eklenenler (toplam 8). Ana sayfa
-  şeridi, `/products?filter=new` ve kategori listesindeki sayı aynı kümeyi
-  gösterir.
+**Sipariş, ödeme ve stok**
+- Ödeme sayfasına geçerken stok ayrılır; ödeme yapılmazsa süre dolunca geri
+  bırakılır. Stok bittiği için gönderilemeyecek bir siparişin ödemesi
+  otomatik iade edilir.
+- Her stok değişikliği bir stok hareketi olarak kaydedilir (mal kabul, satış,
+  iade, iptal, rezervasyon, düzeltme); kritik stok uyarıları.
 
-## Mimari notlar
+**Kargo**
+- Anlaşmalı firmalar (Yurtiçi, Aras, MNG…) için takip numarası girişi;
+  API'li bir kargo firmasını taklit eden simülatör, imzalı webhook'larla
+  "teslim alındı → transferde → dağıtımda → teslim edildi" akışı.
 
-- **Ürün kataloğu**: `loungewear`, `spor`, `pijama` kategorileri ve
-  ürünler, renk/beden varyantları kendi Postgres veritabanımızda tutuluyor
-  ([`src/lib/products.ts`](src/lib/products.ts), Prisma ile sorgulanıyor).
-  Katalog [`prisma/seed.ts`](prisma/seed.ts)'te statik olarak tanımlı;
-  çalışma zamanında harici bir katalog servisine istek atılmıyor. Seed,
-  projenin eski kozmetik kataloğundaki ürün id'lerini upsert ederek yeniden
-  kullanır — böylece o id'lere bağlı test siparişleri, yorumlar ve favoriler
-  geçerli kalır. Fiyatlar TRY'dir.
-- **Sepet**: Zustand store, `persist` middleware ile localStorage'a yazıyor.
-  Hydration uyumsuzluğunu önlemek için `useSyncExternalStore` tabanlı bir
-  `useHasMounted` hook'u kullanılıyor (bkz. `src/lib/use-has-mounted.ts`).
-  Sepet sayfası canlı stok durumunu `/api/cart/lines`'tan, otomatik
-  kampanya indirimini `/api/checkout/campaign-preview`'dan alır.
-- **Oturum/kimlik doğrulama**: `/api/auth/register` ve `/api/auth/login`
-  kullanıcıyı Postgres'teki `User` tablosuna karşı doğruluyor (parola
-  `bcrypt` ile hash'lenip saklanıyor), başarılı olursa bir JWT üretip httpOnly
-  cookie olarak yazıyor; `/account` sayfası bu cookie'yi **sunucu
-  bileşeninde** okuyup ilk render'ı sunucu tarafında dolduruyor (client-side
-  fetch waterfall yok). Her kullanıcının bir `role`'ü (`CUSTOMER`/`ADMIN`) var;
-  `/admin` altındaki tüm sayfalar
-  [`src/app/admin/(dashboard)/layout.tsx`](src/app/admin/%28dashboard%29/layout.tsx)'te
-  sunucu tarafında bu rolü kontrol ediyor.
-- **Hesap paneli**: `/account` altındaki sayfalar
-  [`src/app/(site)/account/layout.tsx`](src/app/%28site%29/account/layout.tsx)'in
-  sağladığı ortak kabuğu paylaşıyor: karşılama başlığı, solda metin menü
-  ([`AccountSidebar.tsx`](src/components/AccountSidebar.tsx) — mobilde yatay
-  kaydırmalı sekmeler) ve sağda içerik. Genel bakış, siparişler, adresler,
-  profil, şifre, bildirim tercihleri ve favoriler burada.
-- **Adresler**: `/account/adresler`'da kullanıcı kendi adres defterini yönetir
-  (ekle/düzenle/sil); her adres `Teslimat` veya `Fatura` etiketiyle kaydedilir
-  ([`src/components/AddressForm.tsx`](src/components/AddressForm.tsx)), ama
-  bu sadece bir varsayılan/organizasyon etiketi — checkout'ta herhangi bir
-  adres her iki rol için de seçilebilir. `Order` tablosunda
-  `shippingAddressId`/`billingAddressId` **iki ayrı alan** olarak tutuluyor —
-  aynı adres kullanılsa bile teslimat ve fatura adresi veri modelinde
-  birbirinden bağımsız. `/account/profil`'de ad/soyad, e-posta, telefon ve
-  doğum tarihi güncellenebilir (oturum çerezi yeniden imzalanır) ve parola
-  değiştirilebilir (mevcut parola doğrulaması ile).
-- **Checkout & ödeme (iyzico)**: `/cart`'taki "Ödemeye geç" gerçek bir
-  akışa götürüyor: `/checkout/address` (teslimat adresi seçimi/eklenmesi,
-  "fatura adresim aynı" seçeneği kapatılırsa ayrı bir fatura adresi
-  seçilir) → `/checkout/review` (sepet özeti, kupon, kargo hesaplaması,
-  "Ödemeyi Başlat") → sunucu tarafında [`src/lib/iyzico.ts`](src/lib/iyzico.ts)
-  iyzico'nun Checkout Form (yönlendirmeli) API'sini başlatır — resmi
-  `iyzipay` SDK'sı yerine düz `fetch` + elle yazılmış IYZWSv2 HMACSHA256
-  imzalama kullanıyoruz (algoritma iyzico'nun kendi Node SDK kaynağından
-  doğrulandı). Kullanıcı iyzico'nun barındırdığı ödeme sayfasına
-  yönlendirilir; kart bilgisi hiçbir zaman bu uygulamadan geçmez.
-  `/checkout/callback` iyzico'nun POST ile bıraktığı `token`'ı asla tek
-  başına güvenmez — sunucu tarafında CF-Retrieve ile yeniden sorgular,
-  yanıt imzasını ve ödenen tutarı doğrular, ancak o zaman siparişi
-  `HAZIRLANIYOR`'a çeker. Sipariş fiyatları **her zaman sunucuda** DB'den
-  yeniden hesaplanır — istemciden gelen fiyata güvenilmez. Sipariş geçmişi
-  `/account/orders` altında.
-  Sandbox testleri iyzico'nun resmi örnek isteklerinde kullanılan
-  `identityNumber: "11111111111"` placeholder'ını kullanır — kullanıcılardan
-  gerçek bir T.C. kimlik numarası toplanmaz.
-- **Kargo**: ücretsiz kargo eşiği ve sabit kargo ücreti tek bir yerde
-  ([`src/lib/shipping.ts`](src/lib/shipping.ts)); checkout API'si, sepet
-  özeti, duyuru çubuğu ve ürün sayfasındaki bilgi satırları aynı değeri
-  kullanır.
-- **Kuponlar ve kampanyalar**: `/checkout/review`'daki kupon kodu girişi
-  önce `/api/checkout/coupon` ile bir önizleme doğrulaması yapıyor, ama asıl
-  indirim `/api/checkout/create`'te **sunucu tarafında yeniden** hesaplanıyor
-  — istemciden gelen indirime güvenilmiyor. Kupon ve otomatik kampanya
-  üst üste binmez; hangisi büyükse o uygulanır. Kuponun `usedCount`'u sadece
-  ödeme `/checkout/callback`'te onaylandığında artıyor; terk edilen bir
-  checkout kuponun kullanım limitini tüketmiyor.
-- **Admin paneli** (`/admin`, sadece `role === "ADMIN"`): sayfa koruması
-  layout'ta yapılıyor, `src/app/api/admin/*` route'ları da kendi başlarına
-  aynı kontrolü tekrarlıyor (sayfa koruması tek başına yeterli değil).
-  Ekranlar: genel bakış ve analitik, ürünler (tam CRUD; `Product.id`
-  autoincrement olmadığı için yeni ürünler `max(id)+1` ile oluşturuluyor —
-  bkz. `src/app/api/admin/products/route.ts`), kategoriler, markalar,
-  koleksiyonlar, renkler, bedenler ve beden tabloları, içerik (ingredient)
-  kütüphanesi, stok (kritik stok ve
-  stok hareketleri), siparişler ve iadeler, kampanyalar ve kuponlar,
-  yorum moderasyonu, kullanıcılar, bildirimler ve ayarlar.
-- **Favoriler**: `WishlistItem` tablosunda kullanıcı başına tutuluyor.
-  [`WishlistButton.tsx`](src/components/WishlistButton.tsx) hem ürün
-  kartlarında hem detay sayfasında kullanılıyor; anlık durum
-  [`wishlist-store.ts`](src/lib/store/wishlist-store.ts)'teki hafif bir
-  Zustand önbelleğinde tutuluyor (sepetin aksine localStorage'a
-  yazılmıyor — sunucudaki gerçek veri her sayfa yüklemesinde
-  `/api/wishlist`'ten bir kez hidrate ediliyor). `/account/favoriler`
-  sayfasında listeleniyor.
-- **Yorumlar (GraphQL)**: [`src/lib/graphql/schema.ts`](src/lib/graphql/schema.ts)
-  hem sorgu hem mutation içeriyor; istemcide `urql` ile tüketiliyor.
-  Resolver'lar Postgres'teki `Review` tablosuna yazıyor/okuyor. Yeni yorumlar
-  `PENDING` durumunda oluşturulur ve [`/admin/reviews`](src/app/admin/%28dashboard%29/reviews)
-  üzerinden bir admin onaylayana kadar herkese açık listede görünmez
-  (`Query.reviews` sadece `APPROVED` döner). Onaylanınca
-  `Product.ratingAvg`/`ratingCount` yeniden hesaplanır. Oturum açmış bir
-  kullanıcının o ürünü içeren teslim edilmiş (`TESLIM_EDILDI`) bir siparişi
-  varsa yorumu "Doğrulanmış alışveriş" olarak işaretlenir.
-- **Push bildirimleri**: `web-push` + VAPID anahtarlarıyla gerçek bir Web
-  Push akışı var: tarayıcı izni → service worker kaydı → `PushManager`
-  aboneliği → sunucuda saklanan abonelik → `web-push` ile bildirim gönderimi.
-  [`src/lib/push/store.ts`](src/lib/push/store.ts) `PushSubscription`
-  tablosunu kullanıyor (oturum açık kullanıcılar için `userId`'ye bağlanıyor,
-  anonim abonelik de mümkün). Bir admin ürün stoğunu 0'dan pozitife
-  çektiğinde tüm abonelere otomatik "tekrar stokta" bildirimi gönderiliyor.
-  Müşteriler `/account/bildirimler`'da bildirim tercihlerini yönetir; toplu
-  gönderim aracı sadece admin panelinde.
-- **Proxy (`src/proxy.ts`)**: Next.js 16'da `middleware.ts` adı `proxy.ts`
-  olarak değiştirildi. Burada iki klasik retail/e-ticaret deseni gösteriliyor:
-  eski/deep-link URL'lerin yönlendirilmesi ve düşük maliyetli bir A/B
-  segment cookie'si atanması.
+**Fatura ve KDV**
+- Sipariş kargoya verilince e-Arşiv satış faturası otomatik kesilir; iadede
+  iade faturası, iptalde fatura iptali. Satır bazında KDV (%1/%10/%20),
+  oran bazında matrah, tutarın yazıyla gösterimi, yazdırılabilir A4 fatura.
 
-### Next.js 16 ile ilgili notlar (bu proje sırasında öğrenilenler)
+**E-posta**
+- Sipariş alındı, kargoya verildi (takip ve fatura bağlantısıyla), teslim
+  edildi, iptal ve iade e-postaları; şifre sıfırlama. Yönetim panelinde tüm
+  e-postalar ve gönderim durumları, müşterinin gördüğü hâliyle önizleme.
 
-Bu proje **Next.js 16** üzerine kuruldu (create-next-app anında en güncel
-sürüm). Önceki sürümlere göre birkaç önemli fark koda yansıtıldı:
+**Yönetim paneli**
+- Genel bakış (ciro, sipariş, sepet ortalaması, en çok satanlar), raporlar.
+- Ürünler: tek sayfalık form, renk × beden matrisiyle otomatik varyant ve
+  SKU, görsel yükleme, "kart kontrolü" (eksik alan uyarıları), yapay zekâ ile
+  açıklama / SEO / görsel alt metni taslağı (Gemini ya da Claude).
+- Siparişler: durum yönetimi, kargoya verme, fatura kesme/iptal, tam ve
+  kısmi iade (iyzico), zaman çizelgesi, CSV dışa aktarma.
+- Kampanyalar, kuponlar, kategoriler, koleksiyonlar, renk/beden/beden
+  tabloları, yorum moderasyonu, müşteriler, iadeler, push bildirimleri.
+- **Shopify CSV:** kataloğu Shopify'ın ürün CSV biçiminde dışa aktarma; bir
+  Shopify dışa aktarımını önizleyerek içe alma (mevcut ürünler SKU'dan
+  eşleşir, kopya oluşmaz).
 
-- `middleware.ts` → `proxy.ts` olarak yeniden adlandırıldı ve varsayılan
-  olarak Node.js runtime'da çalışıyor (Edge zorunluluğu kalktı).
-- Route Handler'larda ve sayfalarda `params`, `searchParams` (ve `cookies()`,
-  `headers()`) artık **Promise** — `await params` / `await cookies()` gerekiyor.
-- Route seviyesinde `export const runtime = "edge"` **deprecated**; edge'e
-  yakın davranış artık `proxy.ts` üzerinden sağlanıyor. Bu proje başta
-  `/api/auth/me` route'unu edge runtime ile yazmıştı, build sırasında gelen
-  deprecation uyarısı üzerine Node.js runtime'a geri alındı (bkz. dosyadaki
-  yorum).
-- `"use client"` bileşenleri yalnızca **tip** olarak `@/lib/products`'tan
-  import edebilir; çalışma zamanı importu Prisma/pg'yi tarayıcı paketine
-  çeker ve derleme `Module not found: Can't resolve 'dns'` hatasıyla durur.
-  İstemci tarafında gereken saf yardımcılar bu yüzden
-  [`src/lib/product-view.ts`](src/lib/product-view.ts) ve
-  [`src/lib/categories.ts`](src/lib/categories.ts) gibi DB'siz modüllerde.
+## Zor kısımlar ve nasıl çözüldü
+
+E-ticarette asıl iş ürün sayfası değil; paranın, stoğun ve belgelerin her
+adımda tutarlı kalması. Projenin en çok şey öğreten parçaları:
+
+- **Aynı son ürünü iki kişi alamasın.** Stok, ödeme sayfasına geçerken satır
+  kilidiyle ayrılır; ödeme gelmezse süresi dolan rezervasyon geri bırakılır,
+  ödeme geç gelir ve stok tükenmişse para otomatik iade edilir. Ürünün toplam
+  stoğunu varyantlardan veritabanı tetikleyicisi hesaplar, kod unutsa bile
+  bozulmaz. → [`stock-reservation.ts`](src/lib/stock-reservation.ts),
+  [`stock_reservation` migration'ı](prisma/migrations/20260929164345_stock_reservation/migration.sql)
+- **Ödeme bildirimine körü körüne güvenmemek.** iyzico'nun geri dönüşündeki
+  token'a tek başına güvenilmez: ödeme sunucudan yeniden sorgulanır, imza ve
+  tutar doğrulanır; aynı bildirim iki kez gelse de sipariş bir kez işlenir.
+  Fiyatlar her zaman sunucuda yeniden hesaplanır. →
+  [`checkout/callback`](src/app/%28site%29/checkout/callback/route.ts)
+- **Fatura toplamı, çekilen tutarla kuruşu kuruşuna aynı.** Tüm hesaplar
+  kuruş cinsinden tam sayıyla yapılır; KDV, KDV dahil tutardan geriye
+  ayrılır; kupon indirimi farklı KDV oranlı satırlara "en büyük kalan"
+  yöntemiyle dağıtılır. 1.000 rastgele sepetle test edildi. →
+  [`invoicing/tax.ts`](src/lib/invoicing/tax.ts)
+- **Fatura numarasında boşluk olmaz, kesilen fatura değişmez.** Numara, fatura
+  ile aynı veritabanı işleminde bir sayaç satırından alınır (hata olursa
+  numara yanmaz, aynı anda kesilen faturalar çakışmaz). Kesilmiş faturayı
+  değiştirmeyi ya da silmeyi veritabanı tetikleyicileri reddeder; hata iptal
+  ya da iade faturasıyla düzeltilir. →
+  [`numbering.ts`](src/lib/invoicing/numbering.ts),
+  [`invoices` migration'ı](prisma/migrations/20260930095947_invoices/migration.sql)
+- **E-posta kaybolmasın, iki kez gitmesin.** E-posta, siparişi değiştiren
+  işlemle aynı veritabanı işleminde kaydedilir (outbox), yanıt döndükten
+  sonra gönderilir, başarısız olursa tekrar denenir. Her bildirimin tekil bir
+  anahtarı var: kargo firması aynı webhook'u iki kez gönderse de müşteriye
+  tek e-posta gider. → [`email/outbox.ts`](src/lib/email/outbox.ts)
+- **Kargo webhook'ları.** HMAC imzasıyla doğrulanır, tekrar gelen olaylar
+  yok sayılır, sıra dışı gelen olaylarda durum olay zamanına göre hesaplanır.
+  → [`shipping/events.ts`](src/lib/shipping/events.ts),
+  [`shipping/webhook.ts`](src/lib/shipping/webhook.ts)
+- **Arama ve filtreler veritabanında.** Eskiden tüm kategori belleğe
+  yükleniyordu; şimdi filtreleme, sayma, sıralama ve sayfalama Postgres'te,
+  aksansız (`unaccent`) ve kelime başından eşleşen arama trigram indeksiyle.
+  → [`catalog.ts`](src/lib/catalog.ts)
+- **Dışarıdan görsel indirmek (SSRF).** CSV içe aktarmada sunucu, dosyada
+  yazan adreslerden görsel indirir; iç ağa işaret eden adresler, yönlendirme
+  zincirleri, büyük ya da görsel olmayan dosyalar reddedilir. →
+  [`remote-image.ts`](src/lib/remote-image.ts)
+- **Şifre sıfırlama.** Bağlantı 30 dakika geçerli ve tek kullanımlık,
+  veritabanında yalnızca özeti tutulur, yanıt adresin kayıtlı olup
+  olmadığını belli etmez. → [`password-reset.ts`](src/lib/password-reset.ts)
+- **Testlerin bulduğu hatalar.** Uçtan uca testler, aynı anda oluşturulan iki
+  ürünün aynı id'yi aldığını ([`product-ids.ts`](src/lib/product-ids.ts)) ve
+  checkout'ta iki adres formunun alan kimliklerinin çakıştığını ortaya
+  çıkardı; ikisi de düzeltildi.
+
+## Teknolojiler
+
+Next.js 16 (App Router, Server Components) · React 19 · TypeScript ·
+PostgreSQL + Prisma 7 · Tailwind CSS 4 · Zustand · GraphQL (graphql-yoga +
+urql, yorumlar) · iyzico · nodemailer · Web Push · Jest + React Testing
+Library · Node test runner (gerçek veritabanı testleri) · Playwright
+
+```
+src/app/(site)       mağaza sayfaları
+src/app/admin        yönetim paneli
+src/app/api          API route'ları (admin, checkout, kargo webhook'u…)
+src/app/fatura       yazdırılabilir fatura
+src/lib              iş kuralları: stok, sipariş, fatura, e-posta, kargo, katalog…
+prisma/              şema, migration'lar, seed
+scripts/             zamanlanmış işler ve demo verisi
+e2e/                 Playwright testleri
+docs/                mimari notlar, ekran görüntüleri
+```
+
+Ayrıntılı mimari notlar: [`docs/mimari.md`](docs/mimari.md).
 
 ## Kurulum
 
+Gerekenler: Node.js 20+, PostgreSQL 15+.
+
 ```bash
 npm install
-cp .env.example .env.local
+cp .env.example .env.local        # değerleri doldur (aşağıda)
+createdb e_commerce               # DATABASE_URL'i buna göre ayarla
+npx prisma migrate deploy --config prisma7.config.ts
+npx prisma db seed --config prisma7.config.ts
+npm run dev                       # http://localhost:3000
 ```
 
-`.env.local` içine gerçek değerler koy:
+`.env.local` için:
+
+| Değişken | |
+| --- | --- |
+| `DATABASE_URL` | Postgres bağlantısı |
+| `AUTH_SECRET` | oturum imzası; `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
+| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | seed'in oluşturacağı admin hesabı |
+| `IYZICO_API_KEY` / `IYZICO_SECRET_KEY` | [iyzico sandbox](https://sandbox-merchant.iyzipay.com) test anahtarları (yoksa ödeme adımı hata mesajı verir) |
+| `NEXT_PUBLIC_SITE_URL` | sitenin adresi (e-posta bağlantıları, sitemap) |
+| `SHIPPING_WEBHOOK_SECRET` | kargo webhook imzası; production'da zorunlu |
+| `SMTP_HOST` … `EMAIL_FROM` | e-posta gönderimi; boşsa e-postalar yalnızca panelde kaydedilir |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | push bildirimleri; `npx web-push generate-vapid-keys` |
+| `GEMINI_API_KEY` ya da `ANTHROPIC_API_KEY` | yapay zekâ taslakları (opsiyonel) |
+| `DEMO_MODE=1` | yalnızca herkese açık demo sunucusunda |
+
+iyzico test kartı: `5528 7900 0000 0008`, son kullanma `12/30`, CVC `123`.
+
+### Zamanlanmış işler
+
+| Komut | Ne yapar | Sıklık |
+| --- | --- | --- |
+| `npm run emails:deliver` | gönderilemeyen e-postaları tekrar dener | 5 dakikada bir |
+| `npm run cleanup:pending-orders` | süresi dolan stok rezervasyonlarını bırakır, yarım kalan siparişleri temizler | saatte bir |
+| `npm run demo:reset` | tüm veriyi silip demo verisini yükler (`DEMO_MODE=1` olmadan çalışmaz) | her gece, yalnızca demo |
+
+## Testler
 
 ```bash
-AUTH_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
-npx web-push generate-vapid-keys --json   # NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY için
+npm test            # birim testleri (Jest + RTL) — 157 test
+npm run test:db     # gerçek Postgres üzerinde: stok, kargo, arama, fatura, e-posta, CSV — 37 test
+npm run test:e2e    # tarayıcıda uçtan uca akışlar (Playwright) — 22 test
+npm run lint
 ```
 
-Ödeme akışını denemek için [iyzico sandbox](https://sandbox-merchant.iyzipay.com)'tan
-bir test hesabı oluşturup `IYZICO_API_KEY`/`IYZICO_SECRET_KEY` değerlerini
-`.env.local`'e ekle (`IYZICO_BASE_URL` sandbox için zaten doğru değere
-ayarlı). Bu anahtarlar olmadan checkout, adres/sipariş özeti adımlarını
-tamamen çalışır şekilde gösterir; sadece "Ödemeyi Başlat" adımı iyzico'ya
-bağlanamadığı için kullanıcı dostu bir hata mesajıyla sonuçlanır.
+`test:db` kendi test verisini oluşturup siler; fatura testleri gerçek
+numaralara dokunmamak için ayrı bir seri (`TST`) kullanır. E2e testleri
+seed'deki admin hesabıyla giriş yapar.
 
-`DATABASE_URL` için bir Postgres veritabanı gerekiyor. Yerelde en hızlı yol:
+## Bilinen sınırlar
 
-```bash
-createdb e_commerce
-# .env.local içine: DATABASE_URL=postgresql://<kullanıcı-adın>@localhost:5432/e_commerce?schema=public
-```
+- Faturalar bir simülatörle üretiliyor; gerçek bir e-Arşiv entegratörü
+  (ve GİB karekodu) yok, satıcı bilgileri örnek değerler. Yalnızca bireysel
+  fatura var, kurumsal (VKN'li) fatura yok.
+- Yalnızca simülatör kargo firması API'li; diğer firmalarda takip numarası
+  elle girilir, teslim elle işaretlenir.
+- Kısmi iadede iyzico'nun iade ettiği tutar, indirim ve kargo payının
+  dağıtımı nedeniyle iade faturasındaki satır tutarından birkaç kuruş
+  farklı olabilir; tam iadede toplamlar eşit.
+- Şifre değişince diğer cihazlardaki açık oturumlar hemen kapanmaz (en geç
+  2 saatte sona erer).
+- Görsel indirmede DNS rebinding'e karşı adres sabitlenmiyor; özellik yalnızca
+  adminlere açık.
 
-(Docker tercih edersen `docker run --name ecommerce-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres` de
-kullanılabilir — bağlantı dizesini ona göre güncelle. Üretimde
-[Neon](https://neon.tech) gibi serverless bir Postgres sağlayıcısı öneriyoruz.)
+---
 
-Şemayı uygula, kataloğu ve bir admin kullanıcıyı içe aktar:
-
-```bash
-npx prisma migrate dev
-npx prisma db seed
-```
-
-Prisma CLI yapılandırmasını [`prisma7.config.ts`](prisma7.config.ts)'ten
-okur (şema yolu, migration klasörü, seed komutu ve `.env.local`'deki
-`DATABASE_URL`). `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` (`.env.local`'de)
-seed sırasında oluşturulacak admin hesabının bilgilerini belirler.
-
-```bash
-npm run dev
-```
-
-Uygulama [http://localhost:3000](http://localhost:3000) adresinde açılır.
-
-## Test
-
-```bash
-npm test          # Jest + React Testing Library (unit)
-npm run test:e2e  # Playwright (e2e) — dev server'ı otomatik ayağa kaldırır
-npm run lint      # ESLint
-```
-
-Admin e2e akışları seed'deki admin hesabıyla giriş yapar; bunun için
-`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` `.env.local`'de tanımlı olmalı.
-
-## Production build
-
-```bash
-npm run build
-npm start
-```
-
-## Vercel'e deploy
-
-Proje herhangi bir ek yapılandırma gerektirmeden Vercel'e deploy edilebilir.
-Gereken, yukarıdaki ortam değişkenlerini (üretimde `DATABASE_URL` için
-[Neon](https://neon.tech) gibi serverless bir Postgres öneriyoruz) Vercel
-proje ayarlarına eklemek. `src/proxy.ts` Vercel'in proxy/edge katmanında,
-geri kalan route'lar Node.js runtime'da çalışır.
+**In English:** EDACEY is a full e-commerce system built from scratch to
+learn how online retail works end to end — a storefront and admin panel
+with colour × size variants, stock reservation at checkout, iyzico
+payments, carrier tracking via signed webhooks, e-Arşiv (Turkish e-invoice)
+sale and return invoices with correct VAT down to the cent, a transactional
+email outbox, password reset and Shopify product CSV import/export. Built
+with Next.js 16, React 19, TypeScript, PostgreSQL and Prisma; tested with
+Jest, real-database integration tests and Playwright.

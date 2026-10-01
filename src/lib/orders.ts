@@ -78,6 +78,14 @@ async function logOrderEvent(
   });
 }
 
+// What iyzico actually charged for a basket item: its share of the paid
+// total after discounts and shipping (paidPrice) — not the list price
+// (price), which a discounted order never paid in full. Orders paid before
+// paidPrice was stored fall back to price.
+function refundAmount(t: IyzicoItemTransaction) {
+  return t.paidPrice ?? t.price ?? "0";
+}
+
 export type RefundOrderResult = { ok: true } | { ok: false; error: string };
 
 // Issues a real money-back request to iyzico and, for orders returned after
@@ -117,11 +125,18 @@ export async function refundOrder(
     };
   }
 
+  // What a partial refund (refundOrderItems) already gave back is not
+  // refunded or restocked again: its lines are marked, and their product's
+  // iyzico transaction was refunded whole.
+  const remainingItems = order.items.filter((i) => !i.refundedAt);
+  const refundedProductIds = new Set(order.items.filter((i) => i.refundedAt).map((i) => i.productId));
+  const toRefund = transactions.filter((t) => !refundedProductIds.has(Number(t.itemId)));
+
   const results = await Promise.all(
-    transactions.map((t) =>
+    toRefund.map((t) =>
       refundPayment({
         paymentTransactionId: t.paymentTransactionId,
-        price: t.price ?? "0",
+        price: refundAmount(t),
         currency: "TRY",
         ip,
         conversationId: order.id,
@@ -138,7 +153,7 @@ export async function refundOrder(
     // failed — record exactly what happened rather than silently retrying
     // (which could double-refund the ones that already went through) or
     // silently declaring success.
-    const note = `İade kısmen başarısız: ${failed.length}/${transactions.length} işlem başarısız oldu (${failed
+    const note = `İade kısmen başarısız: ${failed.length}/${toRefund.length} işlem başarısız oldu (${failed
       .map((f) => f.errorMessage ?? "bilinmeyen hata")
       .join("; ")}). Kalan işlemler iyzico panelinden manuel kontrol edilmeli.`;
     await prisma.$transaction(async (tx) => {
@@ -159,7 +174,7 @@ export async function refundOrder(
       where: { id: order.id },
       data: {
         refundedAt,
-        internalNote: `İade tamamlandı (${transactions.length} işlem, ${refundedAt.toLocaleString("tr-TR")}).`,
+        internalNote: `İade tamamlandı (${toRefund.length} işlem, ${refundedAt.toLocaleString("tr-TR")}).`,
         ...(isReturn ? { status: "IADE" } : {}),
       },
     });
@@ -167,23 +182,23 @@ export async function refundOrder(
     // reporting page (which reads OrderItem.refundedAt) sees full-order
     // refunds the same way it sees partial ones from refundOrderItems().
     await tx.orderItem.updateMany({
-      where: { orderId: order.id },
+      where: { orderId: order.id, refundedAt: null },
       data: { refundedAt, refundReason: reason },
     });
     await logOrderEvent(
       tx,
       order.id,
-      `İade tamamlandı (${transactions.length} işlem)${isReturn ? " — sipariş İade Edildi olarak işaretlendi" : ""}.`,
+      `İade tamamlandı (${toRefund.length} işlem)${isReturn ? " — sipariş İade Edildi olarak işaretlendi" : ""}.`,
       actorUserId
     );
     if (isReturn) {
-      for (const item of order.items) {
+      for (const item of remainingItems) {
         await restockItem(tx, item, "RETURN", `İade #${order.orderNumber}`);
       }
     }
     await queueRefundEmail(tx, order.id, {
       refundKey: String(refundedAt.getTime()),
-      itemIds: order.items.map((i) => i.id),
+      itemIds: remainingItems.map((i) => i.id),
       full: true,
     });
   });
@@ -262,7 +277,7 @@ export async function refundOrderItems(
     matchingTransactions.map((t) =>
       refundPayment({
         paymentTransactionId: t.paymentTransactionId,
-        price: t.price ?? "0",
+        price: refundAmount(t),
         currency: "TRY",
         ip,
         conversationId: order.id,
@@ -360,7 +375,7 @@ export async function refundUnfulfillablePayment(
     payment.itemTransactions.map((t) =>
       refundPayment({
         paymentTransactionId: t.paymentTransactionId,
-        price: t.price ?? "0",
+        price: refundAmount(t),
         currency: "TRY",
         ip,
         conversationId: order.id,
