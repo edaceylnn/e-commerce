@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { PRODUCT_CATEGORIES, getCategoryBySlug } from "@/lib/products";
 import { activeCountsByCategory, LISTING_PAGE_SIZE, MAX_LISTING_PAGES, searchCatalog } from "@/lib/catalog";
@@ -36,12 +35,12 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   discount: "Seçili parçalarda sezon sonu fiyatları.",
 };
 
+// Campaign shots for the listing's editorial breaks (see below).
 const CATEGORY_IMAGES: Record<string, { src: string; position: string }> = {
   loungewear: { src: "/categories/loungewear.webp", position: "50% 22%" },
   spor: { src: "/categories/spor-studyo.webp", position: "50% 30%" },
   pijama: { src: "/categories/pijama.webp", position: "50% 18%" },
 };
-const DEFAULT_IMAGE = { src: "/hero/evde-rahatlik.webp", position: "54% 34%" };
 
 type SearchParams = {
   category?: string;
@@ -118,8 +117,6 @@ export default async function ProductsPage({
     : q
       ? `${catalog.total} ürün bulundu.`
       : PAGE_DESCRIPTIONS[filter ?? sortParam ?? "all"] ?? PAGE_DESCRIPTIONS.all;
-  const headImage =
-    CATEGORY_IMAGES[category?.slug ?? ""] ?? CATEGORY_IMAGES[category?.parent?.slug ?? ""] ?? DEFAULT_IMAGE;
 
   // Tabs: a category's subcategories when it has any, else the top-level
   // categories (with counts) — the design's sub-category tab row.
@@ -211,24 +208,10 @@ export default async function ProductsPage({
         <span className="text-ink">{heading}</span>
       </nav>
 
-      <header className="mt-7 grid grid-cols-12 items-end gap-x-2 gap-y-6">
-        <div className="col-span-12 flex flex-col gap-3 pb-1 tab:col-span-5 tab:pr-6">
-          <h1 className="headline text-[clamp(36px,3.4vw,52px)] leading-[1.02]">{heading}</h1>
-          {description && (
-            <p className="max-w-[44ch] text-pretty text-body font-light text-ink-soft">{description}</p>
-          )}
-        </div>
-        <div className="relative col-span-12 aspect-video bg-image-alt tab:col-start-7 tab:col-span-6 tab:aspect-[4/1] desk:aspect-[3/1]">
-          <Image
-            src={headImage.src}
-            alt=""
-            fill
-            priority
-            sizes="(max-width: 759px) 100vw, 50vw"
-            className="object-cover"
-            style={{ objectPosition: headImage.position }}
-          />
-        </div>
+      {/* Title and description only: product photos are the visuals here. */}
+      <header className="mt-7 flex max-w-[640px] flex-col gap-3">
+        <h1 className="headline text-[clamp(36px,3.4vw,52px)] leading-[1.02]">{heading}</h1>
+        {description && <p className="max-w-[44ch] text-pretty text-body font-light text-ink-soft">{description}</p>}
       </header>
 
       <ProductListing

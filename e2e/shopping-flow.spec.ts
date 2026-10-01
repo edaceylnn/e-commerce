@@ -4,7 +4,7 @@ import { addCurrentProductToBag } from "./helpers";
 test("browsing, category filtering and the cart badge", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("banner").getByRole("link", { name: "EDACEY" })).toBeVisible();
-  await expect(page.getByRole("heading", { level: 1, name: /Gün içinde rahatlık/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /Hareket et, rahat kal/ })).toBeVisible();
 
   await page.getByRole("navigation").getByRole("link", { name: "Pijama" }).click();
   await expect(page).toHaveURL(/category=pijama/);

@@ -88,8 +88,8 @@ function NavLinks({ activeHref }: { activeHref: string | null }) {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`whitespace-nowrap border-b py-1.5 transition-colors hover:border-ink ${
-              active ? "border-ink" : "border-transparent"
+            className={`whitespace-nowrap border-b py-1.5 transition-colors hover:border-current ${
+              active ? "border-current" : "border-transparent"
             } ${item.strong ? "font-medium" : ""}`}
           >
             {item.label}
@@ -154,6 +154,22 @@ export function Navbar() {
   const mounted = useHasMounted();
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // On the homepage the header starts transparent over the hero (light
+  // text on the film and photo) and turns solid once the page scrolls, the
+  // search opens or the pointer is on it. Every other page: always solid.
+  const pathname = usePathname();
+  const overHero = pathname === "/";
+  const [scrolled, setScrolled] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  useEffect(() => {
+    if (!overHero) return;
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [overHero]);
+  const transparent = overHero && !scrolled && !searchOpen && !hovered;
+
   const hydrateWishlist = useWishlistStore((s) => s.hydrate);
   useEffect(() => {
     fetch("/api/wishlist")
@@ -165,8 +181,19 @@ export function Navbar() {
   return (
     <>
       <AnnouncementBar />
-      <header className="sticky top-0 z-20 border-b border-line bg-background">
-        {/* ≥1360px: one 64px row on a 1fr/auto/1fr grid, so the nav sits at
+      <header
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className={`sticky top-0 z-20 border-b transition-colors duration-300 ${
+          // Over the hero it takes no room: the hero slides up under it.
+          overHero ? "-mb-[108px] hdr:-mb-16" : ""
+        } ${transparent ? "border-transparent bg-transparent text-on-image" : "border-line bg-background text-ink"}`}
+      >
+        {transparent && (
+          // Keeps the light text readable over the bright sky of the film.
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[150%] bg-gradient-to-b from-ink/35 to-transparent" />
+        )}
+        {/* ≥1200px: one 64px row on a 1fr/auto/1fr grid, so the nav sits at
             the true centre of the page whatever the widths of the wordmark
             and the right-hand links. Below: the nav wraps onto its own
             full-width 44px row with a top hairline, scrolling sideways from
@@ -174,14 +201,14 @@ export function Navbar() {
         <div className="page-x flex flex-wrap items-center gap-x-10 hdr:grid hdr:grid-cols-[1fr_auto_1fr]">
           <Link
             href="/"
-            className="flex h-16 items-center justify-self-start text-[17px] font-medium tracking-logo text-ink"
+            className="flex h-16 items-center justify-self-start text-[17px] font-medium tracking-logo"
           >
             EDACEY
           </Link>
 
           <nav
             aria-label="Ana menü"
-            className="no-scrollbar bleed-gutter order-3 flex h-11 min-w-0 basis-[calc(100%+2*var(--gutter))] items-center gap-[clamp(16px,2vw,30px)] overflow-x-auto border-t border-line text-nav uppercase tracking-nav [justify-content:safe_center] hdr:order-none hdr:mx-0 hdr:h-16 hdr:border-t-0 hdr:px-0"
+            className={`no-scrollbar bleed-gutter order-3 flex h-11 min-w-0 basis-[calc(100%+2*var(--gutter))] items-center gap-[clamp(16px,2vw,30px)] overflow-x-auto border-t ${transparent ? "border-on-image/30" : "border-line"} text-nav uppercase tracking-nav [justify-content:safe_center] hdr:order-none hdr:mx-0 hdr:h-16 hdr:border-t-0 hdr:px-0`}
           >
             <Suspense fallback={<NavLinks activeHref={null} />}>
               <ActiveNavLinks />
