@@ -23,9 +23,12 @@ type CampaignPreview = {
 export function CheckoutReviewClient({
   shippingAddressId,
   billingAddressId,
+  paymentSimulated = false,
 }: {
   shippingAddressId: string;
   billingAddressId: string;
+  // No iyzico keys: the next step is the payment simulator.
+  paymentSimulated?: boolean;
 }) {
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore(selectCartTotal);
@@ -238,6 +241,12 @@ export function CheckoutReviewClient({
       </div>
 
       {error && <p className="text-xs text-danger">{error}</p>}
+
+      {paymentSimulated && (
+        <p className="border border-line px-3 py-2.5 text-xs text-ink-soft">
+          Demo mağaza: ödeme bir simülatörle yapılır, gerçek para çekilmez ve kart bilgisi istenmez.
+        </p>
+      )}
 
       <PillButton onClick={handlePay} disabled={submitting} className="w-full">
         {submitting ? "Yönlendiriliyor…" : "Ödemeyi Başlat"}

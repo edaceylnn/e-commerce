@@ -3,6 +3,7 @@ import { getOrdersForUser } from "@/lib/orders";
 import { prisma } from "@/lib/db";
 import { AccountClient } from "@/components/AccountClient";
 import { DEMO_ACCOUNTS, isDemoMode } from "@/lib/demo";
+import { isPaymentSimulated } from "@/lib/iyzico";
 import { AccountOverview } from "@/components/AccountOverview";
 
 export default async function AccountPage() {
@@ -16,7 +17,7 @@ export default async function AccountPage() {
         <p className="mt-3 text-body font-light text-ink-soft">
           Siparişlerini, adreslerini ve favorilerini görmek için giriş yap ya da hesap oluştur.
         </p>
-        <AccountClient demo={isDemoMode() ? DEMO_ACCOUNTS.customer : undefined} />
+        <AccountClient demo={isDemoMode() ? DEMO_ACCOUNTS.customer : undefined} paymentSimulated={isPaymentSimulated()} />
       </div>
     );
   }

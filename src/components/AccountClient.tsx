@@ -16,7 +16,13 @@ const TABS: { mode: Mode; label: string }[] = [
 ];
 
 // `demo`: the public demo's shared account, shown with a fill-in button.
-export function AccountClient({ demo }: { demo?: { email: string; password: string } }) {
+export function AccountClient({
+  demo,
+  paymentSimulated = false,
+}: {
+  demo?: { email: string; password: string };
+  paymentSimulated?: boolean;
+}) {
   const router = useRouter();
   const nameId = useId();
   const emailId = useId();
@@ -120,7 +126,11 @@ export function AccountClient({ demo }: { demo?: { email: string; password: stri
             <p className="mt-0.5 text-ink-soft">
               {demo.email} · {demo.password}
             </p>
-            <p className="mt-0.5 text-text-3">Test kartı: 5528 7900 0000 0008 · 12/30 · 123</p>
+            <p className="mt-0.5 text-text-3">
+              {paymentSimulated
+                ? "Ödeme adımı simülatördür; kart gerekmez."
+                : "Test kartı: 5528 7900 0000 0008 · 12/30 · 123"}
+            </p>
             <button
               type="button"
               onClick={() => {

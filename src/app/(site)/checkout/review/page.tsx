@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CheckoutReviewClient } from "@/components/CheckoutReviewClient";
+import { isPaymentSimulated } from "@/lib/iyzico";
 
 export default async function CheckoutReviewPage({
   searchParams,
@@ -72,6 +73,7 @@ export default async function CheckoutReviewPage({
         <CheckoutReviewClient
           shippingAddressId={shippingAddress.id}
           billingAddressId={billingAddress.id}
+          paymentSimulated={isPaymentSimulated()}
         />
       </div>
     </div>

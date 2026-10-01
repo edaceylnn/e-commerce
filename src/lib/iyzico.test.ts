@@ -125,12 +125,24 @@ describe("initializeCheckoutForm", () => {
     );
   });
 
-  it("throws a clear error when iyzico credentials are not configured", async () => {
+  it("without iyzico keys, sends the request to the payment simulator, not the network", async () => {
     process.env.IYZICO_API_KEY = "";
+    const fetchMock = jest.fn();
+    global.fetch = fetchMock as unknown as typeof fetch;
+    const simulateIyzico = jest.fn().mockResolvedValue({ status: "success", token: "sim" });
+    jest.doMock("./payment-simulator", () => ({ simulateIyzico }));
+    const { initializeCheckoutForm, isPaymentSimulated } = await import("./iyzico");
+
+    expect(isPaymentSimulated()).toBe(true);
+    await expect(initializeCheckoutForm({ conversationId: "o1" } as never)).resolves.toEqual({ status: "success", token: "sim" });
+    expect(simulateIyzico).toHaveBeenCalledWith("/payment/iyzipos/checkoutform/initialize/auth/ecom", { conversationId: "o1" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("with keys but no base URL, throws a clear error", async () => {
+    delete process.env.IYZICO_BASE_URL;
     const { initializeCheckoutForm } = await import("./iyzico");
-    await expect(
-      initializeCheckoutForm({} as never)
-    ).rejects.toThrow(/iyzico yapılandırması eksik/);
+    await expect(initializeCheckoutForm({} as never)).rejects.toThrow(/iyzico yapılandırması eksik/);
   });
 });
 

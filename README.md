@@ -6,9 +6,10 @@ için geliştirildi. Ürün ve varyant yönetimi, stok rezervasyonu, iyzico ile
 ödeme, kargo takibi, e-Arşiv fatura ve KDV, iade, bilgilendirme e-postaları
 ve Shopify ile uyumlu ürün aktarımı — hepsi çalışan tek bir uygulamada.
 
-> Kişisel portföy projesi; gerçek bir şirketle bağlantısı yok. Ödemeler
-> iyzico'nun test (sandbox) ortamında alınır, faturalar bir simülatörle
-> üretilir ve Gelir İdaresi'ne gönderilmez.
+> Kişisel portföy projesi; gerçek bir şirketle bağlantısı yok. Ödeme
+> altyapısı iyzico'ya bağlı; iyzico anahtarı tanımlı değilse (demo) yerleşik
+> bir ödeme simülatörü devreye girer ve gerçek para çekilmez. Faturalar da
+> bir simülatörle üretilir ve Gelir İdaresi'ne gönderilmez.
 
 **Canlı demo:** yakında. Demo sitede giriş sayfaları hazır demo hesaplarını
 gösterir; her şey denenebilir, veriler her gece sıfırlanır.
@@ -87,6 +88,17 @@ adımda tutarlı kalması. Projenin en çok şey öğreten parçaları:
   tutar doğrulanır; aynı bildirim iki kez gelse de sipariş bir kez işlenir.
   Fiyatlar her zaman sunucuda yeniden hesaplanır. →
   [`checkout/callback`](src/app/%28site%29/checkout/callback/route.ts)
+- **Ödeme sağlayıcısı olmadan da uçtan uca.** iyzico anahtarı yoksa istekler,
+  iyzico'nun API'sini konuşan yerleşik bir simülatöre gider: yanıtlarını
+  iyzico gibi imzalar, ödenen tutarı ürünlere dağıtır, çekilenden fazla ya
+  da iki kez iadeyi reddeder. Sipariş, ödeme doğrulama ve iade kodu iki
+  durumda da aynıdır. → [`payment-simulator.ts`](src/lib/payment-simulator.ts)
+- **İade iki kez yapılmasın, ödenenden fazla iade edilmesin.** Canlıya
+  çıkmadan önceki kontrol iki hata buldu: kısmi iadeden sonra yapılan tam
+  iade, zaten iade edilmiş ürünü yeniden iade ediyordu; indirimli
+  siparişlerde de iade, ürünün liste fiyatı üzerinden isteniyordu. Artık
+  her ürün için iyzico'nun gerçekten çektiği tutar saklanıp iade ediliyor,
+  daha önce iade edilenler atlanıyor. → [`orders.ts`](src/lib/orders.ts)
 - **Fatura toplamı, çekilen tutarla kuruşu kuruşuna aynı.** Tüm hesaplar
   kuruş cinsinden tam sayıyla yapılır; KDV, KDV dahil tutardan geriye
   ayrılır; kupon indirimi farklı KDV oranlı satırlara "en büyük kalan"
@@ -165,7 +177,7 @@ npm run dev                       # http://localhost:3000
 | `DATABASE_URL` | Postgres bağlantısı |
 | `AUTH_SECRET` | oturum imzası; `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | seed'in oluşturacağı admin hesabı |
-| `IYZICO_API_KEY` / `IYZICO_SECRET_KEY` | [iyzico sandbox](https://sandbox-merchant.iyzipay.com) test anahtarları (yoksa ödeme adımı hata mesajı verir) |
+| `IYZICO_API_KEY` / `IYZICO_SECRET_KEY` | [iyzico sandbox](https://sandbox-merchant.iyzipay.com) test anahtarları; boşsa yerleşik ödeme simülatörü kullanılır |
 | `NEXT_PUBLIC_SITE_URL` | sitenin adresi (e-posta bağlantıları, sitemap) |
 | `SHIPPING_WEBHOOK_SECRET` | kargo webhook imzası; production'da zorunlu |
 | `SMTP_HOST` … `EMAIL_FROM` | e-posta gönderimi; boşsa e-postalar yalnızca panelde kaydedilir |
@@ -173,7 +185,10 @@ npm run dev                       # http://localhost:3000
 | `GEMINI_API_KEY` ya da `ANTHROPIC_API_KEY` | yapay zekâ taslakları (opsiyonel) |
 | `DEMO_MODE=1` | yalnızca herkese açık demo sunucusunda |
 
-iyzico test kartı: `5528 7900 0000 0008`, son kullanma `12/30`, CVC `123`.
+iyzico anahtarları tanımlıysa test kartı: `5528 7900 0000 0008`, son
+kullanma `12/30`, CVC `123`. Tanımlı değilse ödeme adımında kart istenmez;
+simülatör sayfasında "Ödemeyi tamamla" ya da "Başarısız ödeme dene"
+seçilir.
 
 ### Zamanlanmış işler
 
@@ -186,8 +201,8 @@ iyzico test kartı: `5528 7900 0000 0008`, son kullanma `12/30`, CVC `123`.
 ## Testler
 
 ```bash
-npm test            # birim testleri (Jest + RTL) — 157 test
-npm run test:db     # gerçek Postgres üzerinde: stok, kargo, arama, fatura, e-posta, CSV — 37 test
+npm test            # birim testleri (Jest + RTL) — 160 test
+npm run test:db     # gerçek Postgres üzerinde: stok, kargo, arama, fatura, e-posta, CSV, ödeme simülatörü — 41 test
 npm run test:e2e    # tarayıcıda uçtan uca akışlar (Playwright) — 22 test
 npm run lint
 ```
@@ -203,9 +218,9 @@ seed'deki admin hesabıyla giriş yapar.
   fatura var, kurumsal (VKN'li) fatura yok.
 - Yalnızca simülatör kargo firması API'li; diğer firmalarda takip numarası
   elle girilir, teslim elle işaretlenir.
-- Kısmi iadede iyzico'nun iade ettiği tutar, indirim ve kargo payının
-  dağıtımı nedeniyle iade faturasındaki satır tutarından birkaç kuruş
-  farklı olabilir; tam iadede toplamlar eşit.
+- Kısmi iadede müşteriye, iyzico'nun o ürün için çektiği tutar (indirim ve
+  kargo payı dahil) iade edilir; bu, iade faturasındaki (kargo hariç) satır
+  tutarından farklı olabilir. Tam iadede toplamlar eşittir.
 - Şifre değişince diğer cihazlardaki açık oturumlar hemen kapanmaz (en geç
   2 saatte sona erer).
 - Görsel indirmede DNS rebinding'e karşı adres sabitlenmiyor; özellik yalnızca
@@ -216,7 +231,7 @@ seed'deki admin hesabıyla giriş yapar.
 **In English:** EDACEY is a full e-commerce system built from scratch to
 learn how online retail works end to end — a storefront and admin panel
 with colour × size variants, stock reservation at checkout, iyzico
-payments, carrier tracking via signed webhooks, e-Arşiv (Turkish e-invoice)
+payments (with a built-in simulator when no keys are set), carrier tracking via signed webhooks, e-Arşiv (Turkish e-invoice)
 sale and return invoices with correct VAT down to the cent, a transactional
 email outbox, password reset and Shopify product CSV import/export. Built
 with Next.js 16, React 19, TypeScript, PostgreSQL and Prisma; tested with

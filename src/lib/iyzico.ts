@@ -13,16 +13,26 @@ const CF_INITIALIZE_PATH = "/payment/iyzipos/checkoutform/initialize/auth/ecom";
 const CF_RETRIEVE_PATH = "/payment/iyzipos/checkoutform/auth/ecom/detail";
 const REFUND_PATH = "/payment/refund";
 
+// Without iyzico keys (the public demo) payments go to the built-in
+// simulator (src/lib/payment-simulator.ts), which speaks the same API: the
+// rest of the store can't tell the difference and runs the same code.
+export function isPaymentSimulated() {
+  return !process.env.IYZICO_API_KEY || !process.env.IYZICO_SECRET_KEY;
+}
+
+// The simulator's signing secret; kept here so this module doesn't import
+// the simulator (and its database access) unless it's actually used.
+const SIMULATOR_SECRET = "edacey-payment-simulator";
+
 function getConfig() {
-  const apiKey = process.env.IYZICO_API_KEY;
-  const secretKey = process.env.IYZICO_SECRET_KEY;
+  if (isPaymentSimulated()) return { simulated: true as const, apiKey: "", secretKey: SIMULATOR_SECRET, baseUrl: "" };
+  const apiKey = process.env.IYZICO_API_KEY!;
+  const secretKey = process.env.IYZICO_SECRET_KEY!;
   const baseUrl = process.env.IYZICO_BASE_URL;
-  if (!apiKey || !secretKey || !baseUrl) {
-    throw new Error(
-      "iyzico yapılandırması eksik: IYZICO_API_KEY / IYZICO_SECRET_KEY / IYZICO_BASE_URL ortam değişkenlerini ayarlayın."
-    );
+  if (!baseUrl) {
+    throw new Error("iyzico yapılandırması eksik: IYZICO_BASE_URL ortam değişkenini ayarlayın.");
   }
-  return { apiKey, secretKey, baseUrl };
+  return { simulated: false as const, apiKey, secretKey, baseUrl };
 }
 
 function generateRandomKey(): string {
@@ -57,7 +67,12 @@ async function iyzicoRequest<TResponse>(
   uriPath: string,
   body: unknown
 ): Promise<TResponse> {
-  const { apiKey, secretKey, baseUrl } = getConfig();
+  const config = getConfig();
+  if (config.simulated) {
+    const { simulateIyzico } = await import("@/lib/payment-simulator");
+    return simulateIyzico(uriPath, JSON.parse(JSON.stringify(body))) as Promise<TResponse>;
+  }
+  const { apiKey, secretKey, baseUrl } = config;
   // Sign the exact string we send — never re-serialize separately, since
   // that could reorder keys and produce a signature mismatch.
   const bodyString = JSON.stringify(body);

@@ -809,3 +809,24 @@ model PasswordResetToken {
 
   @@index([userId, createdAt])
 }
+
+// Payments taken by the built-in payment simulator (src/lib/payment-
+// simulator.ts), which stands in for iyzico when no iyzico keys are set —
+// the public demo. One row per checkout: what was asked for, what the
+// buyer chose on the simulated payment page, and what was refunded.
+model SimulatedPayment {
+  token          String    @id
+  paymentId      String    @unique
+  conversationId String
+  basketId       String
+  price          Decimal   @db.Decimal(12, 2)
+  paidPrice      Decimal   @db.Decimal(12, 2)
+  // [{ id, name, price }] as sent to iyzico's checkout form.
+  basketItems    Json
+  outcome        String? // SUCCESS | FAILURE, once the buyer has chosen
+  // { [paymentTransactionId]: refunded amount so far }
+  refunds        Json      @default("{}")
+  callbackUrl    String
+  createdAt      DateTime  @default(now())
+  completedAt    DateTime?
+}
