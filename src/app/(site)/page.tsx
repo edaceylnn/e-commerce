@@ -13,6 +13,7 @@ import { formatPrice } from "@/lib/format";
 import { discountedPrice } from "@/lib/product-view";
 import { ShopByCategory, type ShopRow } from "@/components/home/ShopByCategory";
 import { SplitHero } from "@/components/home/SplitHero";
+import { productPath } from "@/lib/product-url";
 
 // Homepage — design handoff screen 1, mapped onto the
 // store's real catalogue: the three categories stand in for the design's
@@ -110,7 +111,7 @@ export default async function HomePage() {
             {editPicks.length > 0 && (
               <div className="grid grid-cols-2 gap-2">
                 {editPicks.map((p) => (
-                  <Link key={p.id} href={`/products/${p.id}`} className="flex flex-col gap-1.5">
+                  <Link key={p.id} href={productPath(p)} className="flex flex-col gap-1.5">
                     <div className="relative mb-2 aspect-[2/3] bg-cream-deep">
                       <Image src={p.thumbnail} alt="" fill sizes="(max-width: 759px) 50vw, 15vw" className="object-cover" />
                     </div>

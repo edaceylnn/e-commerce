@@ -185,12 +185,12 @@ export async function getUnitsSoldByProduct(): Promise<Map<number, number>> {
 
 // Lightweight id-only listing for sitemap.ts — avoids pulling every
 // relation a full Product needs just to build a list of URLs.
-export async function getAllActiveProductIds(): Promise<number[]> {
-  const rows = await prisma.product.findMany({
+// Id + title: enough to build each product's URL (see product-url.ts).
+export async function getAllActiveProductLinks(): Promise<{ id: number; title: string }[]> {
+  return prisma.product.findMany({
     where: STOREFRONT_WHERE,
-    select: { id: true },
+    select: { id: true, title: true },
   });
-  return rows.map((r) => r.id);
 }
 
 export type SizeChartView = {

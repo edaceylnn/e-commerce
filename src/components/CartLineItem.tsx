@@ -10,6 +10,7 @@ import { useWishlistStore } from "@/lib/store/wishlist-store";
 import { showToast } from "@/lib/store/toast-store";
 import { formatPrice } from "@/lib/format";
 import { MinusIcon, PlusIcon } from "@/components/icons/Ph";
+import { productPath } from "@/lib/product-url";
 
 export type CartLineStock = {
   stock: number;
@@ -97,7 +98,7 @@ export function CartLineItem({
   return (
     <li className="flex gap-5 border-b border-line py-6 tab:gap-7">
       <Link
-        href={`/products/${item.id}`}
+        href={productPath({ id: item.id, title })}
         className="relative aspect-[2/3] w-[120px] flex-none self-start bg-cream-deep tab:w-[160px] desk:w-[200px]"
       >
         <Image src={thumbnail} alt={title} fill sizes="200px" className="object-cover object-top" />
@@ -105,7 +106,7 @@ export function CartLineItem({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-baseline justify-between gap-4 text-[14px]">
-          <Link href={`/products/${item.id}`} className="min-w-0">
+          <Link href={productPath({ id: item.id, title })} className="min-w-0">
             {title}
           </Link>
           <span className="flex-none">{formatPrice(item.price * item.quantity)}</span>

@@ -55,7 +55,7 @@ describe("ProductCard", () => {
   it("links to the product detail page", () => {
     render(<ProductCard product={product} />);
     // The image link is a hidden duplicate; the name is the one real link.
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/products/1");
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/products/1-uzun-kollu-ev-takimi");
   });
 
   it("hides the strikethrough price when there is no discount", () => {

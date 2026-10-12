@@ -14,6 +14,7 @@ import {
 } from "@/lib/product-view";
 import { useAddToBag } from "@/lib/use-add-to-bag";
 import { XIcon } from "@/components/icons/Ph";
+import { productPath } from "@/lib/product-url";
 
 // Design handoff → quick view modal: 2:3 image beside name, price, colour
 // swatches and size boxes; picking a size adds that variant and closes.
@@ -141,7 +142,7 @@ export function ProductQuickView({
             </button>
           )}
 
-          <Link href={`/products/${product.id}`} className="text-cta mt-auto self-start pt-6">
+          <Link href={productPath(product)} className="text-cta mt-auto self-start pt-6">
             Ürün detayına git
           </Link>
         </div>

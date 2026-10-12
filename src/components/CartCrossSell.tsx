@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { formatPrice } from "@/lib/format";
+import { productPath } from "@/lib/product-url";
 
 // Deliberately not reusing <ProductCard> here: that component (and its
 // isNewProduct import) pulls in "@/lib/products", which drags Prisma/pg into
@@ -51,7 +52,7 @@ export function CartCrossSell({ cartProductIds }: { cartProductIds: number[] }) 
           const onSale = product.discountPercentage > 0;
           const discounted = product.price * (1 - product.discountPercentage / 100);
           return (
-            <Link key={product.id} href={`/products/${product.id}`} className="flex flex-col gap-1.5">
+            <Link key={product.id} href={productPath(product)} className="flex flex-col gap-1.5">
               <div className="relative mb-2.5 aspect-[2/3] bg-cream-deep">
                 <Image
                   src={product.thumbnail}

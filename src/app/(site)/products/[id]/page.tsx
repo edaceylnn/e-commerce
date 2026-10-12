@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
+import { cache } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import {
   PRODUCT_CATEGORIES,
   getProductById,
@@ -10,24 +12,40 @@ import {
 import { ProductDetail } from "@/components/pdp/ProductDetail";
 import { ProductCard } from "@/components/ProductCard";
 import { ReviewSection } from "@/components/ReviewSection";
+import { parseProductParam, productPath } from "@/lib/product-url";
+
+// Shared by generateMetadata and the page so the product is read once.
+const loadProduct = cache(async (param: string) => {
+  const productId = parseProductParam(param);
+  if (productId === null) return null;
+  return getProductById(productId).catch(() => null);
+});
+
+type Props = { params: Promise<{ id: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const product = await loadProduct((await params).id);
+  if (!product) return {};
+  const description = product.description.length > 160 ? `${product.description.slice(0, 157)}…` : product.description;
+  return {
+    title: `${product.title} — EDACEY`,
+    description,
+    alternates: { canonical: productPath(product) },
+    openGraph: { title: product.title, description, images: [product.thumbnail] },
+  };
+}
 
 // Product page — design handoff screen 3.
-export default async function ProductDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function ProductDetailPage({ params }: Props) {
   const { id } = await params;
-  const productId = Number(id);
-
-  if (!Number.isInteger(productId)) {
-    notFound();
-  }
-
-  const product = await getProductById(productId).catch(() => null);
+  const product = await loadProduct(id);
   if (!product) {
     notFound();
   }
+
+  // Bare-id, old-title or otherwise non-canonical URLs land on the real one.
+  const canonical = productPath(product);
+  if (`/products/${id}` !== canonical) permanentRedirect(canonical);
 
   const category = PRODUCT_CATEGORIES.find((c) => c.slug === product.category);
   const [extras, siblings] = await Promise.all([

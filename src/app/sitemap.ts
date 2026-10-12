@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { PRODUCT_CATEGORIES, getAllActiveProductIds } from "@/lib/products";
+import { PRODUCT_CATEGORIES, getAllActiveProductLinks } from "@/lib/products";
+import { productPath } from "@/lib/product-url";
 import { HELP_TOPIC_SLUGS } from "@/app/(site)/yardim/[slug]/page";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -18,7 +19,7 @@ const STATIC_ROUTES = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const productIds = await getAllActiveProductIds();
+  const products = await getAllActiveProductLinks();
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((path) => ({
     url: `${SITE_URL}${path}`,
@@ -38,8 +39,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.3,
   }));
 
-  const productEntries: MetadataRoute.Sitemap = productIds.map((id) => ({
-    url: `${SITE_URL}/products/${id}`,
+  const productEntries: MetadataRoute.Sitemap = products.map((product) => ({
+    url: `${SITE_URL}${productPath(product)}`,
     changeFrequency: "weekly",
     priority: 0.8,
   }));

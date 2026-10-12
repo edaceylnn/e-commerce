@@ -18,6 +18,7 @@ import { useAddToBag } from "@/lib/use-add-to-bag";
 import { WishlistButton } from "@/components/WishlistButton";
 import { ProductQuickView } from "@/components/ProductQuickView";
 import { PlusIcon } from "@/components/icons/Ph";
+import { productPath } from "@/lib/product-url";
 
 // Design handoff → Product card (identical on home, category and "Complete
 // the look"): a 2:3 image with no card chrome, a wishlist heart, and — on
@@ -41,7 +42,7 @@ export function ProductCard({
   const activeColorId = pickedColorId ?? swatches[0]?.colorId ?? null;
   const options = sizeOptions(product, activeColorId);
   const soldOut = product.stock <= 0 || (options.length > 0 && options.every((o) => !o.available));
-  const href = `/products/${product.id}`;
+  const href = productPath(product);
   const onSale = product.discountPercentage > 0;
 
   return (

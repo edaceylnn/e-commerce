@@ -9,6 +9,7 @@ import { OrderTimeline } from "@/components/OrderTimeline";
 import { ReorderButton } from "@/components/ReorderButton";
 import { CancelOrderButton } from "@/components/CancelOrderButton";
 import { ShipmentTracking } from "@/components/ShipmentTracking";
+import { productPath } from "@/lib/product-url";
 
 // Order detail, top to bottom in the order a shopper reads it: status and
 // date, progress, the items, the amount, then delivery and payment. Sections
@@ -65,14 +66,14 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
           {order.items.map((item) => (
             <li key={item.id} className="flex gap-4 py-4">
               <Link
-                href={`/products/${item.productId}`}
+                href={productPath({ id: item.productId, title: item.title })}
                 className="relative aspect-[3/4] w-16 shrink-0 overflow-hidden bg-cream-deep"
               >
                 <Image src={item.thumbnail} alt={item.title} fill sizes="64px" className="object-cover object-top" />
               </Link>
               <div className="flex min-w-0 flex-1 flex-wrap justify-between gap-x-4 gap-y-1">
                 <div className="min-w-0">
-                  <Link href={`/products/${item.productId}`} className="text-sm font-medium hover:underline hover:underline-offset-4">
+                  <Link href={productPath({ id: item.productId, title: item.title })} className="text-sm font-medium hover:underline hover:underline-offset-4">
                     {item.title}
                   </Link>
                   {(item.variantLabel || item.sku) && (

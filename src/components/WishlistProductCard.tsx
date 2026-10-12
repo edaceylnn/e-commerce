@@ -12,6 +12,7 @@ import { ProductQuickView } from "@/components/ProductQuickView";
 import { useWishlistStore } from "@/lib/store/wishlist-store";
 import { HeartIcon } from "@/components/icons/HeartIcon";
 import { SearchIcon } from "@/components/icons/SearchIcon";
+import { productPath } from "@/lib/product-url";
 
 const HOVER_ICON_CLASS =
   "flex h-10 w-10 items-center justify-center bg-ivory text-ink transition hover:bg-accent hover:text-cream";
@@ -44,7 +45,7 @@ export function WishlistProductCard({
   return (
     <>
       <div className="group flex flex-col">
-        <Link href={`/products/${product.id}`} className="block">
+        <Link href={productPath(product)} className="block">
           <div className="relative aspect-[3/4] overflow-hidden bg-cream-deep">
             <Image
               src={product.thumbnail}
