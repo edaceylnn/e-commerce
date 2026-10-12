@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Ödeme — EDACEY", robots: { index:
 // One-page checkout: addresses, the order and the pay button together.
 export default async function CheckoutPage() {
   const session = await getSession();
-  if (!session) redirect("/account");
+  if (!session) redirect("/account?next=/checkout");
 
   const addresses = await prisma.address.findMany({
     where: { userId: session.userId },

@@ -16,12 +16,15 @@ const TABS: { mode: Mode; label: string }[] = [
 ];
 
 // `demo`: the public demo's shared account, shown with a fill-in button.
+// `next`: a same-site path to go back to after signing in (e.g. /checkout).
 export function AccountClient({
   demo,
   paymentSimulated = false,
+  next,
 }: {
   demo?: { email: string; password: string };
   paymentSimulated?: boolean;
+  next?: string;
 }) {
   const router = useRouter();
   const nameId = useId();
@@ -52,7 +55,8 @@ export function AccountClient({
       return;
     }
 
-    router.refresh();
+    if (next) router.replace(next);
+    else router.refresh();
   }
 
   return (

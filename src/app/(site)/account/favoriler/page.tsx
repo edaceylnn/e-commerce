@@ -11,7 +11,7 @@ import { HeartIcon } from "@/components/icons/HeartIcon";
 export default async function FavorilerPage() {
   const session = await getSession();
   if (!session) {
-    redirect("/account");
+    redirect("/account?next=/account/favoriler");
   }
 
   const items = await prisma.wishlistItem.findMany({
