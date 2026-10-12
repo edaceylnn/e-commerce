@@ -6,7 +6,7 @@ import { ProductCard } from "@/components/ProductCard";
 // category tabs: categories are browsed further down (Shop by category).
 export function BestSellers({ products }: { products: Product[] }) {
   return (
-    <section className="page-x pt-[120px]">
+    <section className="page-x pt-20 tab:pt-[120px]">
       <div className="mb-7 flex flex-wrap items-baseline justify-between gap-6">
         <h2 className="text-body-sm uppercase tracking-eyebrow">Çok Satanlar</h2>
         <Link href="/products" className="text-cta tracking-label">

@@ -35,7 +35,7 @@ export function SplitHero() {
         <div className="pointer-events-none absolute inset-0 bg-ink/[.18]" />
         <div className="absolute inset-x-0 bottom-12 px-5 text-on-image tab:bottom-14 tab:px-10">
           <span className="animate-hero-rise block text-caption uppercase tracking-eyebrow" style={delay(150)}>
-            Yeni sezon — Spor
+            Yeni sezon: Spor
           </span>
           <h1
             className="animate-hero-rise mt-4 text-[clamp(2.75rem,4.6vw,5.25rem)] font-light leading-[0.95] tracking-[-0.03em]"

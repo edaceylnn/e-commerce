@@ -13,7 +13,7 @@ export function NewArrivalsRail({ products }: { products: Product[] }) {
     railRef.current?.scrollBy({ left: dir * 360, behavior: "smooth" });
 
   return (
-    <section className="page-x pt-40">
+    <section className="page-x pt-24 tab:pt-40">
       <div className="mb-7 flex items-baseline justify-between">
         <h2 className="text-body-sm uppercase tracking-eyebrow">Yeni Gelenler</h2>
         <div className="flex items-center gap-7">

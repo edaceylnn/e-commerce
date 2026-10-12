@@ -9,7 +9,6 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
       { href: "/yardim/sss", label: "Yardım merkezi" },
       { href: "/yardim/kargo-ve-teslimat", label: "Kargo & teslimat" },
       { href: "/yardim/iade-ve-degisim", label: "İade & değişim" },
-      { href: "/yardim/sss", label: "Beden rehberi" },
       { href: "/iletisim", label: "İletişim" },
     ],
   },
@@ -27,7 +26,6 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
     links: [
       { href: "/hakkimizda", label: "Hikayemiz" },
       { href: "/mesafeli-satis-sozlesmesi", label: "Mesafeli satış sözleşmesi" },
-      { href: "/iletisim", label: "Bize ulaşın" },
     ],
   },
   {

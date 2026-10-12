@@ -9,12 +9,12 @@ import { PRODUCT_CATEGORIES } from "@/lib/categories";
 import { useHasMounted } from "@/lib/use-has-mounted";
 import { formatPrice } from "@/lib/format";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
-import { CaretLeftIcon, CaretRightIcon, MagnifyingGlassIcon } from "@/components/icons/Ph";
+import { CaretLeftIcon, CaretRightIcon, HeartPhIcon, MagnifyingGlassIcon, UserIcon } from "@/components/icons/Ph";
 
 const ANNOUNCEMENTS = [
   `${formatPrice(FREE_SHIPPING_THRESHOLD)} üzeri siparişlerde kargo bedava`,
   "14 gün içinde kolay iade",
-  "Sezon sonu — seçili loungewear %40",
+  "Sezon sonu: seçili loungewear %40",
   "Yeni sezon parçaları geldi",
 ];
 
@@ -197,8 +197,9 @@ export function Navbar() {
             the true centre of the page whatever the widths of the wordmark
             and the right-hand links. Below: the nav wraps onto its own
             full-width 44px row with a top hairline, scrolling sideways from
-            the first item (safe centre). */}
-        <div className="page-x flex flex-wrap items-center gap-x-10 hdr:grid hdr:grid-cols-[1fr_auto_1fr]">
+            the first item (safe centre), its right edge fading out so a
+            cut-off last item reads as "scroll for more". */}
+        <div className="page-x flex flex-wrap items-center gap-x-4 tab:gap-x-10 hdr:grid hdr:grid-cols-[1fr_auto_1fr]">
           <Link
             href="/"
             className="flex h-16 items-center justify-self-start text-[17px] font-medium tracking-logo"
@@ -208,27 +209,38 @@ export function Navbar() {
 
           <nav
             aria-label="Ana menü"
-            className={`no-scrollbar bleed-gutter order-3 flex h-11 min-w-0 basis-[calc(100%+2*var(--gutter))] items-center gap-[clamp(16px,2vw,30px)] overflow-x-auto border-t ${transparent ? "border-on-image/30" : "border-line"} text-nav uppercase tracking-nav [justify-content:safe_center] hdr:order-none hdr:mx-0 hdr:h-16 hdr:border-t-0 hdr:px-0`}
+            className={`no-scrollbar bleed-gutter order-3 flex [mask-image:linear-gradient(to_right,#000_calc(100%-var(--gutter)-12px),transparent)] hdr:[mask-image:none] h-11 min-w-0 basis-[calc(100%+2*var(--gutter))] items-center gap-[clamp(16px,2vw,30px)] overflow-x-auto border-t ${transparent ? "border-on-image/30" : "border-line"} text-nav uppercase tracking-nav [justify-content:safe_center] hdr:order-none hdr:mx-0 hdr:h-16 hdr:border-t-0 hdr:px-0`}
           >
             <Suspense fallback={<NavLinks activeHref={null} />}>
               <ActiveNavLinks />
             </Suspense>
           </nav>
 
-          <div className="ml-auto flex h-16 items-center gap-6 whitespace-nowrap text-nav uppercase tracking-nav hdr:ml-0 hdr:justify-self-end">
+          {/* Below `tab` there's no room for the words (down to 360px), so
+              search, account and favourites shrink to icons with an
+              accessible name and a 36px tap area. */}
+          <div className="ml-auto flex h-16 items-center gap-3 whitespace-nowrap text-nav uppercase tracking-nav tab:gap-6 hdr:ml-0 hdr:justify-self-end">
             <button
               type="button"
               onClick={() => setSearchOpen((v) => !v)}
               aria-expanded={searchOpen}
-              className="uppercase"
+              aria-label="Ara"
+              className="-m-2 p-2 uppercase tab:m-0 tab:p-0"
             >
-              Ara
+              <MagnifyingGlassIcon size={20} className="tab:hidden" />
+              <span aria-hidden className="hidden tab:inline">Ara</span>
             </button>
-            <Link href="/account" className="hidden tab:inline">
-              Hesabım
+            <Link href="/account" aria-label="Hesabım" className="-m-2 p-2 tab:m-0 tab:p-0">
+              <UserIcon className="tab:hidden" />
+              <span aria-hidden className="hidden tab:inline">Hesabım</span>
             </Link>
-            <Link href="/account/favoriler" className="hidden tab:inline">
-              Favoriler ({mounted ? wishCount : 0})
+            <Link
+              href="/account/favoriler"
+              aria-label={`Favoriler (${mounted ? wishCount : 0})`}
+              className="-m-2 p-2 tab:m-0 tab:p-0"
+            >
+              <HeartPhIcon className="tab:hidden" />
+              <span aria-hidden className="hidden tab:inline">Favoriler ({mounted ? wishCount : 0})</span>
             </Link>
             <Link href="/cart">Sepet ({mounted ? cartCount : 0})</Link>
           </div>

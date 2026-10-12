@@ -13,8 +13,8 @@
   --ink-hover: #3a3733;
   --ink-soft: #4a453e; /* text-2: body copy, secondary text, prices */
   --text-3: #6f6559; /* labels, meta, inactive tabs */
-  --text-4: #8b7f70; /* counts, struck-through prices, hints */
-  --text-5: #9a9083; /* product reference / SKU */
+  --text-4: #746a5e; /* counts, struck-through prices, hints (4.85:1 on page) */
+  --text-5: #766e64; /* product reference / SKU (4.6:1 on page) */
   --disabled: #b3aa9c; /* disabled sizes, soft underline colour */
   --on-image: #faf8f4; /* text on photography */
   --sale: #9a3d25;
@@ -250,6 +250,13 @@ body {
   /* Clips full-bleed children (50vw includes the scrollbar); `clip` rather
      than `hidden` so position: sticky keeps working. */
   overflow-x: clip;
+}
+
+/* Both search fields (storefront "Kapat", admin SearchInput's clear) bring
+   their own control; the browser's blue × would be a second, off-palette one. */
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 @utility page-x {

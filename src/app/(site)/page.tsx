@@ -86,7 +86,7 @@ export default async function HomePage() {
       <BestSellers products={bestSellers} />
 
       {/* 3. Seasonal edit — 7-col image, text bottom-aligned in cols 9–12. */}
-      <section className="page-x pt-40">
+      <section className="page-x pt-24 tab:pt-40">
         <div className="grid grid-cols-12 items-end gap-2">
           <div className="relative col-span-12 aspect-[3/4] bg-image-alt tab:col-span-7">
             <Image
@@ -99,7 +99,6 @@ export default async function HomePage() {
           </div>
           <div className="col-span-12 mt-10 flex flex-col gap-12 tab:col-start-8 tab:col-span-5 tab:mt-0 desk:col-start-9 desk:col-span-4">
             <div className="flex flex-col gap-[18px]">
-              <span className="text-caption uppercase tracking-eyebrow text-text-3">Sezon seçkisi</span>
               <h2 className="headline text-display-lg">Gece &amp; Sabah</h2>
               <p className="max-w-[38ch] text-pretty text-body font-light text-ink-soft">
                 Yumuşak modal ve pamuklu pijamalar; geceden yavaş sabahlara aynı rahatlıkla.
@@ -135,7 +134,7 @@ export default async function HomePage() {
           before the newsletter. The model walks left of centre, so from
           tablet up the copy sits over the colonnade on the right (with a
           soft shade from that side); on phones it goes under the photo. */}
-      <section className="pt-40">
+      <section className="pt-24 tab:pt-40">
         <div className="relative tab:h-[70vh] tab:min-h-[520px]">
           <div className="relative aspect-[4/5] overflow-hidden bg-[#ddd6ca] tab:absolute tab:inset-0 tab:aspect-auto">
             <Image
@@ -149,8 +148,7 @@ export default async function HomePage() {
           </div>
           <div className="page-x pt-8 tab:absolute tab:inset-x-0 tab:bottom-16 tab:flex tab:justify-end tab:pt-0 tab:text-on-image">
             <div className="tab:max-w-[440px]">
-              <span className="block text-caption uppercase tracking-eyebrow text-text-3 tab:text-on-image">Loungewear</span>
-              <h2 className="mt-4 text-[clamp(2.25rem,3.6vw,3.75rem)] font-light leading-[1.02] tracking-[-0.02em]">
+              <h2 className="text-[clamp(2.25rem,3.6vw,3.75rem)] font-light leading-[1.02] tracking-[-0.02em]">
                 Yavaş pazarlar,
                 <br />
                 yumuşak dokular
@@ -170,7 +168,7 @@ export default async function HomePage() {
       </section>
 
       {/* 7. Newsletter. */}
-      <section className="page-x pb-4 pt-44">
+      <section className="page-x pb-4 pt-24 tab:pt-44">
         <div className="mx-auto flex max-w-[520px] flex-col items-center gap-4 text-center">
           <h2 className="text-[clamp(28px,2.6vw,38px)] font-light leading-[1.1] tracking-title">
             Yeni sezonu ilk sen gör

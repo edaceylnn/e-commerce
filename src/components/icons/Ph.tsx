@@ -20,6 +20,7 @@ import { Minus } from "@phosphor-icons/react/dist/ssr/Minus";
 import { Plus } from "@phosphor-icons/react/dist/ssr/Plus";
 import { SlidersHorizontal } from "@phosphor-icons/react/dist/ssr/SlidersHorizontal";
 import { Truck } from "@phosphor-icons/react/dist/ssr/Truck";
+import { User } from "@phosphor-icons/react/dist/ssr/User";
 import { X } from "@phosphor-icons/react/dist/ssr/X";
 
 export type { IconProps };
@@ -46,4 +47,5 @@ export const MinusIcon = light(Minus, 16);
 export const PlusIcon = light(Plus, 16);
 export const SlidersHorizontalIcon = light(SlidersHorizontal);
 export const TruckIcon = light(Truck);
+export const UserIcon = light(User, 20);
 export const XIcon = light(X);

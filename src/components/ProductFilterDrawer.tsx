@@ -116,9 +116,12 @@ export function ProductFilterDrawer({
                   type="button"
                   aria-pressed={on}
                   onClick={() => toggle("sizes", s.value)}
-                  className="flex h-11 min-w-12 items-center justify-center px-2 text-[13.5px]"
+                  className="group flex h-11 min-w-12 items-center justify-center px-2 text-[13.5px]"
                 >
-                  <span className={`border-b pb-[3px] ${on ? "border-ink font-medium" : "border-transparent font-light"}`}>
+                  {/* Hover previews the underline so plain letters read as buttons. */}
+                  <span
+                    className={`border-b pb-[3px] transition-colors ${on ? "border-ink font-medium" : "border-transparent font-light group-hover:border-line-strong"}`}
+                  >
                     {s.value}
                   </span>
                 </button>
